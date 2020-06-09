@@ -1,0 +1,46 @@
+---
+title: "2MR Tutorial"
+author: "Christine Le"
+date: "6/8/2020"
+output: html_document
+---
+# Reference :https://mrcieu.github.io/TwoSampleMR/index.html
+
+## I. Basic WorkFlow
+```{r}
+library(TwoSampleMR)
+
+# List available GWASs
+ao <- available_outcomes()
+
+# Get instruments
+#body mass index
+exposure_dat <- extract_instruments("ieu-a-2")
+
+# Get effects of instruments on outcome
+#CHD
+outcome_dat <- extract_outcome_data(snps=exposure_dat$SNP, outcomes="ieu-a-7")
+
+# Harmonise the exposure and outcome data
+dat <- harmonise_data(exposure_dat, outcome_dat)
+
+# Perform MR
+res <- mr(dat)
+
+```
+
+
+## II. Exposures
+
+### A. Importing exposure data with column names
+```{r}
+
+#file path
+bmi_file <- system.file("extdata", "bmi.txt", package="TwoSampleMR")
+
+#read file 
+bmi_exp_dat <- read_exposure_data(bmi_file)
+```
+
+### B. 
+###
