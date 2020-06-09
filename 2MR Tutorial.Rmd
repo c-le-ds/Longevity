@@ -42,5 +42,198 @@ bmi_file <- system.file("extdata", "bmi.txt", package="TwoSampleMR")
 bmi_exp_dat <- read_exposure_data(bmi_file)
 ```
 
-### B. 
-###
+### B. importing exposure data without correct column names
+
+```{r}
+#file path
+bmi2_file <- system.file("extdata/bmi.csv", package="TwoSampleMR")
+
+#default to exposure if no phenotype name specified
+#match up column names to match with format for 2MR
+bmi_exp_dat <- read_exposure_data(
+    filename = bmi2_file,
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "effect",
+    se_col = "SE",
+    effect_allele_col = "a1",
+    other_allele_col = "a2",
+    eaf_col = "a1_freq",
+    pval_col = "p-value",
+    units_col = "Units",
+    gene_col = "Gene",
+    samplesize_col = "n"
+)
+
+#input values in exposure column to be more specific
+bmi_exp_dat$exposure <- "BMI"
+```
+
+
+### C. Format exisiting df to work for twosampleMR
+```{r}
+#example df
+#make sure to name columns correctly or it will not be converted over
+random_df <- data.frame(
+    SNP = c("rs1", "rs2"),
+    beta = c(1, 2),
+    se = c(1, 2),
+    effect_allele = c("A", "T")
+)
+random_exp_dat <- format_data(random_df, type="exposure")
+random_exp_dat
+```
+
+
+### D, Instruments that have significant associations and can be used for MR analysis
+
+
+```{r}
+library(MRInstruments)
+
+#from GWAS
+data(gwas_catalog)
+head(gwas_catalog)
+
+#use data from specific paper/study and phenotype
+bmi_gwas <- subset(gwas_catalog, grepl("Speliotes", Author) & Phenotype == "Body mass index")
+bmi_exp_dat <- format_data(bmi_gwas)
+
+#for metabolites
+data(metab_qtls)
+head(metab_qtls)
+# as above with metabolite data
+ala_exp_dat <- format_metab_qtls(subset(metab_qtls, phenotype=="Ala"))
+
+#for proteins
+data(proteomic_qtls)
+head(proteomic_qtls)
+
+apoh_exp_dat <- format_proteomic_qtls(subset(proteomic_qtls, analyte=="ApoH"))
+
+#for genes
+data(gtex_eqtl)
+head(gtex_eqtl)
+
+irak1bp1_exp_dat <- format_gtex_eqtl(subset(gtex_eqtl, gene_name=="IRAK1BP1" & tissue == "Adipose Subcutaneous"))
+#by dna methylation
+data(aries_mqtl)
+head(aries_mqtl)
+
+cg25212131_exp_dat <- format_aries_mqtl(subset(aries_mqtl, cpg=="cg25212131" & age == "Birth"))
+
+```
+
+
+### E. Ensuring independence via clumping(reducing covariance)
+
+```{r}
+
+#will calculate the LD values bwtn SNPs and keep only the SNP with the lowest value among SNPs with LD r^2 above threshold 
+bmi_exp_dat <- clump_data(bmi_exp_dat)
+```
+
+## III. Outcome Data
+
+### A.  Extract variants from outcome trait
+
+extract specific SNPs (prior knowledge or lit review or for SNPs examined in study)
+```{r}
+
+#get exposure data for SNP
+bmi_exp_dat <- extract_instruments(outcomes='ieu-a-2')
+head(bmi_exp_dat)
+
+#search for outcome "heart disease"
+ao[grepl("heart disease", ao$trait), ]
+
+#ex : choose ieu-a-7 (e.g. most recent)
+
+chd_out_dat <- extract_outcome_data(
+    snps = bmi_exp_dat$SNP,
+    outcomes = 'ieu-a-7'
+)
+```
+
+
+### B. LDs - proxies for SNPs
+
+extract specific SNPs (prior knowledge or lit review or only SNPs collected for particular study)
+```{r}
+
+#get exposure data for SNP
+bmi_exp_dat <- extract_instruments(outcomes='ieu-a-2')
+head(bmi_exp_dat)
+
+#search for outcome "heart disease"
+ao[grepl("heart disease", ao$trait), ]
+
+#ex : choose ieu-a-7 (e.g. most recent)
+
+chd_out_dat <- extract_outcome_data(
+    snps = bmi_exp_dat$SNP,
+    outcomes = 'ieu-a-7'
+)
+```
+
+
+### C. if SNP data is not available in outcome data find LD proxies using 1000 genome data.
+
+The parameters for handling LD proxies are as follows:
+
+    proxies = TRUE or FALSE (TRUE by default)
+    rsq = numeric value of minimum rsq to find a proxy. Default is 0.8, minimum is 0.6
+    palindromes = Allow palindromic SNPs? Default is 1 (yes)
+    maf_threshold = If palindromes allowed then what is the maximum minor allele frequency of   palindromes allowed  Default is 0.3.
+
+
+outcome data from local GwAS data
+EXAMPLE :
+outcome_dat <- read_outcome_data(
+    snps = bmi_exp_dat$SNP,
+    filename = "gwas_summary.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "effect",
+    se_col = "SE",
+    effect_allele_col = "a1",
+    other_allele_col = "a2",
+    eaf_col = "a1_freq",
+    pval_col = "p-value",
+    units_col = "Units",
+    gene_col = "Gene",
+    samplesize_col = "n"
+)
+
+Parameters
+The extract_outcome_data function returns a table of SNP effects for the requested SNPs on the requested outcomes. The format of the data is similar to the exposure data format, except the main columns are as follows:
+
+    SNP
+    beta.outcome
+    se.outcome
+    samplesize.outcome
+    ncase.outcome
+    ncontrol.outcome
+    pval.outcome
+    eaf.outcome
+    effect_allele.outcom
+    other_allele.outcome
+    units.outcome
+    outcome
+    consortium.outcome
+    year.outcome
+    pmid.outcome
+    id.outcome
+    originalname.outcome
+    proxy.outcome
+    target_snp.outcome
+    proxy_snp.outcome
+    target_a1.outcome
+    target_a2.outcome
+    proxy_a1.outcome
+    proxy_a2.outcome
+    mr_keep.outcome
+    data_source.outcome
+
+
+
