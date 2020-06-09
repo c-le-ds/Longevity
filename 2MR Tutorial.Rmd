@@ -235,5 +235,40 @@ The extract_outcome_data function returns a table of SNP effects for the request
     mr_keep.outcome
     data_source.outcome
 
+## IV. Harmonize Data
+
+Default : automatically tries to infer forward strand alleles using allele frequency (action = 2)
+To drop palindromic SNPs, set action = 3
+
+Basic
+```{r}
+dat <- harmonise_data(
+    exposure_dat = bmi_exp_dat,
+    outcome_dat = chd_out_dat
+)
+```
+
+Drop duplicate GWAS summary sets to reduce duplicate MR analyses
+
+PRUNE DATASETS SO ONLY E-O COMBINATIONS WITH HIGHEST POWER/SAMPLE SIZE ARE KEPT FOR BINARY OUTCOMES.
+
+
+```{r}
+dat1<-power_prune(dat,method=1,dist.outcome="binary")
+```
+
+PRUNE DATASETS SO ONLY E-O COMBOS WITH HIGHEST INSTRUMENT STRENGTH(LOTS OF VARIATION EXPLAINED) AND SAMPLE SIZE
+
+helpful for studies if there are large number of SNPs available to instrument an exposure. Power can be increased if we prune based on the outcome GWAS with better SNP coverage
+```{r}
+dat2<-power_prune(dat,method=2,dist.outcome="binary")
+```
+
+
+assumes SNP-exposure effects are continuous with ~N distribution
+SNP -outcome effects should be binary or continuous, if binary, use method 1.
+
+
+### V. MR Analyses
 
 
