@@ -269,6 +269,121 @@ assumes SNP-exposure effects are continuous with ~N distribution
 SNP -outcome effects should be binary or continuous, if binary, use method 1.
 
 
-### V. MR Analyses
+## V. MR Analyses
+
+### A. Basic
+
+```{r}
+#data prep steps
+bmi_exp_dat <- extract_instruments(outcomes = 'ieu-a-2')
+chd_out_dat <- extract_outcome_data(snps = bmi_exp_dat$SNP, outcomes = 'ieu-a-7')
+dat <- harmonise_data(bmi_exp_dat, chd_out_dat)
+
+
+# perform mr analysis on data from above
+result <- mr(dat)
+
+#can choose other methods besides default 
+#available methods can be found with the following command
+mr_method_list()
+```
+
+
+### B. Analyzing Results
+
+looking at results and testing assumptions
+
+#### Heterogeneity 
+#what is the p-value or Q cut off to say there is no heterogeneity?
+-differences among estimates cannot be explained by sample variation alone
+- suggest an assumption is being violated, couuld be due to multiple reasons
+  - due to pleiotrophy
+  - non homogenous underlying population
+  - each SNP produces a different causal outcome/effect
+  - weak instruments
+- should we in this case utilize the weighted median or mode models?
+
+```{r}
+mr_heterogeneity(dat)
+```
+
+
+### Horizontal pleiotrophy
+#high p-value means no strong evidence of horizontal pleiotrophy?
+```{r}
+mr_pleiotropy_test(dat)
+```
+
+
+### single SNP analysis
+performs the analysis multiple times for each exposure-outcome combination - each time using a different single SNP to perform the analysis.
+```{r}
+# Wald ratio by default
+res_single <- mr_singlesnp(dat) 
+
+#fixed effects
+
+res_single_fe <- mr_singlesnp(dat, single_method="mr_meta_fixed")
+
+#maximum likelihood method
+res_single_ml <- mr_singlesnp(dat, all_method="mr_two_sample_ml")
+```
+
+
+
+### Leave- out -analysis
+are estimates significantly driven by one SNP?
+
+#does low p-value mean that they are significant for estimate?
+#what is the cut off?
+```{r}
+res_loo <- mr_leaveoneout(dat)
+```
+
+
+### PLOTS
+
+#### scatter plot
+```{r}
+#result <- mr(dat)
+
+p1 <- mr_scatter_plot(result, dat)
+p1
+p1[1]
+```
+
+#### Forest plot
+```{r}
+res_single <- mr_singlesnp(dat)
+p2 <- mr_forest_plot(res_single)
+p2
+p2[1]
+#shows the causal effect as estimated using each of the SNPs on their own, and comparing against the causal effect as estimated using the methods that use all the SNPs
+```
+
+#### Forest plot specifying ivw and maximum likelihood methods
+
+```{r}
+res_single_method <- mr_singlesnp(dat, all_method=c("mr_ivw", "mr_two_sample_ml"))
+p3 <- mr_forest_plot(res_single_method)
+p3[[1]]
+```
+
+
+#### Leave out plot
+```{r}
+res_loo <- mr_leaveoneout(dat)
+p4 <- mr_leaveoneout_plot(res_loo)
+p4[[1]]
+```
+
+
+#### Funnel plot
+
+```{r}
+res_single <- mr_singlesnp(dat)
+p5 <- mr_funnel_plot(res_single)
+p5[[1]]
+```
 
 
