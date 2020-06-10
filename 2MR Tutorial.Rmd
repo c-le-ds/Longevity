@@ -1,6 +1,5 @@
 ---
 title: "2MR Tutorial"
-author: "Christine Le"
 date: "6/8/2020"
 output: html_document
 ---
