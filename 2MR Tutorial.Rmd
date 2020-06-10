@@ -340,7 +340,7 @@ res_loo <- mr_leaveoneout(dat)
 ```
 
 
-### PLOTS
+### C. PLOTS
 
 #### scatter plot
 ```{r}
@@ -384,5 +384,174 @@ res_single <- mr_singlesnp(dat)
 p5 <- mr_funnel_plot(res_single)
 p5[[1]]
 ```
+
+
+#### 1 to Many Forest Plot
+
+Single E to multiple O 
+Single O to multiple E
+can be done with or without stratification
+best if done with less than 50 results, max 100 results
+data needs to be sorted before plotting (e.g. sort_1_to_many())
+
+
+Data prep
+```{r}
+
+#Generate MR results
+exp_dat <- extract_instruments(outcomes=c(2,100,1032,104,1,72,999))
+table(exp_dat$exposure)
+chd_out_dat <- extract_outcome_data(
+    snps = exp_dat$SNP,
+    outcomes = 7
+)
+
+dat2 <- harmonise_data(
+    exposure_dat = exp_dat,
+    outcome_dat = chd_out_dat
+)
+res<-mr(dat2)
+
+
+# Make the plot
+# Multiple Exposures on one Outcome
+
+#default : >1 instrument (IVW Method); 1 instrument (Wald Method)
+result <- subset_on_method(res)
+
+# sort by effect size (decreasing)
+
+sort_result <- sort_1_to_many(result)
+
+# remove exposure ID labels from exposure column (Y axis)
+
+plot_data <- split_exposure(sort_result)
+
+#weight data
+plot_data$weight <- 1/plot_data$se
+
+#create minimum ('lo') and maximum('up') bounds for plot
+min(exp(plot_data$b-1.96*plot_data$se))
+max(exp(plot_data$b-1.96*plot_data$se))
+```
+
+##### Example 1
+Basic Plot
+```{r}
+
+forest_plot_1_to_many(plot_data,b="b",se="se",
+    exponentiate=T,ao_slc=F,lo=0.3,up=2.5,
+    TraitM="exposure", col1_width=2,by=NULL,
+    trans="log2",xlab="OR for CHD per SD increase in risk factor (95% confidence interval)",weight="weight")
+
+
+
+```
+
+Customize columns and column titles
+
+```{r}
+res$pval<-formatC(res$pval, format = "e", digits = 2)
+forest_plot_1_to_many(res,b="b",se="se",
+    exponentiate=T,ao_slc=F,lo=0.3,up=2.5,
+    TraitM="exposure",by=NULL,
+    trans="log2",xlab="OR for CHD per SD increase in risk factor (95% CI)",
+    weight="weight",subheading_size=11,
+    col1_title="Risk factor",
+    col1_width=2.5,
+    col_text_size=4,
+    addcols=c("nsnp","pval"),
+    addcol_widths=c(1.0,1.0),
+    addcol_titles=c("No. SNPs","P-val")
+    )
+```
+
+NO column or axis titles
+```{r}
+forest_plot_1_to_many(res,b="b",se="se",
+    exponentiate=T,ao_slc=F,lo=0.3,up=3.0,
+    TraitM="exposure",col1_width=2.0,by=NULL,
+    trans="log2",xlab="",addcols=c("nsnp","pval"),
+    weight="weight", col_text_size=4,
+    addcol_widths=c(0.5,1.0),addcol_titles=c("",""))
+```
+
+
+
+##### Example 2
+plotting 1 to many forest plot with multiple MR methods and grouped by exposure
+```{r}
+#as above
+res<-mr(dat2)
+res<-split_exposure(res)  
+
+res<-sort_1_to_many(res,group="exposure",sort_action=3,priority="Inverse variance weighted",trait_m="method")
+#plot
+forest_plot_1_to_many(res,b="b",se="se",
+    exponentiate=T,trans="log2",ao_slc=F,lo=0.03,
+    up=22,col1_width=2,by="exposure", #grouped by exposure
+    TraitM="method", #analysis by multiple methods
+    xlab="OR for CHD per SD increase in risk factor (95% confidence interval)",
+    subheading_size=12,col_text_size=4)
+```
+
+##### Example 3
+
+plot stratified by grouping variable, selecting ONE MR method for each unique E-O combo,
+sorted by effect size (decreasing) within each group
+```{r}
+# as above
+res<-mr(dat2)
+res<-split_exposure(res)
+res<-subset_on_method(res)
+
+# creating groups
+res$subcategory[res$exposure %in% c("Adiponectin","Hip circumference","Waist circumference")]<-"Group 1"
+res$subcategory[is.na(res$subcategory)]<-"Group 2"
+
+#as above
+res$weight<-1/res$se
+res<-sort_1_to_many(res,sort_action=1,group="subcategory") # sort
+
+#plot
+forest_plot_1_to_many(res,b="b",se="se",
+    exponentiate=T,trans="log2",ao_slc=F,lo=0.3,
+    up=2.5,TraitM="exposure",col_text_size=4,col1_width=1.5,
+    by="subcategory", # by group
+    xlab="OR for CHD per SD increase in risk factor (95% confidence interval)",
+    subheading_size=14,weight="weight")
+```
+
+##### Example 4 BMI (E) on 103 diseases (outcomes)
+
+Best with 50 or less observations
+no more than 100 observations
+
+```{r}
+exp_dat <- extract_instruments(outcomes=2)  #extract instruments for BMI
+ao<-available_outcomes()
+ao<-ao[ao$category=="Disease",] #identify diseases
+ao<-ao[which(ao$ncase>100),]
+
+dis_dat <- extract_outcome_data(
+    snps = exp_dat$SNP,
+    outcomes = ao$id
+)
+
+dat3 <- harmonise_data(
+    exposure_dat = exp_dat,
+    outcome_dat = dis_dat
+)
+
+
+res<-mr(dat3,method_list=c("mr_wald_ratio","mr_ivw"))
+res<-split_outcome(res)  
+
+res<-sort_1_to_many(res,b="b",sort_action=4) #(largest effect at top of the plot)
+```
+
+
+### D. Weak Instruments
+
 
 
