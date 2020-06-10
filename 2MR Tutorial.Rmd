@@ -553,5 +553,25 @@ res<-sort_1_to_many(res,b="b",sort_action=4) #(largest effect at top of the plot
 
 ### D. Weak Instruments
 
+MR_RAPS function (Robust adjusted profile score)
+generates an unbiased estimate when there are many weak instruments
+robust against systematic and idiosyncratic pleiotrophy
 
+```{r}
+res <- mr(dat, method_list = c("mr_raps"), parameters = list(over.dispersion = FALSE, loss.function = "l2"))
+
+#parameters do not need to be specified
+# over.dipersion - takes into account idosyncratic pleiotropy, default = TRUE
+# loss.function (12, huber or tukey), default = tukey
+```
+
+
+### E. Reports
+all analyses and plots together in one document
+default = html
+one report for every E-O combination in the 'dat' object
+
+```{r}
+mr_report(dat)
+```
 
