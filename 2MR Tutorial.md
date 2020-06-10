@@ -1,0 +1,388 @@
+---
+title: "2MR Tutorial"
+date: "6/8/2020"
+output: html_document
+---
+# Reference :https://mrcieu.github.io/TwoSampleMR/index.html
+
+## I. Basic WorkFlow
+```{r}
+library(TwoSampleMR)
+
+# List available GWASs
+ao <- available_outcomes()
+
+# Get instruments
+#body mass index
+exposure_dat <- extract_instruments("ieu-a-2")
+
+# Get effects of instruments on outcome
+#CHD
+outcome_dat <- extract_outcome_data(snps=exposure_dat$SNP, outcomes="ieu-a-7")
+
+# Harmonise the exposure and outcome data
+dat <- harmonise_data(exposure_dat, outcome_dat)
+
+# Perform MR
+res <- mr(dat)
+
+```
+
+
+## II. Exposures
+
+### A. Importing exposure data with column names
+```{r}
+
+#file path
+bmi_file <- system.file("extdata", "bmi.txt", package="TwoSampleMR")
+
+#read file 
+bmi_exp_dat <- read_exposure_data(bmi_file)
+```
+
+### B. importing exposure data without correct column names
+
+```{r}
+#file path
+bmi2_file <- system.file("extdata/bmi.csv", package="TwoSampleMR")
+
+#default to exposure if no phenotype name specified
+#match up column names to match with format for 2MR
+bmi_exp_dat <- read_exposure_data(
+    filename = bmi2_file,
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "effect",
+    se_col = "SE",
+    effect_allele_col = "a1",
+    other_allele_col = "a2",
+    eaf_col = "a1_freq",
+    pval_col = "p-value",
+    units_col = "Units",
+    gene_col = "Gene",
+    samplesize_col = "n"
+)
+
+#input values in exposure column to be more specific
+bmi_exp_dat$exposure <- "BMI"
+```
+
+
+### C. Format exisiting df to work for twosampleMR
+```{r}
+#example df
+#make sure to name columns correctly or it will not be converted over
+random_df <- data.frame(
+    SNP = c("rs1", "rs2"),
+    beta = c(1, 2),
+    se = c(1, 2),
+    effect_allele = c("A", "T")
+)
+random_exp_dat <- format_data(random_df, type="exposure")
+random_exp_dat
+```
+
+
+### D, Instruments that have significant associations and can be used for MR analysis
+
+
+```{r}
+library(MRInstruments)
+
+#from GWAS
+data(gwas_catalog)
+head(gwas_catalog)
+
+#use data from specific paper/study and phenotype
+bmi_gwas <- subset(gwas_catalog, grepl("Speliotes", Author) & Phenotype == "Body mass index")
+bmi_exp_dat <- format_data(bmi_gwas)
+
+#for metabolites
+data(metab_qtls)
+head(metab_qtls)
+# as above with metabolite data
+ala_exp_dat <- format_metab_qtls(subset(metab_qtls, phenotype=="Ala"))
+
+#for proteins
+data(proteomic_qtls)
+head(proteomic_qtls)
+
+apoh_exp_dat <- format_proteomic_qtls(subset(proteomic_qtls, analyte=="ApoH"))
+
+#for genes
+data(gtex_eqtl)
+head(gtex_eqtl)
+
+irak1bp1_exp_dat <- format_gtex_eqtl(subset(gtex_eqtl, gene_name=="IRAK1BP1" & tissue == "Adipose Subcutaneous"))
+#by dna methylation
+data(aries_mqtl)
+head(aries_mqtl)
+
+cg25212131_exp_dat <- format_aries_mqtl(subset(aries_mqtl, cpg=="cg25212131" & age == "Birth"))
+
+```
+
+
+### E. Ensuring independence via clumping(reducing covariance)
+
+```{r}
+
+#will calculate the LD values bwtn SNPs and keep only the SNP with the lowest value among SNPs with LD r^2 above threshold 
+bmi_exp_dat <- clump_data(bmi_exp_dat)
+```
+
+## III. Outcome Data
+
+### A.  Extract variants from outcome trait
+
+extract specific SNPs (prior knowledge or lit review or for SNPs examined in study)
+```{r}
+
+#get exposure data for SNP
+bmi_exp_dat <- extract_instruments(outcomes='ieu-a-2')
+head(bmi_exp_dat)
+
+#search for outcome "heart disease"
+ao[grepl("heart disease", ao$trait), ]
+
+#ex : choose ieu-a-7 (e.g. most recent)
+
+chd_out_dat <- extract_outcome_data(
+    snps = bmi_exp_dat$SNP,
+    outcomes = 'ieu-a-7'
+)
+```
+
+
+### B. LDs - proxies for SNPs
+
+extract specific SNPs (prior knowledge or lit review or only SNPs collected for particular study)
+```{r}
+
+#get exposure data for SNP
+bmi_exp_dat <- extract_instruments(outcomes='ieu-a-2')
+head(bmi_exp_dat)
+
+#search for outcome "heart disease"
+ao[grepl("heart disease", ao$trait), ]
+
+#ex : choose ieu-a-7 (e.g. most recent)
+
+chd_out_dat <- extract_outcome_data(
+    snps = bmi_exp_dat$SNP,
+    outcomes = 'ieu-a-7'
+)
+```
+
+
+### C. if SNP data is not available in outcome data find LD proxies using 1000 genome data.
+
+The parameters for handling LD proxies are as follows:
+
+    proxies = TRUE or FALSE (TRUE by default)
+    rsq = numeric value of minimum rsq to find a proxy. Default is 0.8, minimum is 0.6
+    palindromes = Allow palindromic SNPs? Default is 1 (yes)
+    maf_threshold = If palindromes allowed then what is the maximum minor allele frequency of   palindromes allowed  Default is 0.3.
+
+
+outcome data from local GwAS data
+EXAMPLE :
+outcome_dat <- read_outcome_data(
+    snps = bmi_exp_dat$SNP,
+    filename = "gwas_summary.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "effect",
+    se_col = "SE",
+    effect_allele_col = "a1",
+    other_allele_col = "a2",
+    eaf_col = "a1_freq",
+    pval_col = "p-value",
+    units_col = "Units",
+    gene_col = "Gene",
+    samplesize_col = "n"
+)
+
+Parameters
+The extract_outcome_data function returns a table of SNP effects for the requested SNPs on the requested outcomes. The format of the data is similar to the exposure data format, except the main columns are as follows:
+
+    SNP
+    beta.outcome
+    se.outcome
+    samplesize.outcome
+    ncase.outcome
+    ncontrol.outcome
+    pval.outcome
+    eaf.outcome
+    effect_allele.outcom
+    other_allele.outcome
+    units.outcome
+    outcome
+    consortium.outcome
+    year.outcome
+    pmid.outcome
+    id.outcome
+    originalname.outcome
+    proxy.outcome
+    target_snp.outcome
+    proxy_snp.outcome
+    target_a1.outcome
+    target_a2.outcome
+    proxy_a1.outcome
+    proxy_a2.outcome
+    mr_keep.outcome
+    data_source.outcome
+
+## IV. Harmonize Data
+
+Default : automatically tries to infer forward strand alleles using allele frequency (action = 2)
+To drop palindromic SNPs, set action = 3
+
+Basic
+```{r}
+dat <- harmonise_data(
+    exposure_dat = bmi_exp_dat,
+    outcome_dat = chd_out_dat
+)
+```
+
+Drop duplicate GWAS summary sets to reduce duplicate MR analyses
+
+PRUNE DATASETS SO ONLY E-O COMBINATIONS WITH HIGHEST POWER/SAMPLE SIZE ARE KEPT FOR BINARY OUTCOMES.
+
+
+```{r}
+dat1<-power_prune(dat,method=1,dist.outcome="binary")
+```
+
+PRUNE DATASETS SO ONLY E-O COMBOS WITH HIGHEST INSTRUMENT STRENGTH(LOTS OF VARIATION EXPLAINED) AND SAMPLE SIZE
+
+helpful for studies if there are large number of SNPs available to instrument an exposure. Power can be increased if we prune based on the outcome GWAS with better SNP coverage
+```{r}
+dat2<-power_prune(dat,method=2,dist.outcome="binary")
+```
+
+
+assumes SNP-exposure effects are continuous with ~N distribution
+SNP -outcome effects should be binary or continuous, if binary, use method 1.
+
+
+## V. MR Analyses
+
+### A. Basic
+
+```{r}
+#data prep steps
+bmi_exp_dat <- extract_instruments(outcomes = 'ieu-a-2')
+chd_out_dat <- extract_outcome_data(snps = bmi_exp_dat$SNP, outcomes = 'ieu-a-7')
+dat <- harmonise_data(bmi_exp_dat, chd_out_dat)
+
+
+# perform mr analysis on data from above
+result <- mr(dat)
+
+#can choose other methods besides default 
+#available methods can be found with the following command
+mr_method_list()
+```
+
+
+### B. Analyzing Results
+
+looking at results and testing assumptions
+
+#### Heterogeneity 
+#what is the p-value or Q cut off to say there is no heterogeneity?
+-differences among estimates cannot be explained by sample variation alone
+- suggest an assumption is being violated, couuld be due to multiple reasons
+  - due to pleiotrophy
+  - non homogenous underlying population
+  - each SNP produces a different causal outcome/effect
+  - weak instruments
+- should we in this case utilize the weighted median or mode models?
+
+```{r}
+mr_heterogeneity(dat)
+```
+
+
+### Horizontal pleiotrophy
+#high p-value means no strong evidence of horizontal pleiotrophy?
+```{r}
+mr_pleiotropy_test(dat)
+```
+
+
+### single SNP analysis
+performs the analysis multiple times for each exposure-outcome combination - each time using a different single SNP to perform the analysis.
+```{r}
+# Wald ratio by default
+res_single <- mr_singlesnp(dat) 
+
+#fixed effects
+
+res_single_fe <- mr_singlesnp(dat, single_method="mr_meta_fixed")
+
+#maximum likelihood method
+res_single_ml <- mr_singlesnp(dat, all_method="mr_two_sample_ml")
+```
+
+
+
+### Leave- out -analysis
+are estimates significantly driven by one SNP?
+
+#does low p-value mean that they are significant for estimate?
+#what is the cut off?
+```{r}
+res_loo <- mr_leaveoneout(dat)
+```
+
+
+### PLOTS
+
+#### scatter plot
+```{r}
+#result <- mr(dat)
+
+p1 <- mr_scatter_plot(result, dat)
+p1
+p1[1]
+```
+
+#### Forest plot
+```{r}
+res_single <- mr_singlesnp(dat)
+p2 <- mr_forest_plot(res_single)
+p2
+p2[1]
+#shows the causal effect as estimated using each of the SNPs on their own, and comparing against the causal effect as estimated using the methods that use all the SNPs
+```
+
+#### Forest plot specifying ivw and maximum likelihood methods
+
+```{r}
+res_single_method <- mr_singlesnp(dat, all_method=c("mr_ivw", "mr_two_sample_ml"))
+p3 <- mr_forest_plot(res_single_method)
+p3[[1]]
+```
+
+
+#### Leave out plot
+```{r}
+res_loo <- mr_leaveoneout(dat)
+p4 <- mr_leaveoneout_plot(res_loo)
+p4[[1]]
+```
+
+
+#### Funnel plot
+
+```{r}
+res_single <- mr_singlesnp(dat)
+p5 <- mr_funnel_plot(res_single)
+p5[[1]]
+```
+
+
