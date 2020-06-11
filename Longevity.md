@@ -27,3 +27,35 @@ Using data from section I, compare persons in the 90th percentile with persons i
 Compare persons in the 90th percentile from section I to those in the 90th percentile from the UK Biobank
 
 ### IV. Fourth Outcome: UK Biobank Parental Longevity
+## C. Exposures
+
+### I. Load Libraries
+```{r}
+library(TwoSampleMR)
+library(MRInstruments)
+library(dplyr)
+```
+##II. CPMC Longevity Studies, extract Exposures
+
+```{r}
+
+```
+
+
+### III. UK BioBank extract Exposures
+
+```{r}
+data(gwas_catalog)
+
+
+#data from Piling et al 2017
+UK_exposures_Pilling <- gwas_catalog %>%
+filter(STUDY.ACCESSION == "GCST006698") %>%
+format_data()
+
+#data from Timmers et al 2019
+
+
+
+
+```
