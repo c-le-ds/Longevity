@@ -567,6 +567,7 @@ res <- mr(dat, method_list = c("mr_raps"), parameters = list(over.dispersion = F
 
 
 ### E. Reports
+
 all analyses and plots together in one document
 default = html
 one report for every E-O combination in the 'dat' object
@@ -574,4 +575,162 @@ one report for every E-O combination in the 'dat' object
 ```{r}
 mr_report(dat)
 ```
+
+### F. MR Steiger directionality test
+To test the direction of the E-O relationship
+- not robust aganst measurement error in exposure and outcome
+- based on mr_steiger() in MRCIEU package
+```{r}
+out <- directionality_test(dat)
+kable(out)
+```
+
+Evaluating extent that direction is liable to measurment. 
+--Further reading/sensitivity analyses needed
+
+### G. Multivariable MR
+when looking at multiple potential exposures, multivariate analyses can be done looking a the effect of one exposure conditioning on all other exposures
+
+Example . Lipid fractions
+
+HDL, LDL, total cholesterol on CHD
+
+Setting exposure and outcome
+```{r}
+id_exposure <- c("ieu-a-299", "ieu-a-300", "ieu-a-302")
+id_outcome <- "ieu-a-7"
+```
+
+
+obtaining instruments for each lipid fraction listed above by finding the SNPs that are unique across all fractions, then extracting those unique SNPs from each fraction
+
+
+#why?
+
+Follow steps of basic MR (exposure, outcome, harmonize)
+```{r}
+#obtain exposure data
+exposure_dat <- mv_extract_exposures(id_exposure)
+
+#obtain outcome data
+outcome_dat <- extract_outcome_data(exposure_dat$SNP, id_outcome)
+
+#harmonize
+mvdat <- mv_harmonise_data(exposure_dat, outcome_dat)
+```
+
+Perform multivariate MR
+
+use plots = TRUE to generate plots
+- visualize slope through raw points (conditioned on other exposures)
+
+1. fit all exposures togeher
+```{r}
+result <- mv_multiple(mvdat)
+
+
+```
+
+2. fit one exposure at a time against the residuals of the outcome that has been adjusted for other outcomes
+(Burgess et al 2015)
+
+```{r}
+residual_MR <- mv_residual(mvdat)
+```
+
+
+
+### H. Correlated Instruments
+use MendalianRandomization package
+
+Example
+
+Note: For a set of SNPs
+```{r}
+snplist <- c("rs234", "rs1205")
+ld_matrix(snplist) #LD correlation values for each pair of variants in 1000 genomes data
+```
+
+
+Harmonize data
+```{r}
+dat <- harmonise_data(
+    exposure_dat = bmi_exp_dat,
+    outcome_dat = chd_out_dat
+)
+
+```
+
+MendelianRandomization package to estimate MR effects when instruments are correlated
+
+```{r}
+dat2 <- dat_to_MRInput(dat)
+
+# list of MRInput objects to use with MendelianRandomization
+MendelianRandomization::mr_ivw(dat2[[1]])
+
+# convert to MRInput format and obtain LD matrix
+dat2 <- dat_to_MRInput(dat, get_correlation=TRUE)
+MendelianRandomization::mr_ivw(dat2[[1]], correl=TRUE)
+
+```
+
+
+### I. MR-MoE , Mixture of Experts machine learning approach
+
+Use machine learning to choose the best amongst several MR tests
+- theoretical, new method based on random forest predictive modelling
+
+- look at harmonized data sets to predict how different MR methods will perform on your data. Max - power  ; min - false disovery
+
+- download trained RF model dropbox.com/s/5la7y38od95swcf
+STEPS:
+
+1.  tests 11 MR methods
+2. Steiger or heterogeneity filtering
+
+- for binary traits: each SNP should have # cases, # controls, and allele frequencies; values set to 'log odds'
+
+- for continuous traits: each SNP should have p-values and sample size
+
+3. 14 MR methods tested, using subset that survive filtering in #2
+
+4. Meta Data generated from summary data, predicts best method of 28 methods applied
+
+MR-MoE is applied to every E-O outcome combo
+
+- MOE column : predicts AUROC curve performance of each method
+
+
+
+### J. Post MR results Management
+
+Example
+```{r}
+# instruments 
+
+exposure_dat <- extract_instruments("ieu-a-2")
+
+# outcomes
+outcome_dat <- extract_outcome_data(exposure_dat$SNP, "ieu-a-7")
+
+# Harmonise
+dat <- harmonise_data(exposure_dat, outcome_dat)
+
+# Load the downloaded RData object. 'rf' is the name of the rdata object
+load("rf.rdata")
+
+# Obtain estimates from all methods, and generate data metrics
+res <- mr_wrapper(dat)
+
+# MR-MoE - predict the performance of each method
+res_moe <- mr_moe(res, rf)
+```
+
+
+
+
+
+
+
 
