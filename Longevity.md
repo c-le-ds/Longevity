@@ -74,7 +74,7 @@ gwas_unique[3590]
 gwas_phenotypes$Phenotype
 
 
-save(exposures_gwas, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_gwas.Rdata")
+save(exposures_gwas, file = "~/exposures_gwas.Rdata")
 ```
 
 #### b. MR Base GWAS Catalog
