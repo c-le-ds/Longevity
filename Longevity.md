@@ -37,7 +37,7 @@ library(dplyr)
 library(knitr)
 ```
 
-###II.  Exposures from each catalog
+### II.  Exposures from each catalog
 
 
 #### a. GWAS Catalog
@@ -95,7 +95,7 @@ genes_unique <- gtex_eqtl[!duplicated(gtex_eqtl),] %>% pull(gene_name)
 
 exposures_genes <- data.frame()
 for(i in 1: length(gene_unique)){
-  genes <- subset(gtex_eqtl, gene_name = gene_unique[i])
+  genes <- subset(gtex_eqtl, gene_name == gene_unique[i])
   
   #create a separate clumping step in case LD lookup times out
   genes_format <- format_data(genes) %>% clump_data()
