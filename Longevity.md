@@ -91,7 +91,7 @@ gtex_eqtl
 
 #create a list of unique gene names
 
-genes_unique <- gtex_eqtl[!duplicated(gtex_eqtl),] %>% pull(gene_name)
+genes_unique <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),] %>% pull(gene_name)
 
 exposures_genes <- data.frame()
 for(i in 1: length(gene_unique)){
