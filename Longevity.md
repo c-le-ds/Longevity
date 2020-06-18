@@ -103,3 +103,126 @@ for(i in 1: length(gene_unique)){
   exposures_genes <- rbind(exposures_genes, gene_format)
 }
 ```
+
+#### d. Protein Level QTLs
+
+```{r}
+
+#import Protein Level QTLs into R
+data(proteomic_qtls)
+proteomic_qtls
+
+#create a list of unique protein analyte & make a list
+
+proteins_unique <- proteomic_qtls[!duplicated(proteomic_qtls$analyte),] %>% pull(analyte)
+#  unique phenotypes in catalog
+
+
+
+#make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
+exposures_protein <- data.frame()
+for(i in 1 : length(proteins_unique)) {
+  
+  proteins_phenotypes<- subset(proteomic_qtls, analyte == proteins_unique[i])
+  
+  #format exposure data and clump by LD r2 <0.001 to reduce covariance
+  proteins_format<- proteins_phenotypes %>% format_data() %>% clump_data()
+
+  exposures_proteins <- rbind(exposures_proteins, proteins_format)
+    
+}
+
+  
+#check that 'phenotypes' is the same as the last entry in gwas_unique
+proteins_unique[]
+proteins_phenotypes$analyte
+
+
+save(exposures_proteins, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.Rdata")
+```
+
+
+#### e. Metabolite Level OTLs
+
+
+```{r}
+
+#import Metabolite Level QTLs into R
+data(metab_qtls)
+metab_qtls
+
+#create a list of unique metabolomic phenotype & make a list
+
+metabolites_unique <- metab_qtls[!duplicated(metab_qtls$phenotype),] %>% pull(phenotype)
+#  unique phenotypes in catalog
+
+
+
+#make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
+exposures_metabolite <- data.frame()
+for(i in 1 : length(metabolites_unique)) {
+  
+  metabolites_phenotypes<- subset(metab_qtls, phenotype == metabolites_unique[i])
+  
+  #format exposure data and clump by LD r2 <0.001 to reduce covariance
+  metabolites_format<- metabolites_phenotypes %>% format_data() %>% clump_data()
+
+  exposures_metabolites <- rbind(exposures_metabolites, metabolites_format)
+    
+}
+
+  
+#check that 'phenotypes' is the same as the last entry in metabolites_unique
+metabolites_unique[]
+metabolites_phenotypes$phenotype
+
+
+save(exposures_metabolites, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.Rdata")
+```
+
+#### f. Methylation Level QTLs
+by cpg site and age
+
+```{r}
+
+#import Methylation Level QTLs into R
+data(aries_mqtl)
+aries_mqtl
+
+#create a list of unique Methylation  cpg & make a list
+
+methylation_unique <- aries_mqtl[!duplicated(aries_mqtl$cpg),] %>% pull(aries_mqtl)
+#  unique cpg sites in catalog
+
+
+
+#make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
+
+
+#make a for loop witin another for loop??
+age <- c("Birth")
+
+exposures_methylation <- data.frame()
+for (j in 1:5){
+  for(i in 1 : length(methylation_unique)) {
+  
+    methylation_phenotypes<- subset(aries_mqtl, cpg == metabolites_unique[i] & age[j] )
+  
+    #format exposure data and clump by LD r2 <0.001 to reduce covariance
+    metabolites_format<- metabolites_phenotypes %>% format_data() %>% clump_data()
+
+    exposures_metabolites <- rbind(exposures_metabolites, metabolites_format)
+    
+  }
+
+
+}
+
+  
+#check that 'phenotypes' is the same as the last entry in metabolites_unique
+metabolites_unique[]
+metabolites_phenotypes$phenotype
+
+
+save(exposures_metabolites, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.Rdata")
+```
