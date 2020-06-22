@@ -81,7 +81,7 @@ save(exposures_gwas, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_g
 
 #### c. Gene Expression QTLs
 should we search for gene and tissue together or just gene?
-- below is search by gene name only.
+- below is search by gene and tissue together
 ```{r}
 
 #import Gene Expression QTLs list
@@ -93,19 +93,104 @@ gtex_eqtl
 
 genes_unique <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),] %>% pull(gene_name)
 
-exposures_genes <- data.frame()
-for(i in 1: length(gene_unique)){
-  genes <- subset(gtex_eqtl, gene_name = gene_unique[i])
+# 32432 unique gene names
+```
+
+
+For loop
+```{r}
+genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
+
+#exposures_genes <- data.frame()
+for(i in 17583: length(genes_unique)){
+  genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
   
   #create a separate clumping step in case LD lookup times out
   genes_format <- format_data(genes) %>% clump_data()
   
-  exposures_genes <- rbind(exposures_genes, gene_format)
+  exposures_genes <- rbind(exposures_genes, genes_format)
 }
+
+saveRDS(exposures_genes, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
 ```
+
+
+try as a function
+
+```{r}
+genes_clump <- function(genes){
+  gene <- subset(gtex_eqtl, gene_name == genes) %>% format_data() %>% clump_data()
+}
+
+gen <- genes_unique[1:10]
+
+test <- lapply(gen, genes_clump)
+```
+
+try local clumping
+reference downloaded at : http://fileserve.mrcieu.ac.uk/ld/1kg.v3.tgz
+```{r}
+
+
+#format for ld_clumping
+
+gene_dat <-subset(gtex_eqtl, gene_name == "RP4-669L17.10") %>% 
+  format_data() %>%
+  rename(rsid = SNP,
+         pval = pval.exposure,
+         id = id.exposure) %>%
+  ld_clump(plink_bin = genetics.binaRies::get_plink_binary(), bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR", #no need to include extensions
+           clump_kb = 1000, clump_r2 = .001, 
+           clump_p = 1, pop = "EUR") 
+ 
+
+#same results
+```
+
+
 
 #### d. Protein Level QTLs
 
+Instead of retrieving via API, do ld clumping locally using the same reference population "EUR" from 1000 genomes
+
+```{r}
+#import Protein Level QTLs into R
+data(proteomic_qtls)
+proteomic_qtls
+
+#create a list of unique protein analyte & make a list
+
+proteins_unique <- proteomic_qtls[!duplicated(proteomic_qtls$analyte),] %>% pull(analyte)
+
+
+exposures_protein <- data.frame()
+for(i in 1 : length(proteins_unique)) {
+  
+  proteins_phenotypes<- subset(proteomic_qtls, analyte == proteins_unique[i])
+  
+  #format exposure data and clump by LD r2 <0.001 to reduce covariance
+  proteins_format<- proteins_phenotypes %>% format_data() %>%
+    rename(rsid = SNP,
+         pval = pval.exposure,
+         id = id.exposure)
+  
+  proteins_clump <- ld_clump(proteins_format, 
+                             plink_bin = genetics.binaRies::get_plink_binary(), 
+                             bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR",
+                             #no need to include extensions
+                             clump_kb = 1000, clump_r2 = .001, clump_p = 1, pop = "EUR")
+
+  exposures_protein <- rbind(exposures_protein, proteins_clump)
+    
+}
+
+exposures_protein <- exposures_protein %>% rename (SNP = rsid, id.exposure = id)
+
+```
+
+
+
+For Loops
 ```{r}
 
 #import Protein Level QTLs into R
@@ -120,25 +205,31 @@ proteins_unique <- proteomic_qtls[!duplicated(proteomic_qtls$analyte),] %>% pull
 
 
 #make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
-exposures_protein <- data.frame()
+exposures_proteins_API <- data.frame()
 for(i in 1 : length(proteins_unique)) {
   
-  proteins_phenotypes<- subset(proteomic_qtls, analyte == proteins_unique[i])
+  proteins_phenotypes_API<- subset(proteomic_qtls, analyte == proteins_unique[i])
   
   #format exposure data and clump by LD r2 <0.001 to reduce covariance
-  proteins_format<- proteins_phenotypes %>% format_data() %>% clump_data()
+  proteins_format_API<- proteins_phenotypes_API %>% format_data() %>% clump_data()
 
-  exposures_proteins <- rbind(exposures_proteins, proteins_format)
+  exposures_proteins_API <- rbind(exposures_proteins_API, proteins_format_API)
     
 }
 
-  
+
 #check that 'phenotypes' is the same as the last entry in gwas_unique
 proteins_unique[]
 proteins_phenotypes$analyte
 
 
-save(exposures_proteins, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.Rdata")
+saveRDS(exposures_proteins_API, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.rds")
+```
+
+Both dataframes are the same. 
+
+```{r}
+identical(exposures_protein$rsid, exposures_proteins_API$rsid)
 ```
 
 
@@ -154,7 +245,7 @@ metab_qtls
 #create a list of unique metabolomic phenotype & make a list
 
 metabolites_unique <- metab_qtls[!duplicated(metab_qtls$phenotype),] %>% pull(phenotype)
-#  unique phenotypes in catalog
+# 121 unique phenotypes in catalog
 
 
 
@@ -162,26 +253,34 @@ metabolites_unique <- metab_qtls[!duplicated(metab_qtls$phenotype),] %>% pull(ph
 exposures_metabolite <- data.frame()
 for(i in 1 : length(metabolites_unique)) {
   
-  metabolites_phenotypes<- subset(metab_qtls, phenotype == metabolites_unique[i])
-  
-  #format exposure data and clump by LD r2 <0.001 to reduce covariance
-  metabolites_format<- metabolites_phenotypes %>% format_data() %>% clump_data()
+  metabolites_phenotypes<- subset(metab_qtls, phenotype == metabolites_unique[i]) %>% 
+    format_data() %>% 
+    rename(rsid = SNP,
+         pval = pval.exposure,
+         id = id.exposure) %>%
+    ld_clump( plink_bin = genetics.binaRies::get_plink_binary(), 
+              bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR",
+              clump_kb = 1000, clump_r2 = .001, clump_p = 1, pop = "EUR")
+    
 
-  exposures_metabolites <- rbind(exposures_metabolites, metabolites_format)
+  exposures_metabolite <- rbind(exposures_metabolite, metabolites_phenotypes)
     
 }
 
+exposures_metabolite <- exposures_metabolite %>% rename (SNP = rsid, id.exposure = id)  
   
 #check that 'phenotypes' is the same as the last entry in metabolites_unique
 metabolites_unique[]
 metabolites_phenotypes$phenotype
 
 
-save(exposures_metabolites, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.Rdata")
+saveRDS(exposures_metabolite, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
 ```
 
 #### f. Methylation Level QTLs
 by cpg site and age
+
+
 
 ```{r}
 
@@ -191,38 +290,43 @@ aries_mqtl
 
 #create a list of unique Methylation  cpg & make a list
 
-methylation_unique <- aries_mqtl[!duplicated(aries_mqtl$cpg),] %>% pull(aries_mqtl)
-#  unique cpg sites in catalog
-
-
+methylation_unique <- aries_mqtl[!duplicated(aries_mqtl$cpg),]%>% pull(cpg)
+age <- c("Birth", "Adolescence", "Childhood", "Middle age", "Pregnancy")
+#  33256 unique cpg sites in catalog
+# 5 'ages'
 
 #make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
 
 
-#make a for loop witin another for loop??
-age <- c("Birth")
-
 exposures_methylation <- data.frame()
-for (j in 1:5){
-  for(i in 1 : length(methylation_unique)) {
+for (j in 1:length(age)){
+  for(i in 1 : 1) {
   
-    methylation_phenotypes<- subset(aries_mqtl, cpg == metabolites_unique[i] & age[j] )
-  
-    #format exposure data and clump by LD r2 <0.001 to reduce covariance
-    metabolites_format<- metabolites_phenotypes %>% format_data() %>% clump_data()
+    methylation_phenotypes<- subset(aries_mqtl, cpg == methylation_unique[i] & age == age[j])%>% 
+      format_data() %>% 
+      rename(rsid = SNP,
+         pval = pval.exposure,
+         id = id.exposure) %>%
+    ld_clump( plink_bin = genetics.binaRies::get_plink_binary(), 
+              bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR",
+              clump_kb = 1000, clump_r2 = .001, clump_p = 1, pop = "EUR")
+    
+    
+  exposures_methylation <- rbind(exposures_methylation, methylation_phenotypes)
+     
 
-    exposures_metabolites <- rbind(exposures_metabolites, metabolites_format)
+    
     
   }
 
 
 }
 
-  
+exposures_methylation <- exposures_methylation %>% rename (SNP = rsid, id.exposure = id)   
 #check that 'phenotypes' is the same as the last entry in metabolites_unique
-metabolites_unique[]
-metabolites_phenotypes$phenotype
+methylation_unique[]
+methylation_phenotypes$cpg
 
 
-save(exposures_metabolites, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.Rdata")
+saveRDS(exposures_methylation, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_methylation.rds")
 ```
