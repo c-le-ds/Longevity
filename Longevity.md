@@ -97,22 +97,6 @@ genes_unique <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),] %>% pull(gene_name)
 ```
 
 
-For loop
-```{r}
-genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
-
-#exposures_genes <- data.frame()
-for(i in 17583: length(genes_unique)){
-  genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
-  
-  #create a separate clumping step in case LD lookup times out
-  genes_format <- format_data(genes) %>% clump_data()
-  
-  exposures_genes <- rbind(exposures_genes, genes_format)
-}
-
-saveRDS(exposures_genes, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
-```
 
 
 try as a function
