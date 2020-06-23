@@ -1,6 +1,14 @@
+---
+title: "Longevity"
+author: "C le"
+output: html_document
+---
+
+
+
 # Project Overview
 Two sample Mendelian Randomization Analysis on GWAS of human lifespan looking at new and known exposure relationships related to longevity outcomes.
-test
+
 ## A. Exposures
 
 Exposures are obtained from the mrbase.org website from the following catalogs
@@ -37,7 +45,7 @@ library(dplyr)
 library(knitr)
 ```
 
-### II.  Exposures from each catalog
+###II.  Exposures from each catalog
 
 
 #### a. GWAS Catalog
@@ -57,16 +65,16 @@ gwas_unique <- gwas_catalog[!duplicated(gwas_catalog$Phenotype),] %>% pull(Pheno
 
 #make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
 exposures_gwas <- data.frame()
-for(i in 1 : length(gwas_unique)) {
+#for(i in 1 : length(gwas_unique)) {
   
-  gwas_phenotypes<- subset(gwas_catalog, Phenotype == gwas_unique[i])
+#  gwas_phenotypes<- subset(gwas_catalog, Phenotype == gwas_unique[i])
   
   #format exposure data and clump by LD r2 <0.001 to reduce covariance
-  gwas_format<- gwas_phenotypes %>% format_data() %>% clump_data()
+#  gwas_format<- gwas_phenotypes %>% format_data() %>% clump_data()
 
-  exposures_gwas <- rbind(exposures_gwas, gwas_format)
+#  exposures_gwas <- rbind(exposures_gwas, gwas_format)
     
-}
+#}
 
   
 #check that 'phenotypes' is the same as the last entry in gwas_unique
@@ -74,7 +82,7 @@ gwas_unique[3590]
 gwas_phenotypes$Phenotype
 
 
-save(exposures_gwas, file = "~/exposures_gwas.Rdata")
+#save(exposures_gwas, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_gwas.Rdata")
 ```
 
 #### b. MR Base GWAS Catalog
@@ -93,15 +101,26 @@ gtex_eqtl
 
 genes_unique <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),] %>% pull(gene_name)
 
-<<<<<<< HEAD
-exposures_genes <- data.frame()
-for(i in 1: length(gene_unique)){
-  genes <- subset(gtex_eqtl, gene_name == gene_unique[i])
-=======
 # 32432 unique gene names
 ```
 
 
+For loop
+```{r}
+genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
+
+exposures_genes <- data.frame()
+#for(i in 17583: length(genes_unique)){
+  #genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
+  
+  #create a separate clumping step in case LD lookup times out
+ # genes_format <- format_data(genes) %>% clump_data()
+  
+ # exposures_genes <- rbind(exposures_genes, genes_format)
+#}
+
+#saveRDS(exposures_genes, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
+```
 
 
 try as a function
@@ -154,7 +173,6 @@ proteins_unique <- proteomic_qtls[!duplicated(proteomic_qtls$analyte),] %>% pull
 
 exposures_protein <- data.frame()
 for(i in 1 : length(proteins_unique)) {
->>>>>>> Exposures
   
   proteins_phenotypes<- subset(proteomic_qtls, analyte == proteins_unique[i])
   
