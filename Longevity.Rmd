@@ -52,7 +52,7 @@ library(arsenal)
 
 #### a. GWAS Catalog
 
-```{r}
+```{r, cache = TRUE}
 
 #import gwas catalog into R
 data(gwas_catalog)
@@ -67,9 +67,10 @@ gwas_unique <- gwas_catalog[!duplicated(gwas_catalog$Phenotype),] %>% pull(Pheno
 
 #make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
 exposures_gwas <- data.frame()
+  for(i in 1:2){
 # for(i in 1 : length(gwas_unique)) {
-# 
-#  gwas_phenotypes<- subset(gwas_catalog, Phenotype == gwas_unique[i])
+  print("did it run again?")
+  gwas_phenotypes<- subset(gwas_catalog, Phenotype == gwas_unique[i])
 # 
 #   #format exposure data and clump by LD r2 <0.001 to reduce covariance
 #   gwas_format<- gwas_phenotypes %>% format_data() %>% clump_data()
