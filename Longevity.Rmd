@@ -45,6 +45,7 @@ library(dplyr)
 library(knitr)
 library(ieugwasr)
 library(arsenal)
+library(tidyverse)
 ```
 
 ###II.  Exposures from each catalog
