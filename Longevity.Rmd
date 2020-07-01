@@ -41,7 +41,7 @@ Compare persons in the 90th percentile from section I to those in the 90th perce
 ```{r}
 library(TwoSampleMR)
 library(MRInstruments)
-library(dplyr)
+library(tidyverse) #so we can use purrr::map, and no, not just because I got cats
 library(knitr)
 library(ieugwasr)
 library(arsenal)
@@ -53,32 +53,42 @@ library(tidyverse)
 
 #### a. GWAS Catalog
 
-```{r}
+```{r, cache = TRUE}
 
+#cache = True will create a folder that saves objects, and if objects and code aren't updated, this code chunk will not re-run. This is good for long-running code sections.
 #import gwas catalog into R
 data(gwas_catalog)
 gwas_catalog
 
-#create a list of unique gwas phenotpes & make a list
-
-gwas_unique <- gwas_catalog[!duplicated(gwas_catalog$Phenotype),] %>% pull(Phenotype)
+#create a vector of unique gwas phenotypes
+gwas_unique <- gwas_catalog %>%
+  filter(!duplicated(Phenotype)) %>%
+  pull(Phenotype)
 # 3590 unique phenotypes in catalog
 
-
-
 #make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
-exposures_gwas <- data.frame()
-# for(i in 1 : length(gwas_unique)) {
-# 
-#  gwas_phenotypes<- subset(gwas_catalog, Phenotype == gwas_unique[i])
-# 
-#   #format exposure data and clump by LD r2 <0.001 to reduce covariance
-#   gwas_format<- gwas_phenotypes %>% format_data() %>% clump_data()
-# 
-#   exposures_gwas <- rbind(exposures_gwas, gwas_format)
-# 
-# }
+#Initialize a list to save results. The problem with creating an empty dataframe with data.frame() is that it doesn't preallocate memory for 3590 rows. Instead, it creates an empty DF with zero rows.
 
+exposures_gwas <- vector(mode = "list", length = length(gwas_unique))
+for(i in seq_along(gwas_unique)){
+  #you can test with for(i in 1:5)
+# for(i in 1 : length(gwas_unique)) {
+  #format exposure data and clump by LD r2 <0.001 to reduce covariance
+  #combined both steps together. Send output to each element of list
+  exposures_gwas[[i]] <- gwas_catalog %>%
+    filter(Phenotype == gwas_unique[i]) %>%
+    format_data %>%
+    clump_data
+  
+  print(paste0("Last successful run was ", gwas_unique[i], 
+               " which is iterator ", i))
+}
+
+#rbind list elements into DF
+#old way of doing things
+#exposures_gwas_DF <- do.call(rbind, exposures_gwas)
+#faster way of doing things with dplyr
+exposures_gwas_DF <- bind_rows(exposures_gwas)
 
 #check that 'phenotypes' is the same as the last entry in gwas_unique
 # gwas_unique[3590]
