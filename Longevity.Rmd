@@ -353,3 +353,343 @@ saveRDS(exposures_methylation, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/e
 ```
 
 
+
+### III. Outcomes
+
+#### a. Load Exposures
+
+```{r}
+#GWAS
+load("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_gwas.Rdata")
+
+#Proteins
+exposures_proteins <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.rds")
+
+#Methylation
+exposures_methylation <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_methylation.rds")
+
+#Genes
+exposures_genes <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
+
+# exposures_metabolites <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
+
+# wait for Dan's answer
+```
+
+
+#### b. Cases 90
+
+#### c. Cases 99
+
+#### d. UK 90
+
+```{r}
+#outcome data from local GwAS data
+#ex
+outcome_pilling_gwas <- read_outcome_data(
+    snps = exposures_gwas$SNP,
+    filename = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/Pilling_90.csv",
+    sep = ",",
+    snp_col = "SNP",
+    beta_col = "BETA",
+    se_col = "SE",
+    effect_allele_col = "ALLELE1",
+    other_allele_col = "ALLELE0",
+    eaf_col = "A1FREQ",
+    pval_col = "P_BOLT"
+)
+```
+
+try to obtain from gwas catalog
+
+```{r}
+pilling_out_gwas <- extract_outcome_data(snps = exposures_gwas$SNP, outcomes = 'ebi-a-GCST006698')
+```
+
+
+Dataframes are not the same length
+
+using data downloaded onto local drive we get 4993 SNPs with 12 variables for the outcome
+
+using id from link we get 51655 SNPS and proxies with 23 variables
+
+
+Comparing the two we see the outcome data generated from the downloaded data, is within the larger dataset.
+
+```{r}
+
+
+comparedf(outcome_pilling_gwas, pilling_out_gwas) %>% summary()
+
+
+```
+
+
+#### e. UK Parental
+
+
+
+
+
+
+
+### IV. Harmonize 
+
+#### a. 90 cases
+
+#### b. 99 cases
+
+#### c. UK biobank 90 cases
+
+SNPs must match in both exposure and outcome data
+
+```{r}
+
+#downloaded data
+
+#take only the SNPs that are in the outcome data
+rsid <- outcome_pilling_gwas$SNP
+
+#deal with duplicates
+#keep row with lowest p-value
+#keep row with highest Beta
+
+expo_pilling_gwas_download <- data.frame()
+
+for(i in 1:4993){
+  
+  rsid_unique<- exposures_gwas %>%
+    filter(SNP == rsid[i])
+  
+  if(tally(rsid_unique) > 1) {
+    value <-  min(rsid_unique$pval.exposure)
+    
+    rsid.keep <- rsid_unique %>%
+    filter(pval.exposure == value)
+  }
+  
+  else {
+    rsid.keep <- rsid_unique
+  }
+  
+  
+  if(tally(rsid.keep) >1) {
+    beta_max <- max(rsid.keep$beta.exposure, na.rm = T)
+    
+    if(beta_max == -Inf){
+      rsid.keep <- rsid.keep[1,]
+    }
+    else{
+      rsid.keep <- rsid.keep %>%
+      filter(beta.exposure == beta_max)
+    }
+    
+    if(tally(rsid.keep) >1) {
+       rsid.keep <- rsid.keep[1,]
+     }
+    
+  }
+  
+  
+  
+  expo_pilling_gwas_download <- rbind(expo_pilling_gwas_download, rsid.keep)
+  
+}
+
+
+    
+
+
+#retrieved data
+#take only the SNPs that are in the outcome data
+rsid <- pilling_out_gwas$SNP
+
+#deal with duplicates
+#keep row with lowest p-value
+#keep row with highest Beta
+
+exp_pilling_gwas <- data.frame()
+
+for(i in 1:length(rsid)){
+  
+  rsid_unique<- exposures_gwas %>%
+    filter(SNP == rsid[i])
+  
+  if(tally(rsid_unique) > 1) {
+    value <-  min(rsid_unique$pval.exposure)
+    
+    rsid.keep <- rsid_unique %>%
+    filter(pval.exposure == value)
+  }
+  
+  else {
+    rsid.keep <- rsid_unique
+  }
+  
+  
+  if(tally(rsid.keep) >1) {
+    beta_max <- max(rsid.keep$beta.exposure, na.rm = T)
+    
+    if(beta_max == -Inf){
+      rsid.keep <- rsid.keep[1,]
+    }
+    else{
+      rsid.keep <- rsid.keep %>%
+      filter(beta.exposure == beta_max)
+    }
+    
+    if(tally(rsid.keep) >1) {
+       rsid.keep <- rsid.keep[1,]
+     }
+    
+  }
+  
+  
+  
+  exp_pilling_gwas <- rbind(exp_pilling_gwas, rsid.keep)
+  
+}
+```
+
+
+
+```{r}
+
+#downloaded data
+
+pilling_download <-  harmonise_data(
+    expo_pilling_gwas_download,
+    outcome_pilling_gwas
+)
+
+
+#retrieved data
+
+pilling_out_gwas <- pilling_out_gwas[1:16]
+
+pilling <- harmonise_data(
+    exposure_dat =exp_pilling_gwas,
+    outcome_dat = pilling_out_gwas, action = 2
+ )
+
+
+```
+### III. Outcomes & Harmonize
+
+#### a. Load Exposures
+
+```{r}
+#GWAS
+load("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_gwas.Rdata")
+
+#Proteins
+exposures_proteins <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.rds")
+
+#Methylation
+exposures_methylation <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_methylation.rds")
+
+#Genes
+exposures_genes <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
+
+# exposures_metabolites <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
+
+# wait for Dan's answer
+```
+
+
+#### b. Cases 90
+
+#### c. Cases 99
+
+#### d. UK 90
+
+
+```{r}
+
+#downloaded data
+
+
+pilling_download <- data.frame()
+error_log <- data.frame()
+
+exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exposure)
+
+
+
+for(i in 1:5917){ 
+  
+  exp <- exposures_gwas %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/Pilling_90.csv",
+    sep = ",",
+    snp_col = "SNP",
+    beta_col = "BETA",
+    se_col = "SE",
+    effect_allele_col = "ALLELE1",
+    other_allele_col = "ALLELE0",
+    eaf_col = "A1FREQ",
+    pval_col = "P_BOLT"),
+    error=function(e) e)
+
+  if(!inherits(outcome, "error") == TRUE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      harmonize_dat <- merge(exp, outcome, by = "SNP") %>%
+        mutate(remove = FALSE,
+               palindromic = FALSE,
+               ambiguous = FALSE,
+               action = 2,
+               mr_keep = FALSE, #can change to true later
+               samplesize.outcome = NA,
+               error = TRUE)
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        harmonize_dat <- harmonize %>%
+          mutate(error = FALSE)
+  
+
+      }
+    pilling_download <- rbind(pilling_download, harmonize_dat)
+
+  }else{
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+}
+ #retrieved data
+
+
+
+pilling <- harmonise_data(
+    exposure_dat =exp_pilling_gwas,
+    outcome_dat = pilling_out_gwas, action = 2
+ )
+
+saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/error_log_pilling_gwas.rds")
+
+
+saveRDS(pilling_download, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_gwas.rds")
+```
+
+3612 exposures did not have matching rsids in the pilling data
+
+545 harmonizing errors
+#### e. UK Parental
