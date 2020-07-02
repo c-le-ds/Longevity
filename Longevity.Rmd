@@ -41,10 +41,11 @@ Compare persons in the 90th percentile from section I to those in the 90th perce
 ```{r}
 library(TwoSampleMR)
 library(MRInstruments)
-library(dplyr)
+library(tidyverse) #so we can use purrr::map, and no, not just because I got cats
 library(knitr)
 library(ieugwasr)
 library(arsenal)
+library(tidyverse)
 ```
 
 ###II.  Exposures from each catalog
@@ -52,32 +53,42 @@ library(arsenal)
 
 #### a. GWAS Catalog
 
-```{r}
+```{r, cache = TRUE}
 
+#cache = True will create a folder that saves objects, and if objects and code aren't updated, this code chunk will not re-run. This is good for long-running code sections.
 #import gwas catalog into R
 data(gwas_catalog)
 gwas_catalog
 
-#create a list of unique gwas phenotpes & make a list
-
-gwas_unique <- gwas_catalog[!duplicated(gwas_catalog$Phenotype),] %>% pull(Phenotype)
+#create a vector of unique gwas phenotypes
+gwas_unique <- gwas_catalog %>%
+  filter(!duplicated(Phenotype)) %>%
+  pull(Phenotype)
 # 3590 unique phenotypes in catalog
 
-
-
 #make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
-exposures_gwas <- data.frame()
-# for(i in 1 : length(gwas_unique)) {
-# 
-#  gwas_phenotypes<- subset(gwas_catalog, Phenotype == gwas_unique[i])
-# 
-#   #format exposure data and clump by LD r2 <0.001 to reduce covariance
-#   gwas_format<- gwas_phenotypes %>% format_data() %>% clump_data()
-# 
-#   exposures_gwas <- rbind(exposures_gwas, gwas_format)
-# 
-# }
+#Initialize a list to save results. The problem with creating an empty dataframe with data.frame() is that it doesn't preallocate memory for 3590 rows. Instead, it creates an empty DF with zero rows.
 
+exposures_gwas <- vector(mode = "list", length = length(gwas_unique))
+for(i in seq_along(gwas_unique)){
+  #you can test with for(i in 1:5)
+# for(i in 1 : length(gwas_unique)) {
+  #format exposure data and clump by LD r2 <0.001 to reduce covariance
+  #combined both steps together. Send output to each element of list
+  exposures_gwas[[i]] <- gwas_catalog %>%
+    filter(Phenotype == gwas_unique[i]) %>%
+    format_data %>%
+    clump_data
+  
+  print(paste0("Last successful run was ", gwas_unique[i], 
+               " which is iterator ", i))
+}
+
+#rbind list elements into DF
+#old way of doing things
+#exposures_gwas_DF <- do.call(rbind, exposures_gwas)
+#faster way of doing things with dplyr
+exposures_gwas_DF <- bind_rows(exposures_gwas)
 
 #check that 'phenotypes' is the same as the last entry in gwas_unique
 # gwas_unique[3590]
@@ -92,7 +103,7 @@ exposures_gwas <- data.frame()
 #### c. Gene Expression QTLs
 should we search for gene and tissue together or just gene?
 - below is search by gene and tissue together
-```{r}
+```{r, cache = TRUE}
 
 #import Gene Expression QTLs list
 data(gtex_eqtl)
@@ -108,28 +119,28 @@ genes_unique <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),] %>% pull(gene_name)
 
 
 For loop
-```{r}
+```{r, cache = TRUE}
 genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
 
 exposures_genes <- data.frame()
-# for(i in 17583: length(genes_unique)){
-#   genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
-#   
-#   #create a separate clumping step in case LD lookup times out
-#   genes_format <- format_data(genes) %>% clump_data()
-#   
-#   exposures_genes <- rbind(exposures_genes, genes_format)
-# }
-# 
-# saveRDS(exposures_genes, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
+for(i in 17583: length(genes_unique)){
+  genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
+
+  #create a separate clumping step in case LD lookup times out
+  genes_format <- format_gtex_eqtl(genes) %>% clump_data()
+
+  exposures_genes <- rbind(exposures_genes, genes_format)
+}
+
+saveRDS(exposures_genes, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
 ```
 
 
 try as a function
 
-```{r}
+```{r, cache = TRUE}
 genes_clump <- function(genes){
-  gene <- subset(gtex_eqtl, gene_name == genes) %>% format_data() %>% clump_data()
+  gene <- subset(gtex_eqtl, gene_name == genes) %>% format_gtex_eqtl() %>% clump_data()
 }
 
 gen <- genes_unique[1:10]
@@ -139,13 +150,13 @@ test <- lapply(gen, genes_clump)
 
 try local clumping
 reference downloaded at : http://fileserve.mrcieu.ac.uk/ld/1kg.v3.tgz
-```{r}
+```{r,cache=TRUE}
 
 
 #format for ld_clumping
 
 gene_dat <-subset(gtex_eqtl, gene_name == "RP4-669L17.10") %>% 
-  format_data() %>%
+  format_gtex_eqtl() %>%
   rename(rsid = SNP,
          pval = pval.exposure,
          id = id.exposure) %>%
@@ -163,7 +174,7 @@ gene_dat <-subset(gtex_eqtl, gene_name == "RP4-669L17.10") %>%
 
 Instead of retrieving via API, do ld clumping locally using the same reference population "EUR" from 1000 genomes
 
-```{r}
+```{r, cache=TRUE}
 #import Protein Level QTLs into R
 data(proteomic_qtls)
 proteomic_qtls
@@ -179,7 +190,7 @@ for(i in 1 : length(proteins_unique)) {
   proteins_phenotypes<- subset(proteomic_qtls, analyte == proteins_unique[i])
   
   #format exposure data and clump by LD r2 <0.001 to reduce covariance
-  proteins_format<- proteins_phenotypes %>% format_data() %>%
+  proteins_format<- proteins_phenotypes %>% format_proteomic_qtls() %>%
     rename(rsid = SNP,
          pval = pval.exposure,
          id = id.exposure)
@@ -201,7 +212,7 @@ exposures_protein <- exposures_protein %>% rename (SNP = rsid, id.exposure = id)
 
 
 For Loops
-```{r}
+```{r, cache = TRUE}
 
 #import Protein Level QTLs into R
 data(proteomic_qtls)
@@ -221,24 +232,24 @@ for(i in 1 : length(proteins_unique)) {
   proteins_phenotypes_API<- subset(proteomic_qtls, analyte == proteins_unique[i])
   
   #format exposure data and clump by LD r2 <0.001 to reduce covariance
-  proteins_format_API<- proteins_phenotypes_API %>% format_data() %>% clump_data()
+  proteins_format_API<- proteins_phenotypes_API %>% format_proteomic_qtls() %>% clump_data()
 
   exposures_proteins_API <- rbind(exposures_proteins_API, proteins_format_API)
     
 }
 
 
-#check that 'phenotypes' is the same as the last entry in gwas_unique
-#proteins_unique[]
-# proteins_phenotypes$analyte
-# 
-# 
-# saveRDS(exposures_proteins_API, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.rds")
+# check that 'phenotypes' is the same as the last entry in gwas_unique
+proteins_unique[47]
+proteins_phenotypes$analyte
+
+
+saveRDS(exposures_proteins_API, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.rds")
 ```
 
 Both dataframes are the same. 
 
-```{r}
+```{r,cache=TRUE}
 identical(exposures_protein$rsid, exposures_proteins_API$rsid)
 ```
 
@@ -246,7 +257,7 @@ identical(exposures_protein$rsid, exposures_proteins_API$rsid)
 #### e. Metabolite Level OTLs
 
 
-```{r}
+```{r, cache=TRUE}
 
 #import Metabolite Level QTLs into R
 data(metab_qtls)
@@ -264,7 +275,7 @@ exposures_metabolite <- data.frame()
 for(i in 1 : length(metabolites_unique)) {
   
   metabolites_phenotypes<- subset(metab_qtls, phenotype == metabolites_unique[i]) %>% 
-    format_data() %>% 
+    format_metab_qtls() %>% 
     rename(rsid = SNP,
          pval = pval.exposure,
          id = id.exposure) %>%
@@ -280,11 +291,11 @@ for(i in 1 : length(metabolites_unique)) {
 exposures_metabolite <- exposures_metabolite %>% rename (SNP = rsid, id.exposure = id)  
   
 #check that 'phenotypes' is the same as the last entry in metabolites_unique
-#metabolites_unique[]
-# metabolites_phenotypes$phenotype
-# 
-# 
-# saveRDS(exposures_metabolite, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
+metabolites_unique[121]
+metabolites_phenotypes$phenotype
+
+
+saveRDS(exposures_metabolite, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
 ```
 
 #### f. Methylation Level QTLs
@@ -309,11 +320,11 @@ age <- c("Birth", "Adolescence", "Childhood", "Middle age", "Pregnancy")
 
 
 exposures_methylation <- data.frame()
-for (j in 1:length(age)){
-  for(i in 1 : 1) {
+for (j in 1:5){
+  for(i in 1 : 33256) {
   
     methylation_phenotypes<- subset(aries_mqtl, cpg == methylation_unique[i] & age == age[j])%>% 
-      format_data() %>% 
+      format_aries_mqtl() %>% 
       rename(rsid = SNP,
          pval = pval.exposure,
          id = id.exposure) %>%
@@ -334,11 +345,11 @@ for (j in 1:length(age)){
 
 exposures_methylation <- exposures_methylation %>% rename (SNP = rsid, id.exposure = id)   
 #check that 'phenotypes' is the same as the last entry in metabolites_unique
-#methylation_unique[]
-# methylation_phenotypes$cpg
-# 
-# 
-# saveRDS(exposures_methylation, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_methylation.rds")
+methylation_unique[33256]
+methylation_phenotypes$cpg
+
+
+saveRDS(exposures_methylation, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_methylation.rds")
 ```
 
 
