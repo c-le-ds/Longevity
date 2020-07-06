@@ -49,11 +49,31 @@ library(tidyverse)
 ```
 
 ###II.  Exposures from each catalog
+Local LD clumping was done per [reference url] and reference data was obtained from 1000 genomes at [ http://fileserve.mrcieu.ac.uk/ld/1kg.v3.tgz]
 
+
+Below is the method to do local LD clumping. However in **Section F** there are examples to do it via the TwoSampleMR reference via the internet as well as an example extracting exposures as a function using apply. 
+
+Make sure to set eval = **TRUE** if you want to run that chunk of code. 
+
+
+
+Set variables for local clumping of data
+```{r}
+#set working directory
+setwd("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity")
+
+# plink library
+plink <- genetics.binaRies::get_plink_binary()
+
+# bfile is the filepath were your reference datasets are located
+#no need to include extensions for population (e.g EUR.bin)
+bfile <- "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR"
+```
 
 #### a. GWAS Catalog
 
-```{r, cache = TRUE}
+```{r, eval=FALSE}
 
 #cache = True will create a folder that saves objects, and if objects and code aren't updated, this code chunk will not re-run. This is good for long-running code sections.
 #import gwas catalog into R
@@ -78,7 +98,9 @@ for(i in seq_along(gwas_unique)){
   exposures_gwas[[i]] <- gwas_catalog %>%
     filter(Phenotype == gwas_unique[i]) %>%
     format_data %>%
-    clump_data
+    ld_clump(plink_bin = plink, bfile = bfile, 
+           clump_kb = 1000, clump_r2 = .001, 
+           clump_p = 1) 
   
   print(paste0("Last successful run was ", gwas_unique[i], 
                " which is iterator ", i))
@@ -95,15 +117,14 @@ exposures_gwas_DF <- bind_rows(exposures_gwas)
 # gwas_phenotypes$Phenotype
 
 # 
-# save(exposures_gwas, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_gwas.Rdata")
+save(exposures_gwas, file = "~data/exposures_gwas.Rdata")
 ```
 
-#### b. MR Base GWAS Catalog
 
-#### c. Gene Expression QTLs
-should we search for gene and tissue together or just gene?
-- below is search by gene and tissue together
-```{r, cache = TRUE}
+#### b. Gene Expression QTLs
+Search for SNPs can be done by gene and tissue or just one. Below exposure instruments are created for each unique gene.
+
+```{r, eval= FALSE}
 
 #import Gene Expression QTLs list
 data(gtex_eqtl)
@@ -115,66 +136,32 @@ gtex_eqtl
 genes_unique <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),] %>% pull(gene_name)
 
 # 32432 unique gene names
-```
 
-
-For loop
-```{r, cache = TRUE}
 genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
 
 exposures_genes <- data.frame()
 for(i in 17583: length(genes_unique)){
-  genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
+  genes <- subset(gtex_eqtl, gene_name == genes_unique[i]) %>%
+    format_gtex_eqtl()%>%
+    rename(rsid = SNP,
+         pval = pval.exposure,
+         id = id.exposure)
 
-  #create a separate clumping step in case LD lookup times out
-  genes_format <- format_gtex_eqtl(genes) %>% clump_data()
+
+  genes_format <-  ld_clump(exposures_genes, plink_bin = plink, bfile = bfile,
+           clump_kb = 1000, clump_r2 = .001, clump_p = 1) 
 
   exposures_genes <- rbind(exposures_genes, genes_format)
 }
 
-saveRDS(exposures_genes, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
-```
-
-
-try as a function
-
-```{r, cache = TRUE}
-genes_clump <- function(genes){
-  gene <- subset(gtex_eqtl, gene_name == genes) %>% format_gtex_eqtl() %>% clump_data()
-}
-
-gen <- genes_unique[1:10]
-
-test <- lapply(gen, genes_clump)
-```
-
-try local clumping
-reference downloaded at : http://fileserve.mrcieu.ac.uk/ld/1kg.v3.tgz
-```{r,cache=TRUE}
-
-
-#format for ld_clumping
-
-gene_dat <-subset(gtex_eqtl, gene_name == "RP4-669L17.10") %>% 
-  format_gtex_eqtl() %>%
-  rename(rsid = SNP,
-         pval = pval.exposure,
-         id = id.exposure) %>%
-  ld_clump(plink_bin = genetics.binaRies::get_plink_binary(), bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR", #no need to include extensions
-           clump_kb = 1000, clump_r2 = .001, 
-           clump_p = 1, pop = "EUR") 
- 
-
-#same results
+saveRDS(exposures_genes, file = "~data/exposures_genes.rds")
 ```
 
 
 
-#### d. Protein Level QTLs
+#### c. Protein Level QTLs
 
-Instead of retrieving via API, do ld clumping locally using the same reference population "EUR" from 1000 genomes
-
-```{r, cache=TRUE}
+```{r, eval = FALSE}
 #import Protein Level QTLs into R
 data(proteomic_qtls)
 proteomic_qtls
@@ -196,10 +183,9 @@ for(i in 1 : length(proteins_unique)) {
          id = id.exposure)
   
   proteins_clump <- ld_clump(proteins_format, 
-                             plink_bin = genetics.binaRies::get_plink_binary(), 
-                             bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR",
-                             #no need to include extensions
-                             clump_kb = 1000, clump_r2 = .001, clump_p = 1, pop = "EUR")
+                             plink_bin = plink, 
+                             bfile = bfile,
+                             clump_kb = 1000, clump_r2 = .001, clump_p = 1)
 
   exposures_protein <- rbind(exposures_protein, proteins_clump)
     
@@ -211,53 +197,10 @@ exposures_protein <- exposures_protein %>% rename (SNP = rsid, id.exposure = id)
 
 
 
-For Loops
-```{r, cache = TRUE}
-
-#import Protein Level QTLs into R
-data(proteomic_qtls)
-proteomic_qtls
-
-#create a list of unique protein analyte & make a list
-
-proteins_unique <- proteomic_qtls[!duplicated(proteomic_qtls$analyte),] %>% pull(analyte)
-#  unique phenotypes in catalog
+#### d. Metabolite Level OTLs
 
 
-
-#make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
-exposures_proteins_API <- data.frame()
-for(i in 1 : length(proteins_unique)) {
-  
-  proteins_phenotypes_API<- subset(proteomic_qtls, analyte == proteins_unique[i])
-  
-  #format exposure data and clump by LD r2 <0.001 to reduce covariance
-  proteins_format_API<- proteins_phenotypes_API %>% format_proteomic_qtls() %>% clump_data()
-
-  exposures_proteins_API <- rbind(exposures_proteins_API, proteins_format_API)
-    
-}
-
-
-# check that 'phenotypes' is the same as the last entry in gwas_unique
-proteins_unique[47]
-proteins_phenotypes$analyte
-
-
-saveRDS(exposures_proteins_API, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.rds")
-```
-
-Both dataframes are the same. 
-
-```{r,cache=TRUE}
-identical(exposures_protein$rsid, exposures_proteins_API$rsid)
-```
-
-
-#### e. Metabolite Level OTLs
-
-
-```{r, cache=TRUE}
+```{r, eval=FALSE}
 
 #import Metabolite Level QTLs into R
 data(metab_qtls)
@@ -279,9 +222,9 @@ for(i in 1 : length(metabolites_unique)) {
     rename(rsid = SNP,
          pval = pval.exposure,
          id = id.exposure) %>%
-    ld_clump( plink_bin = genetics.binaRies::get_plink_binary(), 
-              bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR",
-              clump_kb = 1000, clump_r2 = .001, clump_p = 1, pop = "EUR")
+    ld_clump( plink_bin = plink, 
+              bfile = bfile,
+              clump_kb = 1000, clump_r2 = .001, clump_p = 1)
     
 
   exposures_metabolite <- rbind(exposures_metabolite, metabolites_phenotypes)
@@ -295,13 +238,11 @@ metabolites_unique[121]
 metabolites_phenotypes$phenotype
 
 
-saveRDS(exposures_metabolite, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
+saveRDS(exposures_metabolite, file = "~data/exposures_metabolites.rds")
 ```
 
-#### f. Methylation Level QTLs
+#### e. Methylation Level QTLs
 by cpg site and age
-
-
 
 ```{r}
 
@@ -328,9 +269,9 @@ for (j in 1:5){
       rename(rsid = SNP,
          pval = pval.exposure,
          id = id.exposure) %>%
-    ld_clump( plink_bin = genetics.binaRies::get_plink_binary(), 
-              bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR",
-              clump_kb = 1000, clump_r2 = .001, clump_p = 1, pop = "EUR")
+    ld_clump( plink_bin = plink, 
+              bfile = bfile,
+              clump_kb = 1000, clump_r2 = .001, clump_p = 1)
     
     
   exposures_methylation <- rbind(exposures_methylation, methylation_phenotypes)
@@ -349,9 +290,61 @@ methylation_unique[33256]
 methylation_phenotypes$cpg
 
 
-saveRDS(exposures_methylation, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_methylation.rds")
+saveRDS(exposures_methylation, file = "~data/exposures_methylation.rds")
 ```
 
+#### f. Other Methods for obtaining exposure
+
+Ex. GWAS Catalog
+
+Utilizing the clump_data function in TwoSampleMR
+
+```{r}
+#Retrieve the catalog
+data(gwas_catalog)
+gwas_catalog
+
+# then create a vector of unique gwas phenotypes
+gwas_unique <- gwas_catalog %>%
+  filter(!duplicated(Phenotype)) %>%
+  pull(Phenotype)
+
+genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
+
+exposures_genes <- data.frame()
+for(i in 17583: length(genes_unique)){
+  genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
+
+  #create a separate clumping step in case LD lookup times out
+  genes_format <- format_gtex_eqtl(genes) %>% clump_data()
+
+  exposures_genes <- rbind(exposures_genes, genes_format)
+}
+
+saveRDS(exposures_genes, file = "~data/exposures_genes.rds")
+```
+
+
+
+As a function for a list of genes 
+```{r}
+#As before retrieve the catalog
+data(gwas_catalog)
+gwas_catalog
+
+# then create a vector of unique gwas phenotypes
+gwas_unique <- gwas_catalog %>%
+  filter(!duplicated(Phenotype)) %>%
+  pull(Phenotype)
+
+# Define a function
+gwas_clump <- function(genes){
+  gene <- subset(gtex_eqtl, gene_name == genes) %>% format_gtex_eqtl() %>% clump_data()
+}
+
+
+test <- lapply(gwas_unique, genes_clump)
+```
 
 
 ### III. Outcomes & Harmonize
