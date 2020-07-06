@@ -402,7 +402,7 @@ exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exp
 for(i in 1:5917){ 
   
   exp <- exposures_gwas %>%
-    filter(exposure == exp_unique[13])
+    filter(exposure == exp_unique[i])
   
   outcome <- tryCatch( 
     read_outcome_data(
