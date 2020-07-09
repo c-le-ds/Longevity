@@ -1,0 +1,28 @@
+---
+title: "MR Analysis"
+author: "C Le"
+date: "7/6/2020"
+output: html_document
+---
+### IV. MR Analysis
+
+#### a. UK 90 
+Downloaded Pilling Data
+```{r}
+gwas <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_gwas.rds")
+mr_gwas <- mr(gwas)%>%
+  mutate(exposure_dat = "GWAS")
+
+protein <-readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_protein.rds")
+mr_protein <- mr(protein) %>%
+  mutate(exposure_dat = "protein")
+
+metabolite <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_metabolites.rds")
+mr_metabolite <- mr(metabolite)  %>%
+  mutate(exposure_dat = "metabolite")
+
+
+mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
+
+saveRDS(mr, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/MR_pilling.rds")
+```

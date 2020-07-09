@@ -38,6 +38,40 @@ Compare persons in the 90th percentile from section I to those in the 90th perce
 ## C. Preparation of Data
 
 ### I. Load Libraries
+
+Run this code chunk the first time you use this code to check that you have all the packages needed.
+```{r,eval=FALSE}
+
+if(!require(TwoSampleMR)){
+  install.packages("devtools")
+  devtools::install_github("MRCIEU/TwoSampleMR")
+}
+  
+if(!require(ieugwasr)){
+  #if devtools not installed yet, use line below
+  #install.packages("devtools")
+  devtools::install_github("mrcieu/ieugwasr")
+}
+
+if(!require(genetics.binaRies)){
+  #if devtools not installed yet, use line below
+  #install.packages("devtools")
+  devtools::install_github("explodecomputer/genetics.binaRies")
+}
+
+is_it_here <- function(package_list){
+  for( i in seq_along(package_list)){
+    if(!require(i)){
+      install.packages(i)
+    }
+  }
+}
+packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table")
+is_it_here(packages_CRAN)
+
+````
+
+
 ```{r}
 library(TwoSampleMR)
 library(MRInstruments)
@@ -59,16 +93,16 @@ Make sure to set eval = **TRUE** if you want to run that chunk of code.
 
 
 Set variables for local clumping of data
-```{r}
+```{r,eval=FALSE}
 #set working directory
-setwd("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity")
+setwd("path/to/file")
 
 # plink library
 plink <- genetics.binaRies::get_plink_binary()
 
 # bfile is the filepath were your reference datasets are located
 #no need to include extensions for population (e.g EUR.bin)
-bfile <- "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR"
+bfile <- "../data/LD/LD_reference/EUR"
 ```
 
 #### a. GWAS Catalog
@@ -99,7 +133,7 @@ for(i in seq_along(gwas_unique)){
     filter(Phenotype == gwas_unique[i]) %>%
     format_data %>%
     ld_clump(plink_bin = plink, bfile = bfile, 
-           clump_kb = 1000, clump_r2 = .001, 
+           clump_kb = 10000, clump_r2 = .001, 
            clump_p = 1) 
   
   print(paste0("Last successful run was ", gwas_unique[i], 
@@ -149,7 +183,7 @@ for(i in 17583: length(genes_unique)){
 
 
   genes_format <-  ld_clump(exposures_genes, plink_bin = plink, bfile = bfile,
-           clump_kb = 1000, clump_r2 = .001, clump_p = 1) 
+           clump_kb = 10000, clump_r2 = .001, clump_p = 1) 
 
   exposures_genes <- rbind(exposures_genes, genes_format)
 }
@@ -185,7 +219,7 @@ for(i in 1 : length(proteins_unique)) {
   proteins_clump <- ld_clump(proteins_format, 
                              plink_bin = plink, 
                              bfile = bfile,
-                             clump_kb = 1000, clump_r2 = .001, clump_p = 1)
+                             clump_kb = 10000, clump_r2 = .001, clump_p = 1)
 
   exposures_protein <- rbind(exposures_protein, proteins_clump)
     
@@ -224,7 +258,7 @@ for(i in 1 : length(metabolites_unique)) {
          id = id.exposure) %>%
     ld_clump( plink_bin = plink, 
               bfile = bfile,
-              clump_kb = 1000, clump_r2 = .001, clump_p = 1)
+              clump_kb = 10000, clump_r2 = .001, clump_p = 1)
     
 
   exposures_metabolite <- rbind(exposures_metabolite, metabolites_phenotypes)
@@ -271,7 +305,7 @@ for (j in 1:5){
          id = id.exposure) %>%
     ld_clump( plink_bin = plink, 
               bfile = bfile,
-              clump_kb = 1000, clump_r2 = .001, clump_p = 1)
+              clump_kb = 10000, clump_r2 = .001, clump_p = 1)
     
     
   exposures_methylation <- rbind(exposures_methylation, methylation_phenotypes)

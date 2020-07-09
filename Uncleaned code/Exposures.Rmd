@@ -1,0 +1,300 @@
+---
+title: "Exposures"
+author: "C Le"
+date: "7/6/2020"
+output: html_document
+---
+
+
+# Load Libraries
+```{r}
+library(TwoSampleMR)
+library(MRInstruments)
+library(tidyverse) #so we can use purrr::map, and no, not just because I got cats
+library(knitr)
+library(ieugwasr)
+library(arsenal)
+library(tidyverse)
+```
+
+#GWAS via API
+```{r, eval=FALSE}
+
+
+#import gwas catalog into R
+data(gwas_catalog)
+gwas_catalog
+
+#create a list of unique gwas phenotpes & make a list
+
+gwas_unique <- gwas_catalog[!duplicated(gwas_catalog$Phenotype),] %>% pull(Phenotype)
+# 3590 unique phenotypes in catalog
+
+
+
+#make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
+exposures_gwas <- data.frame()
+for(i in 1 : length(gwas_unique)) {
+
+ gwas_phenotypes<- subset(gwas_catalog, Phenotype == gwas_unique[i])
+
+  #format exposure data and clump by LD r2 <0.001 to reduce covariance
+  gwas_format<- gwas_phenotypes %>% format_data() %>% clump_data()
+
+  exposures_gwas <- rbind(exposures_gwas, gwas_format)
+
+}
+
+
+#check that 'phenotypes' is the same as the last entry in gwas_unique
+# gwas_unique[3590]
+# gwas_phenotypes$Phenotype
+
+
+save(exposures_gwas, file = "data/exposures_gwas.Rdata")
+```
+
+
+#### b. Gene Expression QTLs
+Search for SNPs can be done by gene and tissue or just one. Below exposure instruments are created for each unique gene.
+
+```{r, cache = TRUE}
+
+#import Gene Expression QTLs list
+data(gtex_eqtl)
+gtex_eqtl
+
+
+#create a list of unique gene names
+
+genes_unique <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),] %>% pull(gene_name)
+
+# 32432 unique gene names
+```
+
+
+For loop
+```{r, cache = TRUE}
+genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
+
+exposures_genes <- data.frame()
+for(i in 17583: length(genes_unique)){
+  genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
+
+  #create a separate clumping step in case LD lookup times out
+  genes_format <- format_gtex_eqtl(genes) %>% clump_data()
+
+  exposures_genes <- rbind(exposures_genes, genes_format)
+}
+
+saveRDS(exposures_genes, file = "~data/exposures_genes.rds")
+```
+
+
+try as a function
+
+```{r, cache = TRUE}
+genes_clump <- function(genes){
+  gene <- subset(gtex_eqtl, gene_name == genes) %>% format_gtex_eqtl() %>% clump_data()
+}
+
+gen <- genes_unique[1:10]
+
+test <- lapply(gen, genes_clump)
+```
+
+try local clumping
+reference downloaded at : http://fileserve.mrcieu.ac.uk/ld/1kg.v3.tgz
+```{r,cache=TRUE}
+
+
+#format for ld_clumping
+
+gene_dat <-subset(gtex_eqtl, gene_name == "RP4-669L17.10") %>% 
+  format_gtex_eqtl() %>%
+  rename(rsid = SNP,
+         pval = pval.exposure,
+         id = id.exposure) %>%
+  ld_clump(plink_bin = genetics.binaRies::get_plink_binary(), bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR", #no need to include extensions
+           clump_kb = 10000, clump_r2 = .001, 
+           clump_p = 1, pop = "EUR") 
+ 
+
+#same results
+```
+
+Proteins
+
+```{r, cache=TRUE}
+#import Protein Level QTLs into R
+data(proteomic_qtls)
+proteomic_qtls
+
+#create a list of unique protein analyte & make a list
+
+proteins_unique <- proteomic_qtls[!duplicated(proteomic_qtls$analyte),] %>% pull(analyte)
+
+
+exposures_protein <- data.frame()
+for(i in 1 : length(proteins_unique)) {
+  
+  proteins_phenotypes<- subset(proteomic_qtls, analyte == proteins_unique[i])
+  
+  #format exposure data and clump by LD r2 <0.001 to reduce covariance
+  proteins_format<- proteins_phenotypes %>% format_proteomic_qtls() %>%
+    rename(rsid = SNP,
+         pval = pval.exposure,
+         id = id.exposure)
+  
+  proteins_clump <- ld_clump(proteins_format, 
+                             plink_bin = plink, 
+                             bfile = bfile,
+                             clump_kb = 10000, clump_r2 = .001, clump_p = 1)
+
+  exposures_protein <- rbind(exposures_protein, proteins_clump)
+    
+}
+
+exposures_protein <- exposures_protein %>% rename (SNP = rsid, id.exposure = id)
+
+```
+
+
+
+For Loops
+```{r, cache = TRUE}
+
+#import Protein Level QTLs into R
+data(proteomic_qtls)
+proteomic_qtls
+
+#create a list of unique protein analyte & make a list
+
+proteins_unique <- proteomic_qtls[!duplicated(proteomic_qtls$analyte),] %>% pull(analyte)
+#  unique phenotypes in catalog
+
+
+
+#make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
+exposures_proteins_API <- data.frame()
+for(i in 1 : length(proteins_unique)) {
+  
+  proteins_phenotypes_API<- subset(proteomic_qtls, analyte == proteins_unique[i])
+  
+  #format exposure data and clump by LD r2 <0.001 to reduce covariance
+  proteins_format_API<- proteins_phenotypes_API %>% format_proteomic_qtls() %>% clump_data()
+
+  exposures_proteins_API <- rbind(exposures_proteins_API, proteins_format_API)
+    
+}
+
+
+# check that 'phenotypes' is the same as the last entry in gwas_unique
+proteins_unique[47]
+proteins_phenotypes$analyte
+
+
+saveRDS(exposures_proteins_API, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.rds")
+```
+
+Both dataframes are the same. 
+
+```{r,cache=TRUE}
+identical(exposures_protein$rsid, exposures_proteins_API$rsid)
+```
+
+#### d. Metabolite Level OTLs
+
+
+```{r, eval=FALSE}
+
+#import Metabolite Level QTLs into R
+data(metab_qtls)
+metab_qtls
+
+#create a list of unique metabolomic phenotype & make a list
+
+metabolites_unique <- metab_qtls[!duplicated(metab_qtls$phenotype),] %>% pull(phenotype)
+# 121 unique phenotypes in catalog
+
+
+
+#make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
+exposures_metabolite <- data.frame()
+for(i in 1 : length(metabolites_unique)) {
+  
+  metabolites_phenotypes<- subset(metab_qtls, phenotype == metabolites_unique[i]) %>% 
+    format_metab_qtls() %>% 
+    rename(rsid = SNP,
+         pval = pval.exposure,
+         id = id.exposure) %>%
+    ld_clump( plink_bin = plink, 
+              bfile = bfile,
+              clump_kb = 10000, clump_r2 = .001, clump_p = 1)
+    
+
+  exposures_metabolite <- rbind(exposures_metabolite, metabolites_phenotypes)
+    
+}
+
+exposures_metabolite <- exposures_metabolite %>% rename (SNP = rsid, id.exposure = id)  
+  
+#check that 'phenotypes' is the same as the last entry in metabolites_unique
+metabolites_unique[121]
+metabolites_phenotypes$phenotype
+
+
+saveRDS(exposures_metabolite, file = "~data/exposures_metabolites.rds")
+```
+
+#### e. Methylation Level QTLs
+by cpg site and age
+
+```{r}
+
+#import Methylation Level QTLs into R
+data(aries_mqtl)
+aries_mqtl
+
+#create a list of unique Methylation  cpg & make a list
+
+methylation_unique <- aries_mqtl[!duplicated(aries_mqtl$cpg),]%>% pull(cpg)
+age <- c("Birth", "Adolescence", "Childhood", "Middle age", "Pregnancy")
+#  33256 unique cpg sites in catalog
+# 5 'ages'
+
+#make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
+
+
+exposures_methylation <- data.frame()
+for (j in 1:5){
+  for(i in 1 : 33256) {
+  
+    methylation_phenotypes<- subset(aries_mqtl, cpg == methylation_unique[i] & age == age[j])%>% 
+      format_aries_mqtl() %>% 
+      rename(rsid = SNP,
+         pval = pval.exposure,
+         id = id.exposure) %>%
+    ld_clump( plink_bin = genetics.binaRies::get_plink_binary(), 
+              bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR",
+              clump_kb = 10000, clump_r2 = .001, clump_p = 1, pop = "EUR")
+    
+    
+  exposures_methylation <- rbind(exposures_methylation, methylation_phenotypes)
+     
+
+    
+    
+  }
+
+
+}
+
+exposures_methylation <- exposures_methylation %>% rename (SNP = rsid, id.exposure = id)   
+#check that 'phenotypes' is the same as the last entry in metabolites_unique
+methylation_unique[33256]
+methylation_phenotypes$cpg
+
+
+saveRDS(exposures_methylation, file = "~data/exposures_methylation.rds")
+```
