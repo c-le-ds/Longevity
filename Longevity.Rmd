@@ -25,6 +25,35 @@ Exposures are obtained from the mrbase.org website from the following catalogs
 
 Outcome Data obtained from CPMC that was utilized in Deelen et al., 2019 (https://pubmed.ncbi.nlm.nih.gov/31413261/). Exposure - Outcome relationships will be examined in persons whose longevity is in the 90th percentile using the rest of the cohort as the control.
 
+Download Deelen outcomes and files for rsID mapping.
+
+```{r, eval = FALSE}
+#Mapping file from EasyQC. Place is data/outcomes/
+system("wget https://homepages.uni-regensburg.de/~wit59712/easyqc/1000g/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt.gz")
+
+#Deelen GWAS outcomes
+system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008598/Results_90th_percentile.txt.gz")
+
+system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008599/Results_99th_percentile.txt.gz")
+
+```
+
+Define functions
+
+```{r}
+strand_flippr <- function(effect_allele, non_effect_allele){
+  require(dplyr)
+  
+  
+}
+
+```
+
+```{r}
+require(tidyverse)
+outcome <- read_delim("data/outcomes/Results_90th_percentile.txt.gz", delim = "\t")
+
+```
 
 ### II. Second outcome: cases 99
 
@@ -79,7 +108,7 @@ library(tidyverse) #so we can use purrr::map, and no, not just because I got cat
 library(knitr)
 library(ieugwasr)
 library(arsenal)
-library(tidyverse)
+library(tidyverse) #why loaded twice?
 ```
 
 ###II.  Exposures from each catalog
@@ -112,7 +141,7 @@ bfile <- "../data/LD/LD_reference/EUR"
 #cache = True will create a folder that saves objects, and if objects and code aren't updated, this code chunk will not re-run. This is good for long-running code sections.
 #import gwas catalog into R
 data(gwas_catalog)
-gwas_catalog
+#gwas_catalog
 
 #create a vector of unique gwas phenotypes
 gwas_unique <- gwas_catalog %>%
