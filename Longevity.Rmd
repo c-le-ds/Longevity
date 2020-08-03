@@ -25,6 +25,35 @@ Exposures are obtained from the mrbase.org website from the following catalogs
 
 Outcome Data obtained from CPMC that was utilized in Deelen et al., 2019 (https://pubmed.ncbi.nlm.nih.gov/31413261/). Exposure - Outcome relationships will be examined in persons whose longevity is in the 90th percentile using the rest of the cohort as the control.
 
+Download Deelen outcomes and files for rsID mapping.
+
+```{r, eval = FALSE}
+#Mapping file from EasyQC. Place is data/outcomes/
+system("wget https://homepages.uni-regensburg.de/~wit59712/easyqc/1000g/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt.gz")
+
+#Deelen GWAS outcomes
+system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008598/Results_90th_percentile.txt.gz")
+
+system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008599/Results_99th_percentile.txt.gz")
+
+```
+
+Define functions
+
+```{r}
+strand_flippr <- function(effect_allele, non_effect_allele){
+  require(dplyr)
+  
+  
+}
+
+```
+
+```{r}
+require(tidyverse)
+outcome <- read_delim("data/outcomes/Results_90th_percentile.txt.gz", delim = "\t")
+
+```
 
 ### II. Second outcome: cases 99
 
@@ -38,6 +67,40 @@ Compare persons in the 90th percentile from section I to those in the 90th perce
 ## C. Preparation of Data
 
 ### I. Load Libraries
+
+Run this code chunk the first time you use this code to check that you have all the packages needed.
+```{r,eval=FALSE}
+
+if(!require(TwoSampleMR)){
+  install.packages("devtools")
+  devtools::install_github("MRCIEU/TwoSampleMR")
+}
+  
+if(!require(ieugwasr)){
+  #if devtools not installed yet, use line below
+  #install.packages("devtools")
+  devtools::install_github("mrcieu/ieugwasr")
+}
+
+if(!require(genetics.binaRies)){
+  #if devtools not installed yet, use line below
+  #install.packages("devtools")
+  devtools::install_github("explodecomputer/genetics.binaRies")
+}
+
+is_it_here <- function(package_list){
+  for( i in seq_along(package_list)){
+    if(!require(i)){
+      install.packages(i)
+    }
+  }
+}
+packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table")
+is_it_here(packages_CRAN)
+
+````
+
+
 ```{r}
 library(TwoSampleMR)
 library(MRInstruments)
@@ -45,20 +108,40 @@ library(tidyverse) #so we can use purrr::map, and no, not just because I got cat
 library(knitr)
 library(ieugwasr)
 library(arsenal)
-library(tidyverse)
+library(tidyverse) #why loaded twice?
 ```
 
 ###II.  Exposures from each catalog
+Local LD clumping was done per [reference url] and reference data was obtained from 1000 genomes at [ http://fileserve.mrcieu.ac.uk/ld/1kg.v3.tgz]
 
+
+Below is the method to do local LD clumping. However in **Section F** there are examples to do it via the TwoSampleMR reference via the internet as well as an example extracting exposures as a function using apply. 
+
+Make sure to set eval = **TRUE** if you want to run that chunk of code. 
+
+
+
+Set variables for local clumping of data
+```{r,eval=FALSE}
+#set working directory
+setwd("path/to/file")
+
+# plink library
+plink <- genetics.binaRies::get_plink_binary()
+
+# bfile is the filepath were your reference datasets are located
+#no need to include extensions for population (e.g EUR.bin)
+bfile <- "../data/LD/LD_reference/EUR"
+```
 
 #### a. GWAS Catalog
 
-```{r, cache = TRUE}
+```{r, eval=FALSE}
 
 #cache = True will create a folder that saves objects, and if objects and code aren't updated, this code chunk will not re-run. This is good for long-running code sections.
 #import gwas catalog into R
 data(gwas_catalog)
-gwas_catalog
+#gwas_catalog
 
 #create a vector of unique gwas phenotypes
 gwas_unique <- gwas_catalog %>%
@@ -78,7 +161,9 @@ for(i in seq_along(gwas_unique)){
   exposures_gwas[[i]] <- gwas_catalog %>%
     filter(Phenotype == gwas_unique[i]) %>%
     format_data %>%
-    clump_data
+    ld_clump(plink_bin = plink, bfile = bfile, 
+           clump_kb = 10000, clump_r2 = .001, 
+           clump_p = 1) 
   
   print(paste0("Last successful run was ", gwas_unique[i], 
                " which is iterator ", i))
@@ -95,15 +180,14 @@ exposures_gwas_DF <- bind_rows(exposures_gwas)
 # gwas_phenotypes$Phenotype
 
 # 
-# save(exposures_gwas, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_gwas.Rdata")
+save(exposures_gwas, file = "~data/exposures_gwas.Rdata")
 ```
 
-#### b. MR Base GWAS Catalog
 
-#### c. Gene Expression QTLs
-should we search for gene and tissue together or just gene?
-- below is search by gene and tissue together
-```{r, cache = TRUE}
+#### b. Gene Expression QTLs
+Search for SNPs can be done by gene and tissue or just one. Below exposure instruments are created for each unique gene.
+
+```{r, eval= FALSE}
 
 #import Gene Expression QTLs list
 data(gtex_eqtl)
@@ -115,66 +199,32 @@ gtex_eqtl
 genes_unique <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),] %>% pull(gene_name)
 
 # 32432 unique gene names
-```
 
-
-For loop
-```{r, cache = TRUE}
 genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
 
 exposures_genes <- data.frame()
 for(i in 17583: length(genes_unique)){
-  genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
+  genes <- subset(gtex_eqtl, gene_name == genes_unique[i]) %>%
+    format_gtex_eqtl()%>%
+    rename(rsid = SNP,
+         pval = pval.exposure,
+         id = id.exposure)
 
-  #create a separate clumping step in case LD lookup times out
-  genes_format <- format_gtex_eqtl(genes) %>% clump_data()
+
+  genes_format <-  ld_clump(exposures_genes, plink_bin = plink, bfile = bfile,
+           clump_kb = 10000, clump_r2 = .001, clump_p = 1) 
 
   exposures_genes <- rbind(exposures_genes, genes_format)
 }
 
-saveRDS(exposures_genes, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
-```
-
-
-try as a function
-
-```{r, cache = TRUE}
-genes_clump <- function(genes){
-  gene <- subset(gtex_eqtl, gene_name == genes) %>% format_gtex_eqtl() %>% clump_data()
-}
-
-gen <- genes_unique[1:10]
-
-test <- lapply(gen, genes_clump)
-```
-
-try local clumping
-reference downloaded at : http://fileserve.mrcieu.ac.uk/ld/1kg.v3.tgz
-```{r,cache=TRUE}
-
-
-#format for ld_clumping
-
-gene_dat <-subset(gtex_eqtl, gene_name == "RP4-669L17.10") %>% 
-  format_gtex_eqtl() %>%
-  rename(rsid = SNP,
-         pval = pval.exposure,
-         id = id.exposure) %>%
-  ld_clump(plink_bin = genetics.binaRies::get_plink_binary(), bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR", #no need to include extensions
-           clump_kb = 1000, clump_r2 = .001, 
-           clump_p = 1, pop = "EUR") 
- 
-
-#same results
+saveRDS(exposures_genes, file = "~data/exposures_genes.rds")
 ```
 
 
 
-#### d. Protein Level QTLs
+#### c. Protein Level QTLs
 
-Instead of retrieving via API, do ld clumping locally using the same reference population "EUR" from 1000 genomes
-
-```{r, cache=TRUE}
+```{r, eval = FALSE}
 #import Protein Level QTLs into R
 data(proteomic_qtls)
 proteomic_qtls
@@ -196,10 +246,9 @@ for(i in 1 : length(proteins_unique)) {
          id = id.exposure)
   
   proteins_clump <- ld_clump(proteins_format, 
-                             plink_bin = genetics.binaRies::get_plink_binary(), 
-                             bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR",
-                             #no need to include extensions
-                             clump_kb = 1000, clump_r2 = .001, clump_p = 1, pop = "EUR")
+                             plink_bin = plink, 
+                             bfile = bfile,
+                             clump_kb = 10000, clump_r2 = .001, clump_p = 1)
 
   exposures_protein <- rbind(exposures_protein, proteins_clump)
     
@@ -211,53 +260,10 @@ exposures_protein <- exposures_protein %>% rename (SNP = rsid, id.exposure = id)
 
 
 
-For Loops
-```{r, cache = TRUE}
-
-#import Protein Level QTLs into R
-data(proteomic_qtls)
-proteomic_qtls
-
-#create a list of unique protein analyte & make a list
-
-proteins_unique <- proteomic_qtls[!duplicated(proteomic_qtls$analyte),] %>% pull(analyte)
-#  unique phenotypes in catalog
+#### d. Metabolite Level OTLs
 
 
-
-#make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
-exposures_proteins_API <- data.frame()
-for(i in 1 : length(proteins_unique)) {
-  
-  proteins_phenotypes_API<- subset(proteomic_qtls, analyte == proteins_unique[i])
-  
-  #format exposure data and clump by LD r2 <0.001 to reduce covariance
-  proteins_format_API<- proteins_phenotypes_API %>% format_proteomic_qtls() %>% clump_data()
-
-  exposures_proteins_API <- rbind(exposures_proteins_API, proteins_format_API)
-    
-}
-
-
-# check that 'phenotypes' is the same as the last entry in gwas_unique
-proteins_unique[47]
-proteins_phenotypes$analyte
-
-
-saveRDS(exposures_proteins_API, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.rds")
-```
-
-Both dataframes are the same. 
-
-```{r,cache=TRUE}
-identical(exposures_protein$rsid, exposures_proteins_API$rsid)
-```
-
-
-#### e. Metabolite Level OTLs
-
-
-```{r, cache=TRUE}
+```{r, eval=FALSE}
 
 #import Metabolite Level QTLs into R
 data(metab_qtls)
@@ -279,9 +285,9 @@ for(i in 1 : length(metabolites_unique)) {
     rename(rsid = SNP,
          pval = pval.exposure,
          id = id.exposure) %>%
-    ld_clump( plink_bin = genetics.binaRies::get_plink_binary(), 
-              bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR",
-              clump_kb = 1000, clump_r2 = .001, clump_p = 1, pop = "EUR")
+    ld_clump( plink_bin = plink, 
+              bfile = bfile,
+              clump_kb = 10000, clump_r2 = .001, clump_p = 1)
     
 
   exposures_metabolite <- rbind(exposures_metabolite, metabolites_phenotypes)
@@ -295,13 +301,11 @@ metabolites_unique[121]
 metabolites_phenotypes$phenotype
 
 
-saveRDS(exposures_metabolite, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
+saveRDS(exposures_metabolite, file = "~data/exposures_metabolites.rds")
 ```
 
-#### f. Methylation Level QTLs
+#### e. Methylation Level QTLs
 by cpg site and age
-
-
 
 ```{r}
 
@@ -328,9 +332,9 @@ for (j in 1:5){
       rename(rsid = SNP,
          pval = pval.exposure,
          id = id.exposure) %>%
-    ld_clump( plink_bin = genetics.binaRies::get_plink_binary(), 
-              bfile = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/LD_reference/EUR",
-              clump_kb = 1000, clump_r2 = .001, clump_p = 1, pop = "EUR")
+    ld_clump( plink_bin = plink, 
+              bfile = bfile,
+              clump_kb = 10000, clump_r2 = .001, clump_p = 1)
     
     
   exposures_methylation <- rbind(exposures_methylation, methylation_phenotypes)
@@ -349,231 +353,63 @@ methylation_unique[33256]
 methylation_phenotypes$cpg
 
 
-saveRDS(exposures_methylation, file = "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_methylation.rds")
+saveRDS(exposures_methylation, file = "~data/exposures_methylation.rds")
+```
+
+#### f. Other Methods for obtaining exposure
+
+Ex. GWAS Catalog
+
+Utilizing the clump_data function in TwoSampleMR
+
+```{r}
+#Retrieve the catalog
+data(gwas_catalog)
+gwas_catalog
+
+# then create a vector of unique gwas phenotypes
+gwas_unique <- gwas_catalog %>%
+  filter(!duplicated(Phenotype)) %>%
+  pull(Phenotype)
+
+genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
+
+exposures_genes <- data.frame()
+for(i in 17583: length(genes_unique)){
+  genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
+
+  #create a separate clumping step in case LD lookup times out
+  genes_format <- format_gtex_eqtl(genes) %>% clump_data()
+
+  exposures_genes <- rbind(exposures_genes, genes_format)
+}
+
+saveRDS(exposures_genes, file = "~data/exposures_genes.rds")
 ```
 
 
 
-### III. Outcomes
-
-#### a. Load Exposures
-
+As a function for a list of genes 
 ```{r}
-#GWAS
-load("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_gwas.Rdata")
+#As before retrieve the catalog
+data(gwas_catalog)
+gwas_catalog
 
-#Proteins
-exposures_proteins <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.rds")
+# then create a vector of unique gwas phenotypes
+gwas_unique <- gwas_catalog %>%
+  filter(!duplicated(Phenotype)) %>%
+  pull(Phenotype)
 
-#Methylation
-exposures_methylation <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_methylation.rds")
-
-#Genes
-exposures_genes <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
-
-# exposures_metabolites <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
-
-# wait for Dan's answer
-```
-
-
-#### b. Cases 90
-
-#### c. Cases 99
-
-#### d. UK 90
-
-```{r}
-#outcome data from local GwAS data
-#ex
-outcome_pilling_gwas <- read_outcome_data(
-    snps = exposures_gwas$SNP,
-    filename = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/Pilling_90.csv",
-    sep = ",",
-    snp_col = "SNP",
-    beta_col = "BETA",
-    se_col = "SE",
-    effect_allele_col = "ALLELE1",
-    other_allele_col = "ALLELE0",
-    eaf_col = "A1FREQ",
-    pval_col = "P_BOLT"
-)
-```
-
-try to obtain from gwas catalog
-
-```{r}
-pilling_out_gwas <- extract_outcome_data(snps = exposures_gwas$SNP, outcomes = 'ebi-a-GCST006698')
-```
-
-
-Dataframes are not the same length
-
-using data downloaded onto local drive we get 4993 SNPs with 12 variables for the outcome
-
-using id from link we get 51655 SNPS and proxies with 23 variables
-
-
-Comparing the two we see the outcome data generated from the downloaded data, is within the larger dataset.
-
-```{r}
-
-
-comparedf(outcome_pilling_gwas, pilling_out_gwas) %>% summary()
-
-
-```
-
-
-#### e. UK Parental
-
-
-
-
-
-
-
-### IV. Harmonize 
-
-#### a. 90 cases
-
-#### b. 99 cases
-
-#### c. UK biobank 90 cases
-
-SNPs must match in both exposure and outcome data
-
-```{r}
-
-#downloaded data
-
-#take only the SNPs that are in the outcome data
-rsid <- outcome_pilling_gwas$SNP
-
-#deal with duplicates
-#keep row with lowest p-value
-#keep row with highest Beta
-
-expo_pilling_gwas_download <- data.frame()
-
-for(i in 1:4993){
-  
-  rsid_unique<- exposures_gwas %>%
-    filter(SNP == rsid[i])
-  
-  if(tally(rsid_unique) > 1) {
-    value <-  min(rsid_unique$pval.exposure)
-    
-    rsid.keep <- rsid_unique %>%
-    filter(pval.exposure == value)
-  }
-  
-  else {
-    rsid.keep <- rsid_unique
-  }
-  
-  
-  if(tally(rsid.keep) >1) {
-    beta_max <- max(rsid.keep$beta.exposure, na.rm = T)
-    
-    if(beta_max == -Inf){
-      rsid.keep <- rsid.keep[1,]
-    }
-    else{
-      rsid.keep <- rsid.keep %>%
-      filter(beta.exposure == beta_max)
-    }
-    
-    if(tally(rsid.keep) >1) {
-       rsid.keep <- rsid.keep[1,]
-     }
-    
-  }
-  
-  
-  
-  expo_pilling_gwas_download <- rbind(expo_pilling_gwas_download, rsid.keep)
-  
+# Define a function
+gwas_clump <- function(genes){
+  gene <- subset(gtex_eqtl, gene_name == genes) %>% format_gtex_eqtl() %>% clump_data()
 }
 
 
-    
-
-
-#retrieved data
-#take only the SNPs that are in the outcome data
-rsid <- pilling_out_gwas$SNP
-
-#deal with duplicates
-#keep row with lowest p-value
-#keep row with highest Beta
-
-exp_pilling_gwas <- data.frame()
-
-for(i in 1:length(rsid)){
-  
-  rsid_unique<- exposures_gwas %>%
-    filter(SNP == rsid[i])
-  
-  if(tally(rsid_unique) > 1) {
-    value <-  min(rsid_unique$pval.exposure)
-    
-    rsid.keep <- rsid_unique %>%
-    filter(pval.exposure == value)
-  }
-  
-  else {
-    rsid.keep <- rsid_unique
-  }
-  
-  
-  if(tally(rsid.keep) >1) {
-    beta_max <- max(rsid.keep$beta.exposure, na.rm = T)
-    
-    if(beta_max == -Inf){
-      rsid.keep <- rsid.keep[1,]
-    }
-    else{
-      rsid.keep <- rsid.keep %>%
-      filter(beta.exposure == beta_max)
-    }
-    
-    if(tally(rsid.keep) >1) {
-       rsid.keep <- rsid.keep[1,]
-     }
-    
-  }
-  
-  
-  
-  exp_pilling_gwas <- rbind(exp_pilling_gwas, rsid.keep)
-  
-}
+test <- lapply(gwas_unique, genes_clump)
 ```
 
 
-
-```{r}
-
-#downloaded data
-
-pilling_download <-  harmonise_data(
-    expo_pilling_gwas_download,
-    outcome_pilling_gwas
-)
-
-
-#retrieved data
-
-pilling_out_gwas <- pilling_out_gwas[1:16]
-
-pilling <- harmonise_data(
-    exposure_dat =exp_pilling_gwas,
-    outcome_dat = pilling_out_gwas, action = 2
- )
-
-
-```
 ### III. Outcomes & Harmonize
 
 #### a. Load Exposures
@@ -591,7 +427,7 @@ exposures_methylation <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/expos
 #Genes
 exposures_genes <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
 
-# exposures_metabolites <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
+exposures_metabolites <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
 
 # wait for Dan's answer
 ```
@@ -603,6 +439,9 @@ exposures_genes <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_g
 
 #### d. UK 90
 
+DOWNLOADED PILLING DATA
+
+GWAS EXPOSURES
 
 ```{r}
 
@@ -619,6 +458,90 @@ exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exp
 for(i in 1:5917){ 
   
   exp <- exposures_gwas %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/Pilling_90.csv",
+    sep = ",",
+    snp_col = "SNP",
+    beta_col = "BETA",
+    se_col = "SE",
+    effect_allele_col = "ALLELE1",
+    other_allele_col = "ALLELE0",
+    eaf_col = "A1FREQ",
+    pval_col = "P_BOLT"),
+    error=function(e) e)
+
+  if(!inherits(outcome, "error") == TRUE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome, action = 3),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      harmonize_dat <- merge(exp, outcome, by = "SNP") %>%
+        mutate(remove = FALSE,
+               palindromic = FALSE,
+               ambiguous = FALSE,
+               action = 2,
+               mr_keep = FALSE, #can change to true later
+               samplesize.outcome = NA,
+               error = TRUE)
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        harmonize_dat <- harmonize %>%
+          mutate(error = FALSE)
+  
+
+      }
+    pilling_download <- rbind(pilling_download, harmonize_dat)
+
+  }else{
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+}
+ 
+saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/error_log_pilling_gwas.rds")
+
+
+saveRDS(pilling_download, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_gwas.rds")
+```
+
+3612 exposures did not have matching rsids in the pilling data
+
+545 harmonizing errors due to NA values
+
+
+
+
+PROTEIN EXPOSURES
+
+```{r}
+
+
+pilling_download <- data.frame()
+error_log <- data.frame()
+
+exp_unique <- exposures_proteins[!duplicated(exposures_proteins$exposure),] %>% pull(exposure)
+
+
+
+for(i in 1:47){ 
+  
+  exp <- exposures_proteins %>%
     filter(exposure == exp_unique[i])
   
   outcome <- tryCatch( 
@@ -674,7 +597,96 @@ for(i in 1:5917){
   }
     
 }
- #retrieved data
+ 
+saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/error_log_pilling_protein.rds")
+
+
+saveRDS(pilling_download, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_protein.rds")
+```
+
+40 exposures with no matching SNPs
+
+
+METABOLITES
+
+
+```{r}
+pilling_download <- data.frame()
+error_log <- data.frame()
+
+exp_unique <- exposures_metabolites[!duplicated(exposures_metabolites$exposure),] %>% pull(exposure)
+
+
+
+for(i in 1:121){ 
+  
+  exp <- exposures_metabolites %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/Pilling_90.csv",
+    sep = ",",
+    snp_col = "SNP",
+    beta_col = "BETA",
+    se_col = "SE",
+    effect_allele_col = "ALLELE1",
+    other_allele_col = "ALLELE0",
+    eaf_col = "A1FREQ",
+    pval_col = "P_BOLT"),
+    error=function(e) e)
+
+  if(!inherits(outcome, "error") == TRUE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      harmonize_dat <- merge(exp, outcome, by = "SNP") %>%
+        mutate(remove = FALSE,
+               palindromic = FALSE,
+               ambiguous = FALSE,
+               action = 2,
+               mr_keep = FALSE, #can change to true later
+               samplesize.outcome = NA,
+               error = TRUE)
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        harmonize_dat <- harmonize %>%
+          mutate(error = FALSE)
+  
+
+      }
+    pilling_download <- rbind(pilling_download, harmonize_dat)
+
+  }else{
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+}
+ 
+saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/error_log_pilling_metabolites.rds")
+
+
+saveRDS(pilling_download, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_metabolites.rds")
+```
+45 exposures with no mathing SNPs in the outcome
+
+RETRIEVED DATA
+```{r}
+#retrieved data
 
 
 
@@ -683,13 +695,31 @@ pilling <- harmonise_data(
     outcome_dat = pilling_out_gwas, action = 2
  )
 
-saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/error_log_pilling_gwas.rds")
-
-
-saveRDS(pilling_download, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_gwas.rds")
 ```
 
-3612 exposures did not have matching rsids in the pilling data
-
-545 harmonizing errors
 #### e. UK Parental
+
+
+### IV. MR Analysis
+
+#### a. UK 90 
+Downloaded Pilling Data
+```{r}
+gwas <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_gwas.rds")
+mr_gwas <- mr(gwas)%>%
+  mutate(exposure_dat = "GWAS")
+
+protein <-readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_protein.rds")
+mr_protein <- mr(protein) %>%
+  mutate(exposure_dat = "protein")
+
+metabolite <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_metabolites.rds")
+mr_metabolite <- mr(metabolite)  %>%
+  mutate(exposure_dat = "metabolite")
+
+
+mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
+
+saveRDS(mr, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/MR_pilling.rds")
+```
+
