@@ -1,5 +1,9 @@
 data/exposures/*.Rdata
 data/exposures/*.rds
+
+data/LD/LD_reference/*.bed
+data/LD/LD_reference/*.bim
+data/LD/LD_reference/*.fam
 Longevity.Rproj
 .Rproj.user
 
