@@ -1,5 +1,5 @@
 data/exposures/*.Rdata
-
+data/exposures/*.rds
 Longevity.Rproj
 .Rproj.user
 
