@@ -1,0 +1,82 @@
+---
+title: "Two Sample Mendelian Randomization on Longevity GWAS"
+author: "Christine Le"
+date:  "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Outline
+- Background
+- Methods
+- Data Description
+- Results
+- Discussion
+- Conclusion
+
+
+## Background
+
+```{r}
+knitr::include_graphics("images/An_Aging_Nation.png")
+```
+
+
+
+
+## Methods
+
+```{r}
+knitr::include_graphics("images/2MR_graphic.png")
+```
+
+
+**Two Sample Mendelian Randomization**
+
+- Exposure: SNPs as a proxy for Exposure from one dataset
+- Outcome: outcome from another dataset using SNPs from Exposure to assess the causal relationship between Exposure and Outcome, bypassing confounders that influence the E-O relationship.
+
+**Assumptions** 
+
+1. SNPs truly associated with Exposure, as seem from independent studies
+
+2. SNPs not associated with E-O confounders
+
+3. SNPs are associated with outcome through Exposure only. (Horizontal pleiotropy)
+
+citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
+
+
+**Limitations**
+
+- weak instrument bias
+- very few SNPs for an exposure
+- low power ??
+- horizontal pleiotropy
+- LD
+- developmenal compensation
+- complex biological pathways
+- winnder's curse
+- trait heterogeneity
+- collider bias
+
+
+## Data Description
+**GWAS**
+
+**Protein**
+
+**Metabolites**
+**Genes**
+**Methylation**
+
+
+
+## Results
+
+
+## Discussion
