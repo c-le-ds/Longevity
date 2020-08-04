@@ -7,6 +7,10 @@ data/LD/LD_reference/*.fam
 Longevity.Rproj
 .Rproj.user
 
+data/harmonized/*.rds
+
 data/outcomes/*.tsv
 data/outcomes/*.GZ
 data/outcomes/*.csv
+
+data/MR/*.rds
