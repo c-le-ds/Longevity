@@ -6,10 +6,23 @@ output: html_document
 ---
 ### IV. MR Analysis
 
+
+Load Libraries
+```{r}
+library(TwoSampleMR)
+library(MRInstruments)
+library(tidyverse) #so we can use purrr::map, and no, not just because I got cats
+library(knitr)
+library(ieugwasr)
+library(arsenal)
+library(tidyverse)
+```
+
+
 #### a. UK 90 
 Downloaded Pilling Data
 ```{r}
-gwas <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_gwas.rds")
+gwas <- readRDS("C:/Users/Me/Desktop/CPMC/data/harmonized/pilling_download_gwas.rds")
 mr_gwas <- mr(gwas)%>%
   mutate(exposure_dat = "GWAS")
 
@@ -20,6 +33,28 @@ mr_protein <- mr(protein) %>%
 metabolite <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_metabolites.rds")
 mr_metabolite <- mr(metabolite)  %>%
   mutate(exposure_dat = "metabolite")
+
+
+mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
+
+saveRDS(mr, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/MR_pilling.rds")
+```
+
+
+Timmers data
+
+```{r}
+gwas <- readRDS("C:/Users/Me/Desktop/CPMC/data/harmonized/timmers_gwas_df.rds")
+mr_gwas <- mr(gwas)%>%
+  mutate(exposure_dat = "GWAS")
+saveRDS(mr_gwas, "C:/Users/Me/Desktop/CPMC/data/harmonized/MR_timmers_gwas.rds")
+# protein <-readRDS()
+# mr_protein <- mr(protein) %>%
+#   mutate(exposure_dat = "protein")
+# 
+# metabolite <- readRDS()
+# mr_metabolite <- mr(metabolite)  %>%
+#   mutate(exposure_dat = "metabolite")
 
 
 mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
