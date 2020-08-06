@@ -27,41 +27,7 @@ Exposures are obtained from the mrbase.org website from the following catalogs
 Outcome Data obtained from CPMC that was utilized in Deelen et al., 2019 (https://pubmed.ncbi.nlm.nih.gov/31413261/). Exposure - Outcome relationships will be examined in persons whose longevity is in the 90th percentile using the rest of the cohort as the control.
 
 
-### II. Second outcome: cases 99
-
-Using data from section I, compare persons in the 90th percentile with persons in the 99th percentile. 
-
-### III. Third Outcome: UK Biobank
-
-Compare persons in the 90th percentile from section I to those in the 90th percentile from the UK Biobank
-
-### IV. Fourth Outcome: UK Biobank Parental Longevity
-## C. Preparation of Data
-
-### I. Load Libraries
-
-Run this code chunk the first time you use this code to check that you have all the packages needed.
-```{r,eval=FALSE}
-
-if(!require(TwoSampleMR)){
-  install.packages("devtools")
-  devtools::install_github("MRCIEU/TwoSampleMR")
-}
-  
-if(!require(ieugwasr)){
-  #if devtools not installed yet, use line below
-  #install.packages("devtools")
-  devtools::install_github("mrcieu/ieugwasr")
-}
-
-if(!require(genetics.binaRies)){
-  #if devtools not installed yet, use line below
-  #install.packages("devtools")
-  devtools::install_github("explodecomputer/genetics.binaRies")
-}
-=======
 Map cptids to rsids using EasyQC map files
-
 ```{r}
 require(tidyverse)
 outcome <- read_delim("data/outcomes/Results_90th_percentile.txt.gz", delim = "\t")
@@ -105,28 +71,12 @@ outcome <- outcome %>%
   select(rsid, everything())
 
 write_csv(outcome ,"data/outcomes/cases90rsid.csv")
->>>>>>> 296de2dc125ffccfcd789c6919d33524d3068c74
-
-if(!requireNamespace("BiocManager", quietly = TRUE)){
- install.packages("BiocManager") 
- BiocManager::install("multtest")
-}
-    
-
-
-
-
-is_it_here <- function(package_list){
-  for( i in seq_along(package_list)){
-    if(!require(i)){
-      install.packages(i)
-    }
-  }
-}
-packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table")
-is_it_here(packages_CRAN)
 ```
 
+
+### II. Second outcome: cases 99
+
+Using data from section I, compare persons in the 90th percentile with persons in the 99th percentile. 
 Map cptids to rsids using EasyQC map files
 
 ```{r}
@@ -177,7 +127,60 @@ write_csv(outcome ,"data/outcomes/cases99rsid.csv")
 
 
 ### III. Third Outcome: UK Biobank
->>>>>>> 296de2dc125ffccfcd789c6919d33524d3068c74
+
+Compare persons in the 90th percentile from section I to those in the 90th percentile from the UK Biobank
+
+### IV. Fourth Outcome: UK Biobank Parental Longevity
+## C. Preparation of Data
+
+### I. Load Libraries
+
+Run this code chunk the first time you use this code to check that you have all the packages needed.
+```{r,eval=FALSE}
+
+if(!require(TwoSampleMR)){
+  install.packages("devtools")
+  devtools::install_github("MRCIEU/TwoSampleMR")
+}
+  
+if(!require(ieugwasr)){
+  #if devtools not installed yet, use line below
+  #install.packages("devtools")
+  devtools::install_github("mrcieu/ieugwasr")
+}
+
+if(!require(genetics.binaRies)){
+  #if devtools not installed yet, use line below
+  #install.packages("devtools")
+  devtools::install_github("explodecomputer/genetics.binaRies")
+}
+
+
+
+if(!requireNamespace("BiocManager", quietly = TRUE)){
+ install.packages("BiocManager") 
+ BiocManager::install("multtest")
+}
+    
+
+
+
+
+is_it_here <- function(package_list){
+  for( i in seq_along(package_list)){
+    if(!require(i)){
+      install.packages(i)
+    }
+  }
+}
+packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table")
+is_it_here(packages_CRAN)
+```
+
+
+
+### III. Third Outcome: UK Biobank
+
 
 ````
 
