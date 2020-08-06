@@ -2,6 +2,7 @@
 title: "Longevity"
 author: "C le"
 output: html_document
+date :  "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
 
@@ -21,43 +22,119 @@ Exposures are obtained from the mrbase.org website from the following catalogs
 
 ## B. Outcomes
 
-### I. First Outcome: cases 90
-
-Outcome Data obtained from CPMC that was utilized in Deelen et al., 2019 (https://pubmed.ncbi.nlm.nih.gov/31413261/). Exposure - Outcome relationships will be examined in persons whose longevity is in the 90th percentile using the rest of the cohort as the control.
-
 Download Deelen outcomes and files for rsID mapping.
 
 ```{r, eval = FALSE}
 #Mapping file from EasyQC. Place is data/outcomes/
 system("wget https://homepages.uni-regensburg.de/~wit59712/easyqc/1000g/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt.gz")
-
 #Deelen GWAS outcomes
 system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008598/Results_90th_percentile.txt.gz")
-
 system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008599/Results_99th_percentile.txt.gz")
-
 ```
 
-Define functions
+### I. First Outcome: cases 90
 
-```{r}
-strand_flippr <- function(effect_allele, non_effect_allele){
-  require(dplyr)
-  
-  
-}
+Outcome Data obtained from CPMC that was utilized in Deelen et al., 2019 (https://pubmed.ncbi.nlm.nih.gov/31413261/). Exposure - Outcome relationships will be examined in persons whose longevity is in the 90th percentile using the rest of the cohort as the control.
 
-```
 
+Map cptids to rsids using EasyQC map files
 ```{r}
 require(tidyverse)
 outcome <- read_delim("data/outcomes/Results_90th_percentile.txt.gz", delim = "\t")
+#create SNPorder to track dups caused by multiple matches
+outcome <- outcome %>%
+  mutate(SNPorder = seq_along(SNP))
 
+mapfile <- read_delim("data/outcomes/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt", delim = "\t")
+
+#rsmid contains rsids
+mapfile %>%
+  filter(grepl("^rs.*", rsmid)) %>%
+  summarize(n())
+
+outcome <- outcome %>%
+  left_join(mapfile, by = c("SNP" = "cptid"))
+
+# All 1:1 merge, no dups induced
+outcome %>%
+  filter(duplicated(SNPorder)) %>%
+  summarize(n())
+#Chr matches with chr
+outcome %>%
+  filter(Chr != chr) %>%
+  summarize(n()) 
+#Position mismatches with pos = 2
+outcome %>%
+  filter(Position != pos) %>%
+  summarize(n()) 
+map_int(outcome, function(x) sum(is.na(x))) #4 missing rsmids
+#remove missing rsids, mismatching chr and pos, rename vars,
+# remove unneeded vars
+outcome <- outcome %>%
+  filter(!is.na(rsmid)) %>%
+  filter(Chr == chr) %>%
+  filter(Position == pos) %>%
+  rename(rsid = rsmid, pval = "P-value", cptid = SNP) %>%
+  mutate(chr = NULL) %>%
+  mutate(pos = NULL) %>%
+  mutate(SNPorder = NULL) %>%
+  select(rsid, everything())
+
+write_csv(outcome ,"data/outcomes/cases90rsid.csv")
 ```
+
 
 ### II. Second outcome: cases 99
 
 Using data from section I, compare persons in the 90th percentile with persons in the 99th percentile. 
+Map cptids to rsids using EasyQC map files
+
+```{r}
+require(tidyverse)
+outcome <- read_delim("data/outcomes/Results_99th_percentile.txt.gz", delim = "\t")
+#create SNPorder to track dups caused by multiple matches
+outcome <- outcome %>%
+  mutate(SNPorder = seq_along(SNP))
+
+mapfile <- read_delim("data/outcomes/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt", delim = "\t")
+
+#rsmid contains rsids
+mapfile %>%
+  filter(grepl("^rs.*", rsmid)) %>%
+  summarize(n())
+
+outcome <- outcome %>%
+  left_join(mapfile, by = c("SNP" = "cptid"))
+
+# All 1:1 merge, no dups induced
+outcome %>%
+  filter(duplicated(SNPorder)) %>%
+  summarize(n())
+#Chr matches with chr
+outcome %>%
+  filter(Chr != chr) %>%
+  summarize(n()) 
+#Position mismatches with pos = 2
+outcome %>%
+  filter(Position != pos) %>%
+  summarize(n()) 
+map_int(outcome, function(x) sum(is.na(x))) #4 missing rsmids
+#remove missing rsids, mismatching chr and pos, rename vars,
+# remove unneeded vars
+outcome <- outcome %>%
+  filter(!is.na(rsmid)) %>%
+  filter(Chr == chr) %>%
+  filter(Position == pos) %>%
+  rename(rsid = rsmid, pval = "P-value", cptid = SNP) %>%
+  mutate(chr = NULL) %>%
+  mutate(pos = NULL) %>%
+  mutate(SNPorder = NULL) %>%
+  select(rsid, everything())
+
+write_csv(outcome ,"data/outcomes/cases99rsid.csv")
+
+```
+
 
 ### III. Third Outcome: UK Biobank
 
@@ -88,6 +165,17 @@ if(!require(genetics.binaRies)){
   devtools::install_github("explodecomputer/genetics.binaRies")
 }
 
+
+
+if(!requireNamespace("BiocManager", quietly = TRUE)){
+ install.packages("BiocManager") 
+ BiocManager::install("multtest")
+}
+    
+
+
+
+
 is_it_here <- function(package_list){
   for( i in seq_along(package_list)){
     if(!require(i)){
@@ -97,6 +185,12 @@ is_it_here <- function(package_list){
 }
 packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table")
 is_it_here(packages_CRAN)
+```
+
+
+
+### III. Third Outcome: UK Biobank
+
 
 ````
 
@@ -108,7 +202,8 @@ library(tidyverse) #so we can use purrr::map, and no, not just because I got cat
 library(knitr)
 library(ieugwasr)
 library(arsenal)
-library(tidyverse) #why loaded twice?
+library(tidyverse)
+library(multtest)
 ```
 
 ###II.  Exposures from each catalog
@@ -141,7 +236,7 @@ bfile <- "../data/LD/LD_reference/EUR"
 #cache = True will create a folder that saves objects, and if objects and code aren't updated, this code chunk will not re-run. This is good for long-running code sections.
 #import gwas catalog into R
 data(gwas_catalog)
-#gwas_catalog
+gwas_catalog
 
 #create a vector of unique gwas phenotypes
 gwas_unique <- gwas_catalog %>%
@@ -180,7 +275,7 @@ exposures_gwas_DF <- bind_rows(exposures_gwas)
 # gwas_phenotypes$Phenotype
 
 # 
-save(exposures_gwas, file = "~data/exposures_gwas.Rdata")
+save(exposures_gwas, file = "data/exposures/exposures_gwas.Rdata")
 ```
 
 
@@ -217,7 +312,7 @@ for(i in 17583: length(genes_unique)){
   exposures_genes <- rbind(exposures_genes, genes_format)
 }
 
-saveRDS(exposures_genes, file = "~data/exposures_genes.rds")
+saveRDS(exposures_genes, file = "data/exposures/exposures_genes.rds")
 ```
 
 
@@ -256,6 +351,7 @@ for(i in 1 : length(proteins_unique)) {
 
 exposures_protein <- exposures_protein %>% rename (SNP = rsid, id.exposure = id)
 
+saveRDS(exposures_genes, file = "data/exposures/exposures_proteins.rds")
 ```
 
 
@@ -301,7 +397,7 @@ metabolites_unique[121]
 metabolites_phenotypes$phenotype
 
 
-saveRDS(exposures_metabolite, file = "~data/exposures_metabolites.rds")
+saveRDS(exposures_metabolite, file = "data/exposures/exposures_metabolites.rds")
 ```
 
 #### e. Methylation Level QTLs
@@ -353,7 +449,7 @@ methylation_unique[33256]
 methylation_phenotypes$cpg
 
 
-saveRDS(exposures_methylation, file = "~data/exposures_methylation.rds")
+saveRDS(exposures_methylation, file = "data/exposures/exposures_methylation.rds")
 ```
 
 #### f. Other Methods for obtaining exposure
@@ -384,7 +480,7 @@ for(i in 17583: length(genes_unique)){
   exposures_genes <- rbind(exposures_genes, genes_format)
 }
 
-saveRDS(exposures_genes, file = "~data/exposures_genes.rds")
+saveRDS(exposures_genes, file = "data/exposures/exposures_genes.rds")
 ```
 
 
@@ -412,24 +508,27 @@ test <- lapply(gwas_unique, genes_clump)
 
 ### III. Outcomes & Harmonize
 
-#### a. Load Exposures
+#### a. Loading Exposures
+
+
 
 ```{r}
 #GWAS
-load("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_gwas.Rdata")
+load("data/exposures/exposures_gwas.Rdata")
 
 #Proteins
-exposures_proteins <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_proteins.rds")
+exposures_proteins <- readRDS("data/exposures/exposures_proteins.rds")
 
 #Methylation
-exposures_methylation <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_methylation.rds")
+exposures_methylation <- readRDS( "data/exposures/exposures_methylation.rds")
 
 #Genes
-exposures_genes <- readRDS( "C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_genes.rds")
+exposures_genes <- readRDS( "data/exposures/exposures_genes.rds")
 
-exposures_metabolites <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/exposures_metabolites.rds")
+#Metabolites
+exposures_metabolites <- readRDS("data/exposures/exposures_metabolites.rds")
 
-# wait for Dan's answer
+
 ```
 
 
@@ -463,7 +562,7 @@ for(i in 1:5917){
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/Pilling_90.csv",
+    filename = "data/outcomes/Pilling_90.csv",
     sep = ",",
     snp_col = "SNP",
     beta_col = "BETA",
@@ -514,10 +613,10 @@ for(i in 1:5917){
     
 }
  
-saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/error_log_pilling_gwas.rds")
+saveRDS(error_log, "data/harmonized/error_log_pilling_gwas.rds")
 
 
-saveRDS(pilling_download, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_gwas.rds")
+saveRDS(pilling_download, "data/harmonized/pilling_download_gwas.rds")
 ```
 
 3612 exposures did not have matching rsids in the pilling data
@@ -547,7 +646,7 @@ for(i in 1:47){
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/Pilling_90.csv",
+    filename = "data/outcomes/Pilling_90.csv",
     sep = ",",
     snp_col = "SNP",
     beta_col = "BETA",
@@ -598,10 +697,10 @@ for(i in 1:47){
     
 }
  
-saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/error_log_pilling_protein.rds")
+saveRDS(error_log, "data/harmonized/error_log_pilling_protein.rds")
 
 
-saveRDS(pilling_download, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_protein.rds")
+saveRDS(pilling_download, "data/harmonized/pilling_download_protein.rds")
 ```
 
 40 exposures with no matching SNPs
@@ -626,7 +725,7 @@ for(i in 1:121){
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/Pilling_90.csv",
+    filename = "data/outcomes/Pilling_90.csv",
     sep = ",",
     snp_col = "SNP",
     beta_col = "BETA",
@@ -677,27 +776,418 @@ for(i in 1:121){
     
 }
  
-saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/error_log_pilling_metabolites.rds")
+saveRDS(error_log, "data/harmonized/error_log_pilling_metabolites.rds")
 
 
-saveRDS(pilling_download, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_metabolites.rds")
+saveRDS(pilling_download, "data/harmonized/pilling_download_metabolites.rds")
 ```
 45 exposures with no mathing SNPs in the outcome
 
-RETRIEVED DATA
+
+GENES
+
 ```{r}
-#retrieved data
+error_log <- data.frame()
+
+exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(exposure)
+
+pilling_download <- vector(mode = "list", length = length(exp_unique))
+
+for(i in seq_along(exp_unique)){
+# for(i in 15001:55000){
+  
+  exp <- exposures_genes %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "data/outcomes/Pilling_90.csv",
+    sep = ",",
+    snp_col = "SNP",
+    beta_col = "BETA",
+    se_col = "SE",
+    effect_allele_col = "ALLELE1",
+    other_allele_col = "ALLELE0",
+    eaf_col = "A1FREQ",
+    pval_col = "P_BOLT"),
+    error=function(e) e)
+
+  if(!inherits(outcome, "error") == TRUE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      pilling_download[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        pilling_download[[i]]<- harmonize %>%
+          mutate(error = "FALSE")
+  
+
+      }
+  
+
+  }else{
+    pilling_download[[i]] <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+    
+    
+  }
+  
+   
+
+  print(paste0("Harmonized exposure ", exp_unique[i], 
+               " which is iterator ", i))    
+}
+
+
+pilling_download_DF <- bind_rows(pilling_download)
+ 
+saveRDS(error_log, "data/harmonized/error_log_pilling_genes.rds")
+
+
+saveRDS(pilling_download, "data/harmonized/pilling_download_genes.rds")
+```
 
 
 
-pilling <- harmonise_data(
-    exposure_dat =exp_pilling_gwas,
-    outcome_dat = pilling_out_gwas, action = 2
- )
+
+methylation
+fixed and added methylation error exposures
+
+```{r}
+error_log <- data.frame()
+
+exp_unique <- exposures_methylation[!duplicated(exposures_methylation$exposure),] %>% pull(exposure)
+
+pilling_download <- vector(mode = "list", length = length(exp_unique))
+
+for(i in seq_along(exp_unique)){
+# for(i in 120000:140099){
+  
+  exp <- exposures_methylation %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "data/outcomes/Pilling_90.csv",
+    sep = ",",
+    snp_col = "SNP",
+    beta_col = "BETA",
+    se_col = "SE",
+    effect_allele_col = "ALLELE1",
+    other_allele_col = "ALLELE0",
+    eaf_col = "A1FREQ",
+    pval_col = "P_BOLT"),
+    error=function(e) e)
+
+  if(!inherits(outcome, "error") == TRUE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      pilling_download[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        pilling_download[[i]]<- harmonize %>%
+          mutate(error = "FALSE")
+  
+
+      }
+  
+
+  }else{
+    pilling_download[[i]] <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+    
+    
+  }
+  
+   
+
+  print(paste0("Harmonized exposure ", exp_unique[i], 
+               " which is iterator ", i))    
+}
+
+
+pilling_download_DF <- bind_rows(pilling_download)
+ 
+saveRDS(error_log, "data/harmonized/error_log_pilling_methylation.rds")
+
+
+saveRDS(pilling_download, "data/harmonized/pilling_download_methylation.rds")
+
+saveRDS(pilling_download_DF,"data/harmonized/pilling_download_methylation_df.rds")
 
 ```
 
+125955 rsids not in outcome
+
+14149 exposures in outcome
+
+14267 rsids harmonized
+
+
 #### e. UK Parental
+GWAS
+
+```{r}
+error_log <- data.frame()
+
+exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exposure)
+
+
+for(i in seq_along(exp_unique)){ 
+  
+  exp <- exposures_proteins %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p"),
+    error=function(e) e)
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      timmers[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        timmers[[i]] <- harmonize %>%
+          mutate(error = FALSE)
+  
+
+      }
+    
+
+  }else{
+    pilling_download[[i]] <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+  print(paste0("Harmonized exposure ", exp_unique[i], 
+               " which is iterator ", i)) 
+}
+ 
+
+timmers_df <- bind_rows(timmers)
+
+saveRDS(error_log, "data/harmonized/error_log_timmrs_gwas.rds")
+
+
+saveRDS(timmers, "data/harmonized/timmers_gwas_ls.rds")
+saveRDS(timmers_df, "data/harmonized/timmers_gwas_df.rds")
+```
+
+Proteins
+```{r}
+
+
+
+error_log <- data.frame()
+
+exp_unique <- exposures_proteins[!duplicated(exposures_proteins$exposure),] %>% pull(exposure)
+
+timmers <- vector(mode = "list", length = length(exp_unique))
+
+for(i in seq_along(exp_unique)){ 
+  
+  exp <- exposures_proteins %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p"),
+    error=function(e) e)
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      timmers[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        timmers[[i]] <- harmonize %>%
+          mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    pilling_download[[i]] <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+  print(paste0("Harmonized exposure ", exp_unique[i], 
+               " which is iterator ", i)) 
+}
+ 
+
+timmers_df <- bind_rows(timmers)
+
+saveRDS(error_log, "data/harmonized/error_log_timmrs_protein.rds")
+
+
+saveRDS(timmers, "data/harmonized/timmers_protein_ls.rds")
+saveRDS(timmers_df, "data/harmonized/timmers_protein_df.rds")
+```
+
+
+METABOLITES
+
+
+```{r}
+
+error_log <- data.frame()
+
+exp_unique <- exposures_metabolites[!duplicated(exposures_metabolites$exposure),] %>% pull(exposure)
+
+timmers <- vector(mode = "list", length = length(exp_unique))
+
+for(i in seq_along(exp_unique)){ 
+  
+  exp <- exposures_proteins %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p"),
+    error=function(e) e)
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      timmers[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        timmers[[i]] <- harmonize %>%
+          mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    pilling_download[[i]] <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+  print(paste0("Harmonized exposure ", exp_unique[i], 
+               " which is iterator ", i)) 
+}
+ 
+
+timmers_df <- bind_rows(timmers)
+
+saveRDS(error_log, "data/harmonized/error_log_timmrs_metabolite.rds")
+
+
+saveRDS(timmers, "data/harmonized/timmers_metabolite_ls.rds")
+saveRDS(timmers_df, "data/harmonized/timmers_metabolite_df.rds")
+```
+
+
+
 
 
 ### IV. MR Analysis
@@ -705,15 +1195,51 @@ pilling <- harmonise_data(
 #### a. UK 90 
 Downloaded Pilling Data
 ```{r}
-gwas <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_gwas.rds")
+gwas <- readRDS("data/harmonized/pilling_download_gwas.rds")
 mr_gwas <- mr(gwas)%>%
   mutate(exposure_dat = "GWAS")
 
-protein <-readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_protein.rds")
+protein <-readRDS("data/harmonized/pilling_download_protein.rds")
 mr_protein <- mr(protein) %>%
   mutate(exposure_dat = "protein")
 
-metabolite <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_metabolites.rds")
+metabolite <- readRDS("data/harmonized/pilling_download_metabolites.rds")
+mr_metabolite <- mr(metabolite)  %>%
+  mutate(exposure_dat = "metabolite")
+
+
+mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
+
+saveRDS(mr, "data/MR/MR_pilling.rds")
+```
+
+Control for multiple testing
+```{r}
+
+# Look only at the Inverse variance weighted method for unique exposures
+MR <- MR_pilling %>%
+  filter(method == "Inverse variance weighted") %>%
+  filter(!duplicated(exposure))
+
+pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
+
+
+```
+
+
+
+#### b. Timmers data
+
+```{r}
+gwas <- readRDS("data/harmonized/timmers_gwas_df.rds")
+mr_gwas <- mr(gwas)%>%
+  mutate(exposure_dat = "GWAS")
+
+protein <-readRDS("data/harmonized/timmers_protein_df.rds")
+mr_protein <- mr(protein) %>%
+  mutate(exposure_dat = "protein")
+
+metabolite <- readRDS("data/harmonized/timmers_metabolite_df.rds")
 mr_metabolite <- mr(metabolite)  %>%
   mutate(exposure_dat = "metabolite")
 
@@ -722,4 +1248,3 @@ mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 
 saveRDS(mr, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/MR_pilling.rds")
 ```
-
