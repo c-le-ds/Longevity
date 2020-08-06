@@ -22,6 +22,16 @@ Exposures are obtained from the mrbase.org website from the following catalogs
 
 ## B. Outcomes
 
+Download Deelen outcomes and files for rsID mapping.
+
+```{r, eval = FALSE}
+#Mapping file from EasyQC. Place is data/outcomes/
+system("wget https://homepages.uni-regensburg.de/~wit59712/easyqc/1000g/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt.gz")
+#Deelen GWAS outcomes
+system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008598/Results_90th_percentile.txt.gz")
+system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008599/Results_99th_percentile.txt.gz")
+```
+
 ### I. First Outcome: cases 90
 
 Outcome Data obtained from CPMC that was utilized in Deelen et al., 2019 (https://pubmed.ncbi.nlm.nih.gov/31413261/). Exposure - Outcome relationships will be examined in persons whose longevity is in the 90th percentile using the rest of the cohort as the control.
