@@ -65,18 +65,78 @@ citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendeli
 - collider bias
 
 
-## Data Description
-**GWAS**
+**Software- TwoSampleMR Package**
 
-**Protein**
+R package developed to utilize 2-sample Mendelian Randomization on GWAS studies with curated databases. 
+Allows researchers to more easily perform 2-sample Mendelian Randomization on GWASs to discover and eludicate possible causal relationships between phenotypes and evaluate assumptions of this statistical strategy. 
+
+source: Gibran Hemani, Jie Zheng, Kaitlin H Wade, Charles Laurin, Benjamin Elsworth, Stephen Burgess, Jack Bowden, Ryan Langdon, Vanessa Tan, James Yarmolinsky, Hashem A. $ The MR-Base platform supports systematic causal inference across the human phenome. eLife 2018. doi: https://doi.org/10.7554/eLife.34408 
+
+
+**Steps**
+1. Find top SNPs associated with each phenotype/exposure, use ld_clump() function  from the ieugwasr package to ensure instruments/SNPs for an exposure are independent.
+Note: can use the clump_data() function for non-local clumping. 
+2. For each exposure with associated SNPs, find those SNPs in the outcome data, harmonize the merged data to ensure that the SNP association we are seeing is occurring on the same allele and located on the forward strand. (Aligned to human genome build 37)
+3. prune for duplicate exposure- outcome summary sets using the power_prune()
+4. Perform MR
+5. Analyze results for violations of assumptions, correct for multiple testing errors
+
+Code : https://github.com/c-le-ds/Longevity/blob/master/Longevity.Rmd
+
+## Data Description - Exposures
+Data obtained using IEU GWAS database
+
+**GWAS **
+Curated from the NHGRI-EBI GWAS Catalog of significant associations found in different GWAS studies to include only data that has the required information to perform MR analyis. Catalog was further cleaned so that the unit of report is the same.
+
+**Proteins**
+
+Significant associations from GWAS studies on 47 protein levels obtained from whole blood
 
 **Metabolites**
+
+Database of significant associations on 121 metabolites from GWAS studies provided by Peter Wurtz and Mika Ala-Korpela. 
+
 **Genes**
+
+Signficant associations of tissue-specific gene expression  GWASs from the GTEX study. 
+
+- ask Dan why we would need tissue-specific gene expression
+
 **Methylation**
 
+Significant hits from GWASs on DNA methylation levels performed on mothers and children, with five timepoints during the lifecourse (e.g. child - birth, child - childhood, child - adolescence, mother - pregnancy, mother - middle age).
+
+
+## Data Description - Outcomes
+
+**Pilling**
+Results from GWAS study of parental longevity (combined monther's and father's age) on UK Biobank participants. Participants whose parental longevity was in the top 10 percent were compared with all other UK Biobank participants who met the inclusion criteria. 
+
+**Timmers**
+GWAS results from 1 million parental lifespans of 500,000 particpants with data on mortalilty risk factors. 
+
+**Deleen**
 
 
 ## Results
-
+**Pilling**
+```{r, echo=FALSE, results='hide',message=FALSE}
+library(tidyverse)
+library(knitr)
+```
+```{r}
+readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/MR/MR_pilling.rds")%>%
+  filter(method == "Inverse variance weighted") %>%
+  select(-id.exposure, -id.outcome, -outcome, -method)%>%
+  arrange(pval)%>%
+  kable(digits = 11)
+  
+```
 
 ## Discussion
+
+
+##Conclusion
+
+##Limitations and Next Steps

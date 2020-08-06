@@ -60,6 +60,14 @@ if(!require(genetics.binaRies)){
   devtools::install_github("explodecomputer/genetics.binaRies")
 }
 
+if(!requireNamespace("BiocManager", quietly = TRUE)){
+ install.packages("BiocManager") 
+ BiocManager::install("multtest")
+}
+    
+
+
+
 is_it_here <- function(package_list){
   for( i in seq_along(package_list)){
     if(!require(i)){
@@ -81,6 +89,7 @@ library(knitr)
 library(ieugwasr)
 library(arsenal)
 library(tidyverse)
+library(multtest)
 ```
 
 ###II.  Exposures from each catalog
@@ -1089,6 +1098,21 @@ mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 
 saveRDS(mr, "data/MR/MR_pilling.rds")
 ```
+
+Control for multiple testing
+```{r}
+
+# Look only at the Inverse variance weighted method for unique exposures
+MR <- MR_pilling %>%
+  filter(method == "Inverse variance weighted") %>%
+  filter(!duplicated(exposure))
+
+pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
+
+
+```
+
+
 
 #### b. Timmers data
 
