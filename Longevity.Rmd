@@ -38,219 +38,106 @@ system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_3
 
 ```
 
-Define functions
-
-```{r}
-strand_flippr <- function(effect_allele, non_effect_allele){
-  require(dplyr)
-  
-  
-}
-
-# Define functions
-strand_flippr <- function(DT){
-  library(data.table)
-  DT[STRAND=="-", chartr("ATGC","TACG",effect_allele)]
-  DT[STRAND=="-", chartr("ATGC","TACG",non_effect_allele)]
-  DT[,STRAND:="+"]
-}
-
-
-allele_matchr <- function(merge_dat, indel = "id"){
-  library(data.table)
-  library(stringr)
-  #GTEx reference alleles. gtex_ref and gtex_alt.
-  #GWAS alleles. effect_allele and non_effect_allele.
-  #indel id = ID marks indels, indel nucleo = nucleotides are provided for indels
-  #modify study result file to match reference file
-  #everything same case
-  merge_dat[,gtex_ref:=str_to_upper(gtex_ref)]
-  merge_dat[,gtex_alt:=str_to_upper(gtex_alt)]
-  merge_dat[,effect_allele:=str_to_upper(effect_allele)]
-  merge_dat[,non_effect_allele:=str_to_upper(non_effect_allele)]
-  if (indel == "id"){
-    #convert GTEx reference indel alleles to I and D
-    merge_dat[,ref_indel := 1]
-    merge_dat[(gtex_ref == "A" | gtex_ref == "C" | gtex_ref == "G" | gtex_ref == "T") & (gtex_alt == "A" | gtex_alt == "C" | gtex_alt == "G" | gtex_alt == "T"), ref_indel := 0]
-    merge_dat[ref_indel == 1, gtex_ref := "I"]
-    merge_dat[ref_indel == 1, gtex_alt := "D"]
-    #convert gwas indel alleles to I and D
-    merge_dat[,gwas_indel := 1]
-    merge_dat[(effect_allele == "A" | effect_allele == "C" | effect_allele == "G" | effect_allele == "T") & (non_effect_allele == "A" | non_effect_allele == "C" | non_effect_allele == "G" | non_effect_allele == "T"), gwas_indel := 0]
-    merge_dat[gwas_indel == 1, effect_allele := "I"]
-    merge_dat[gwas_indel == 1, non_effect_allele := "D"]
-  } #end of if(indel == "id")
-
-  #flip alleles marked as being on the - strand
-  merge_dat <- strand_flippr(merge_dat)
-
-  #test for matches as is. GTEx alleles aren't in a particular order.
-  #gtex_ref is not effect or non-effect for GTEx. They are just the two different alleles for a variant
-  merge_dat[, noMatch:=0]   
-  merge_dat[gtex_ref!=effect_allele | gtex_alt!=non_effect_allele, noMatch := 1]
-  #Was non-match because effect and other were switched in study results? 
-  #Test for match with the other alleles, and if match, reset noMatch to 0.
-  if(merge_dat[noMatch==1,.N] > 0){
-    merge_dat[noMatch==1 & effect_allele == gtex_alt & non_effect_allele == gtex_ref, noMatch:=0] 
-    #noMatch==1 if SNPs alleles don't match without checking for strand flips
-  } #end of matching without strand flip
-  
-  #now look for matches after flipping strand
-  if(merge_dat[noMatch==1, .N] > 0){
-    merge_dat[noMatch==1, STRAND := "-"]     
-    merge_dat <- strand_flippr(merge_dat)
-    merge_dat[noMatch==1 & effect_allele == gtex_ref & non_effect_allele == gtex_alt, noMatch:=0] 
-    merge_dat[noMatch==1 & effect_allele == gtex_alt & non_effect_allele == gtex_ref, noMatch:=0] 
-  } #end of matching after strand flip
-}
-
-
-miss_to_NA <- function(DT){
-  library(data.table)
-  stopifnot(is.data.table(DT))
-  for(j in seq_len(ncol(DT))){
-    set(DT, which(is.nan(DT[[j]])), j, NA)
-    set(DT, which(DT[[j]] == "nan"), j, NA)
-    set(DT, which(DT[[j]] == "."), j, NA)
-  }
-}
-
-chrpos_split <- function(DT){
-  library(data.table)
-  library(stringr)
-  chr_pos <- str_split(DT$markerID, pattern = ":")
-  newchr <- vapply(chr_pos, function(x) x[1], character(1))
-  newchr <- gsub("[[:alpha:]]", "", newchr) #turns chrX, X, MT into ""
-  newpos <- vapply(chr_pos, function(x) x[2], character(1))
-  newpos <- gsub("[[:alpha:]]", "", newpos)
-  DT[, chr := as.integer(newchr)] #"" coerced into NA
-  DT[, position := as.integer(newpos)]
-}
-
-
-format_rawgwas <- function(iter_index){
-  library(data.table)
-  trait_sheet <- fread("trait_sheet.csv")
-  input_path <- "data/gwas/raw/"
-  output_path_metaX <- "data/gwas/formatted/"
-  output_path_LDSC <- "data/ldsc/gwas_formatted/"
-  #collect raw GWAS file characteristics from trait_sheet
-  raw_ID <- trait_sheet$markerID[iter_index]
-  fname_out <- trait_sheet$fname_out[iter_index]
-  fname_in <- trait_sheet$filename[iter_index]
-  raw_chr <- trait_sheet$chr[iter_index]
-  raw_position <- trait_sheet$position[iter_index]
-  raw_effect_allele <- trait_sheet$effect_allele[iter_index]
-  raw_non_effect_allele <- trait_sheet$non_effect_allele[iter_index]
-  raw_effect <- trait_sheet$effect[iter_index]
-  raw_se <- trait_sheet$se[iter_index]
-  raw_p <- trait_sheet$p[iter_index]
-  raw_n <- trait_sheet$n[iter_index]
-
-  #read raw GWAS file
-  gwas <- fread(paste0("gunzip -c ", input_path, fname_in))
-  miss_to_NA(gwas)
-  #harmonize column names
-  setnames(gwas, raw_ID, "markerID")
-  setnames(gwas, raw_effect_allele, "effect_allele")
-  setnames(gwas, raw_non_effect_allele, "non_effect_allele")
-  setnames(gwas, raw_effect, "effect")
-  if(!is.na(raw_chr)){
-    setnames(gwas, raw_chr, "chr")
-    setnames(gwas, raw_position, "position")
-  } else {
-    chrpos_split(gwas)
-  }
-  gwas <- gwas[!is.na(chr)]
-  gwas <- gwas[!is.na(position)]
-  gwas <- gwas[!is.na(effect)]
-  gwas[, effect := as.double(effect)]
-  if(trait_sheet$OR[iter_index] == "y"){
-    gwas[,effect := log(effect)]
-  }
-  if(!is.na(raw_se)){
-    setnames(gwas, raw_se, "se")
-    gwas[,se := as.double(se) ]
-  }
-  if(!is.na(raw_p)){
-    setnames(gwas, raw_p, "p")
-    gwas[, p := as.double(p)]
-    gwas[p < 1e-300, p := 1e-300]
-  }
-  ## if P-value is missing but effect and se are not, calculate P-value
-  if(is.na(raw_p) & !is.na(raw_se) & !is.na(raw_effect)){
-    gwas[, p := pnorm(effect/se, lower.tail = FALSE)*2 ]
-    gwas[p < 1e-300, p := 1e-300]
-  }
-  ## if SE is missing but effect and P-value are not, calculate SE
-  if(!is.na(raw_p) & !is.na(raw_effect)  & is.na(raw_se)){
-    gwas <- gwas[!is.na(p)]
-    gwas[, z := qnorm(p/2, lower.tail = FALSE)]
-    gwas[, se := effect/z]
-  }
-
-  nStart <- gwas[,.N]
-  gwas[, SNPorder := 1:nStart]
-
-  gwas <- merge(gwas,map_gtex,by.x=c("chr","position") ,by.y=c("gtex_chr", "gtex_position"),all.x=T)
-  gwas[,STRAND:="+"]
-  allele_matchr(gwas)
-  gwas[, keep_dup:=0L]
-  gwas[, grp_order:=0L]
-  #clean up duplicates
-  #gwas[base::duplicated(SNPorder), .N]
-  dup_snporder <- unique(gwas[base::duplicated(SNPorder),SNPorder])
-  gwas[!SNPorder %in% dup_snporder, keep_dup := 1L]
-  #select one row from each SNPorder group
-  for (i in seq_along(dup_snporder)){
-    #create counter for each dup group
-    grp_n <- gwas[SNPorder == dup_snporder[i], .N]
-    gwas[SNPorder == dup_snporder[i], grp_order := 1:grp_n  ]
-    if(gwas[SNPorder == dup_snporder[i] & noMatch == 0, .N ] == 0 ){
-      #if there are no position and allele matches among the dups, take the first one
-      gwas[SNPorder == dup_snporder[i] & grp_order == 1L, keep_dup := 1L ]
-    } else if (gwas[SNPorder == dup_snporder[i] & noMatch == 0, .N] == 1 ){
-      #if there is only one match, select it
-      gwas[SNPorder == dup_snporder[i] & noMatch == 0, keep_dup := 1L]
-    } else {
-      #if there are multiple matches, select the first of the matches
-      grp_order_multi <- gwas[SNPorder == dup_snporder[i] & noMatch == 0, min(grp_order) ]
-      gwas[SNPorder == dup_snporder[i] & noMatch == 0 & grp_order == grp_order_multi, keep_dup := 1L]
-    }
-  }# end of for i loop over dups
-
-  #remove duplicated rows that don't match
-  gwas <- gwas[keep_dup == 1L]
-  gwas <- gwas[order(SNPorder)]
-  nEnd <- gwas[,.N]
-  if(nStart != nEnd | sum(1:nEnd != gwas[,SNPorder])>0){
-    print (paste0(fname_in, " has a SNPorder error")) 
-  }
-  #change name of GTEx rsID to rsID. Use this with MetaXcan input
-  setnames(gwas, "rsid_gtex", "rsID")
-  #only keep SNPs with rsIDs in GTEx annotation
-  gwas <- gwas[!is.na(rsID)]
-  #select cols
-  gwas <- gwas[,.(rsID, chr, position, effect_allele, non_effect_allele, effect, se, p)]
-  setkey(gwas, chr)
-  fwrite(gwas, file=paste0(output_path_metaX, fname_out,"_metaX.csv"), na="NA", quote=F)
-  gwas[,N := raw_n]
-  fwrite(gwas, file=paste0(output_path_LDSC, fname_out,".txt"), na="NA", quote=F, sep="\t")
-}
-
-
-
-```
+Map cptids to rsids using EasyQC map files
 
 ```{r}
 require(tidyverse)
 outcome <- read_delim("data/outcomes/Results_90th_percentile.txt.gz", delim = "\t")
+#create SNPorder to track dups caused by multiple matches
+outcome <- outcome %>%
+  mutate(SNPorder = seq_along(SNP))
+
+mapfile <- read_delim("data/outcomes/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt", delim = "\t")
+
+#rsmid contains rsids
+mapfile %>%
+  filter(grepl("^rs.*", rsmid)) %>%
+  summarize(n())
+
+outcome <- outcome %>%
+  left_join(mapfile, by = c("SNP" = "cptid"))
+
+# All 1:1 merge, no dups induced
+outcome %>%
+  filter(duplicated(SNPorder)) %>%
+  summarize(n())
+#Chr matches with chr
+outcome %>%
+  filter(Chr != chr) %>%
+  summarize(n()) 
+#Position mismatches with pos = 2
+outcome %>%
+  filter(Position != pos) %>%
+  summarize(n()) 
+map_int(outcome, function(x) sum(is.na(x))) #4 missing rsmids
+#remove missing rsids, mismatching chr and pos, rename vars,
+# remove unneeded vars
+outcome <- outcome %>%
+  filter(!is.na(rsmid)) %>%
+  filter(Chr == chr) %>%
+  filter(Position == pos) %>%
+  rename(rsid = rsmid, pval = "P-value", cptid = SNP) %>%
+  mutate(chr = NULL) %>%
+  mutate(pos = NULL) %>%
+  mutate(SNPorder = NULL) %>%
+  select(rsid, everything())
+
+write_csv(outcome ,"data/outcomes/cases90rsid.csv")
 
 ```
 
 ### II. Second outcome: cases 99
 
 Using data from section I, compare persons in the 90th percentile with persons in the 99th percentile. 
+
+Map cptids to rsids using EasyQC map files
+
+```{r}
+require(tidyverse)
+outcome <- read_delim("data/outcomes/Results_99th_percentile.txt.gz", delim = "\t")
+#create SNPorder to track dups caused by multiple matches
+outcome <- outcome %>%
+  mutate(SNPorder = seq_along(SNP))
+
+mapfile <- read_delim("data/outcomes/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt", delim = "\t")
+
+#rsmid contains rsids
+mapfile %>%
+  filter(grepl("^rs.*", rsmid)) %>%
+  summarize(n())
+
+outcome <- outcome %>%
+  left_join(mapfile, by = c("SNP" = "cptid"))
+
+# All 1:1 merge, no dups induced
+outcome %>%
+  filter(duplicated(SNPorder)) %>%
+  summarize(n())
+#Chr matches with chr
+outcome %>%
+  filter(Chr != chr) %>%
+  summarize(n()) 
+#Position mismatches with pos = 2
+outcome %>%
+  filter(Position != pos) %>%
+  summarize(n()) 
+map_int(outcome, function(x) sum(is.na(x))) #4 missing rsmids
+#remove missing rsids, mismatching chr and pos, rename vars,
+# remove unneeded vars
+outcome <- outcome %>%
+  filter(!is.na(rsmid)) %>%
+  filter(Chr == chr) %>%
+  filter(Position == pos) %>%
+  rename(rsid = rsmid, pval = "P-value", cptid = SNP) %>%
+  mutate(chr = NULL) %>%
+  mutate(pos = NULL) %>%
+  mutate(SNPorder = NULL) %>%
+  select(rsid, everything())
+
+write_csv(outcome ,"data/outcomes/cases99rsid.csv")
+
+```
+
 
 ### III. Third Outcome: UK Biobank
 
