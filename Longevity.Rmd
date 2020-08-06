@@ -59,12 +59,60 @@ if(!require(genetics.binaRies)){
   #install.packages("devtools")
   devtools::install_github("explodecomputer/genetics.binaRies")
 }
+=======
+Map cptids to rsids using EasyQC map files
+
+```{r}
+require(tidyverse)
+outcome <- read_delim("data/outcomes/Results_90th_percentile.txt.gz", delim = "\t")
+#create SNPorder to track dups caused by multiple matches
+outcome <- outcome %>%
+  mutate(SNPorder = seq_along(SNP))
+
+mapfile <- read_delim("data/outcomes/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt", delim = "\t")
+
+#rsmid contains rsids
+mapfile %>%
+  filter(grepl("^rs.*", rsmid)) %>%
+  summarize(n())
+
+outcome <- outcome %>%
+  left_join(mapfile, by = c("SNP" = "cptid"))
+
+# All 1:1 merge, no dups induced
+outcome %>%
+  filter(duplicated(SNPorder)) %>%
+  summarize(n())
+#Chr matches with chr
+outcome %>%
+  filter(Chr != chr) %>%
+  summarize(n()) 
+#Position mismatches with pos = 2
+outcome %>%
+  filter(Position != pos) %>%
+  summarize(n()) 
+map_int(outcome, function(x) sum(is.na(x))) #4 missing rsmids
+#remove missing rsids, mismatching chr and pos, rename vars,
+# remove unneeded vars
+outcome <- outcome %>%
+  filter(!is.na(rsmid)) %>%
+  filter(Chr == chr) %>%
+  filter(Position == pos) %>%
+  rename(rsid = rsmid, pval = "P-value", cptid = SNP) %>%
+  mutate(chr = NULL) %>%
+  mutate(pos = NULL) %>%
+  mutate(SNPorder = NULL) %>%
+  select(rsid, everything())
+
+write_csv(outcome ,"data/outcomes/cases90rsid.csv")
+>>>>>>> 296de2dc125ffccfcd789c6919d33524d3068c74
 
 if(!requireNamespace("BiocManager", quietly = TRUE)){
  install.packages("BiocManager") 
  BiocManager::install("multtest")
 }
     
+
 
 
 
@@ -77,6 +125,59 @@ is_it_here <- function(package_list){
 }
 packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table")
 is_it_here(packages_CRAN)
+```
+
+Map cptids to rsids using EasyQC map files
+
+```{r}
+require(tidyverse)
+outcome <- read_delim("data/outcomes/Results_99th_percentile.txt.gz", delim = "\t")
+#create SNPorder to track dups caused by multiple matches
+outcome <- outcome %>%
+  mutate(SNPorder = seq_along(SNP))
+
+mapfile <- read_delim("data/outcomes/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt", delim = "\t")
+
+#rsmid contains rsids
+mapfile %>%
+  filter(grepl("^rs.*", rsmid)) %>%
+  summarize(n())
+
+outcome <- outcome %>%
+  left_join(mapfile, by = c("SNP" = "cptid"))
+
+# All 1:1 merge, no dups induced
+outcome %>%
+  filter(duplicated(SNPorder)) %>%
+  summarize(n())
+#Chr matches with chr
+outcome %>%
+  filter(Chr != chr) %>%
+  summarize(n()) 
+#Position mismatches with pos = 2
+outcome %>%
+  filter(Position != pos) %>%
+  summarize(n()) 
+map_int(outcome, function(x) sum(is.na(x))) #4 missing rsmids
+#remove missing rsids, mismatching chr and pos, rename vars,
+# remove unneeded vars
+outcome <- outcome %>%
+  filter(!is.na(rsmid)) %>%
+  filter(Chr == chr) %>%
+  filter(Position == pos) %>%
+  rename(rsid = rsmid, pval = "P-value", cptid = SNP) %>%
+  mutate(chr = NULL) %>%
+  mutate(pos = NULL) %>%
+  mutate(SNPorder = NULL) %>%
+  select(rsid, everything())
+
+write_csv(outcome ,"data/outcomes/cases99rsid.csv")
+
+```
+
+
+### III. Third Outcome: UK Biobank
+>>>>>>> 296de2dc125ffccfcd789c6919d33524d3068c74
 
 ````
 
