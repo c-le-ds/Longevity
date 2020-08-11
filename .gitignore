@@ -1,11 +1,8 @@
-data/exposures/*.Rdata
-data/exposures/*.rds
-
-data/LD/LD_reference/*.bed
-data/LD/LD_reference/*.bim
-data/LD/LD_reference/*.fam
+data/
+.Rhistory
 Longevity.Rproj
 .Rproj.user
+<<<<<<< HEAD
 data/harmonized/*.rds
 
 data/outcomes/*.tsv
@@ -17,3 +14,6 @@ data/MR/*.rds
 .Rhistory
 .DS_Store
 
+=======
+.DS_Store
+>>>>>>> 397b552fc6a67cec42e6fc2a8485b9e8fc9eea29
