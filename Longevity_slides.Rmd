@@ -5,7 +5,7 @@ date:  "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
   slidy_presentation
 ---
-
+#code folding lookup
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
@@ -26,8 +26,6 @@ knitr::include_graphics("images/An_Aging_Nation.png")
 ```
 
 
-
-
 ## Methods
 
 ```{r}
@@ -40,30 +38,51 @@ knitr::include_graphics("images/2MR_graphic.png")
 - Exposure: SNPs as a proxy for Exposure from one dataset
 - Outcome: outcome from another dataset using SNPs from Exposure to assess the causal relationship between Exposure and Outcome, bypassing confounders that influence the E-O relationship.
 
-**Assumptions** 
+citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
 
-1. SNPs truly associated with Exposure, as seem from independent studies
+## Assumption 1 - Independence
 
-2. SNPs not associated with E-O confounders
+SNPs truly associated with Exposure, as seem from independent studies
 
-3. SNPs are associated with outcome through Exposure only. (Horizontal pleiotropy)
+
+**Violations**
+- LD
+- low power
+
+citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
+
+## Assumption 2 - Confounding
+
+
+SNPs not associated with E-O confounders
+
+**Violations**
+- complex biological pathways
+
+citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
+
+## Assumption 3
+
+SNPs are associated with outcome through Exposure only
+
+**Violations**
+- Horizontal Pleiotropy
+- trait heterogeneity
 
 citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
 
 
-**Limitations**
-
+## Other Limitations
 - weak instrument bias
+  - solution : increase sample size
 - very few SNPs for an exposure
-- low power ??
-- horizontal pleiotropy
-- LD
+  - solution : proxy SNPs for an exposure, must be carefully interpreted
 - developmenal compensation
-- complex biological pathways
-- winnder's curse
-- trait heterogeneity
+   - solution: careful interpretation of results, realizing that both environmental and genetic factors influence an outcome.
+- winner's curse
+ - no real solution, must view results in conjunction with other studies and what we already know
 - collider bias
-
+  - be careful in how we interpret the results of our analysis. Based on current knowledge, could the relationship we see in our study be due to other biases like loss to follow up.
 
 **Software- TwoSampleMR Package**
 
@@ -101,7 +120,6 @@ Database of significant associations on 121 metabolites from GWAS studies provid
 
 Signficant associations of tissue-specific gene expression  GWASs from the GTEX study. 
 
-- ask Dan why we would need tissue-specific gene expression
 
 **Methylation**
 
