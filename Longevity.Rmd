@@ -13,7 +13,6 @@ Two sample Mendelian Randomization Analysis on GWAS of human lifespan looking at
 ## A. Exposures
 
 Exposures are obtained from the mrbase.org website from the following catalogs
-  - NHGRI-EBI GWAS catalog
   - MR BASE GWAS catalog
   - Gene Expression QTLs
   - Protein Level QTLs
@@ -32,6 +31,20 @@ system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_3
 system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008599/Results_99th_percentile.txt.gz")
 ```
 
+Download Pilling outcomes
+```{r, eval = FALSE}
+
+
+
+```
+
+Download Timmers outcomes
+
+```{r}
+
+system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008598/Results_90th_percentile.txt.gz")
+```
+
 ### I. First Outcome: cases 90
 
 Outcome Data obtained from CPMC that was utilized in Deelen et al., 2019 (https://pubmed.ncbi.nlm.nih.gov/31413261/). Exposure - Outcome relationships will be examined in persons whose longevity is in the 90th percentile using the rest of the cohort as the control.
@@ -41,6 +54,7 @@ Map cptids to rsids using EasyQC map files
 ```{r}
 require(tidyverse)
 outcome <- read_delim("data/outcomes/Results_90th_percentile.txt.gz", delim = "\t")
+
 #create SNPorder to track dups caused by multiple matches
 outcome <- outcome %>%
   mutate(SNPorder = seq_along(SNP))
@@ -86,7 +100,7 @@ write_csv(outcome ,"data/outcomes/cases90rsid.csv")
 
 ### II. Second outcome: cases 99
 
-Using data from section I, compare persons in the 90th percentile with persons in the 99th percentile. 
+SNP data from persons whose longevity is in the 99th percentile. 
 Map cptids to rsids using EasyQC map files
 
 ```{r}
@@ -134,13 +148,27 @@ outcome <- outcome %>%
 write_csv(outcome ,"data/outcomes/cases99rsid.csv")
 
 ```
-
+rsid = rsid
+cptid = 
+chr = chromosome
+position = position
+EA = effect allele
+NEA = non effect allele
+EAF = effective allele frequency
+Beta = Beta
+SE = standard error
+pval = pvalue
+effective_N = sample size
 
 ### III. Third Outcome: UK Biobank
 
-Compare persons in the 90th percentile from section I to those in the 90th percentile from the UK Biobank
+Persons whose parental longevity was in the 90th percentile from the UK Biobank
 
 ### IV. Fourth Outcome: UK Biobank Parental Longevity
+
+### V. Comparisons
+Compare significant Exposures-Outcome relationships found via Two Sample Mendelian Randomization Analysis Among these four studies, using the 90th percentile outcomes in Deleen as the baseline. 
+
 ## C. Preparation of Data
 
 ### I. Load Libraries
@@ -187,14 +215,7 @@ packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table")
 is_it_here(packages_CRAN)
 ```
 
-
-
-### III. Third Outcome: UK Biobank
-
-
-````
-
-
+Load the libraries you need for the subsequent code chunks
 ```{r}
 library(TwoSampleMR)
 library(MRInstruments)
@@ -209,12 +230,12 @@ library(multtest)
 ###II.  Exposures from each catalog
 Local LD clumping was done per [reference url] and reference data was obtained from 1000 genomes at [ http://fileserve.mrcieu.ac.uk/ld/1kg.v3.tgz]
 
+Below is the code to do local LD clumping. However in **Section F** there are examples to do it via the TwoSampleMR reference via the internet as well as an example extracting exposures as a function using apply.
 
-Below is the method to do local LD clumping. However in **Section F** there are examples to do it via the TwoSampleMR reference via the internet as well as an example extracting exposures as a function using apply. 
+Code in words:
+For each unique phenotype, we format the data for use with the TwoSampleMR package, then we ensure independence of SNPs by clumping the formatted data to ensure that the SNPs are not too close to each other, thereby violating our independence assumption.
 
 Make sure to set eval = **TRUE** if you want to run that chunk of code. 
-
-
 
 Set variables for local clumping of data
 ```{r,eval=FALSE}
@@ -278,7 +299,6 @@ exposures_gwas_DF <- bind_rows(exposures_gwas)
 save(exposures_gwas, file = "data/exposures/exposures_gwas.Rdata")
 ```
 
-
 #### b. Gene Expression QTLs
 Search for SNPs can be done by gene and tissue or just one. Below exposure instruments are created for each unique gene.
 
@@ -314,8 +334,6 @@ for(i in 17583: length(genes_unique)){
 
 saveRDS(exposures_genes, file = "data/exposures/exposures_genes.rds")
 ```
-
-
 
 #### c. Protein Level QTLs
 
@@ -354,10 +372,7 @@ exposures_protein <- exposures_protein %>% rename (SNP = rsid, id.exposure = id)
 saveRDS(exposures_genes, file = "data/exposures/exposures_proteins.rds")
 ```
 
-
-
 #### d. Metabolite Level OTLs
-
 
 ```{r, eval=FALSE}
 
@@ -452,7 +467,7 @@ methylation_phenotypes$cpg
 saveRDS(exposures_methylation, file = "data/exposures/exposures_methylation.rds")
 ```
 
-#### f. Other Methods for obtaining exposure
+#### f. Other Methods for obtaining exposures
 
 Ex. GWAS Catalog
 
@@ -471,7 +486,7 @@ gwas_unique <- gwas_catalog %>%
 genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
 
 exposures_genes <- data.frame()
-for(i in 17583: length(genes_unique)){
+for(i in 1: length(genes_unique)){
   genes <- subset(gtex_eqtl, gene_name == genes_unique[i])
 
   #create a separate clumping step in case LD lookup times out
@@ -482,8 +497,6 @@ for(i in 17583: length(genes_unique)){
 
 saveRDS(exposures_genes, file = "data/exposures/exposures_genes.rds")
 ```
-
-
 
 As a function for a list of genes 
 ```{r}
@@ -505,12 +518,10 @@ gwas_clump <- function(genes){
 test <- lapply(gwas_unique, genes_clump)
 ```
 
-
 ### III. Outcomes & Harmonize
+Here we will use the TwoMRSample package to merge the exposure and outcome dataset by SNP/rsid for each unique exposure, then harmonize the data and compile it.
 
 #### a. Loading Exposures
-
-
 
 ```{r}
 #GWAS
@@ -533,7 +544,80 @@ exposures_metabolites <- readRDS("data/exposures/exposures_metabolites.rds")
 
 
 #### b. Cases 90
+GWAS
 
+```{r}
+error_log <- data.frame()
+
+exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exposure)
+cases_90 <- vector(mode = "list", length = length(exp_unique))
+
+# for(i in seq_along(exp_unique)){ 
+for(i in 1:1000){  
+  exp <- exposures_gwas %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "data/outcomes/cases90rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N"),
+    error=function(e) e)
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      cases_90[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        cases_90[[i]] <- harmonize %>%
+          mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    cases_90[[i]] <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+  print(paste0("Harmonized exposure ", exp_unique[i], 
+               " which is iterator ", i)) 
+}
+ 
+
+cases_90_df <- bind_rows(cases_90)
+
+saveRDS(error_log, "data/error_log_cases_90_gwas.rds")
+
+
+saveRDS(cases_90, "data/cases_90_gwas_ls.rds")
+saveRDS(cases_90_df, "data/cases_90_gwas_df.rds")
+```
 #### c. Cases 99
 
 #### d. UK 90
@@ -1217,12 +1301,16 @@ Control for multiple testing
 ```{r}
 
 # Look only at the Inverse variance weighted method for unique exposures
-MR <- MR_pilling %>%
+MR <- mr %>%
   filter(method == "Inverse variance weighted") %>%
   filter(!duplicated(exposure))
 
-pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
+mt.pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
 
+mt.pval$adjp
+
+MR <- MR %>%
+   mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
 
 ```
 

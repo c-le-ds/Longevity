@@ -40,6 +40,22 @@ mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 saveRDS(mr, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/MR_pilling.rds")
 ```
 
+Control for multiple testing
+```{r}
+
+# Look only at the Inverse variance weighted method for unique exposures
+MR <- mr %>%
+  filter(method == "Inverse variance weighted") %>%
+  filter(!duplicated(exposure))
+
+mt.pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
+
+mt.pval$adjp
+
+MR <- MR %>%
+   mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
+
+```
 
 Timmers data
 
