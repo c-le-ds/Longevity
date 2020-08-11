@@ -43,7 +43,80 @@ exposures_metabolites <- readRDS("../data/exposures/exposures_metabolites.rds")
 
 
 #### b. Cases 90
+GWAS
 
+```{r}
+error_log <- data.frame()
+
+exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exposure)
+cases_90 <- vector(mode = "list", length = length(exp_unique))
+
+# for(i in seq_along(exp_unique)){ 
+for(i in 1:1){  
+  exp <- exposures_gwas %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "../data/outcomes/cases90rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N"),
+    error=function(e) e)
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      cases_90[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        cases_90[[i]] <- harmonize %>%
+          mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    cases_90[[i]] <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+  print(paste0("Harmonized exposure ", exp_unique[i], 
+               " which is iterator ", i)) 
+}
+ 
+
+cases_90_df <- bind_rows(timmers)
+
+saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/error_log_cases_90_gwas.rds")
+
+
+saveRDS(cases_90, "C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/cases_90_gwas_ls.rds")
+saveRDS(cases_90_df, "C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/cases_90_gwas_df.rds")
+```
 #### c. Cases 99
 
 #### d. UK 90
