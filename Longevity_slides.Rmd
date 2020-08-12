@@ -37,12 +37,22 @@ knitr::include_graphics("images/2MR_graphic.png")
 
 - Exposure: SNPs as a proxy for Exposure from one dataset
 - Outcome: outcome from another dataset using SNPs from Exposure to assess the causal relationship between Exposure and Outcome, bypassing confounders that influence the E-O relationship.
+**Advantages**
+  - use publicly available data from two separate studies to inform researchers on the possible relationships between an exposure and outcome
+  - simple analyses
+  - cost-efficient
 
 citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
 
-## Assumption 1 - Independence
 
-SNPs truly associated with Exposure, as seem from independent studies
+## Methods for Determining Estimates
+- Inverse Variance Weighted
+- Egger
+- Median Weighted
+- Mode Weighted
+## Assumption 1
+
+SNPs truly associated with Exposure, as seen from independent studies
 
 
 **Violations**
@@ -55,9 +65,8 @@ citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendeli
 
 
 SNPs not associated with E-O confounders
-
-**Violations**
-- complex biological pathways
+- difficult to prove positively to due complex biological pathways and unknown confounders
+- can be tested with known confounders of the Exposure-Outcome relationship
 
 citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
 
@@ -67,23 +76,44 @@ SNPs are associated with outcome through Exposure only
 
 **Violations**
 - Horizontal Pleiotropy
+  - when a SNP is related to multiple traits independent of the exposure
+  - we can use different methods to try and detect the prescence of horizontal pleiotropy
+  - requires adjusted methods to estimate our association of interest even when present 
+    - MR Egger 
+      - InSIDE(Instrument Strength Independent of Direct Effect)
+        assumes no correlation between SNP-exposure association and direct efect of SNP-outcome
+      - suffers from low power
+      - weak instruments can influence the regression and therefore the estimate
+    - Weighted Median approach
+      - allows up to 50% of SNPs to be weak or invalid instruments
+    - Mode based approach
+      - futher relaxes pleiotropy assumption requirements
+- weak instruments    
+    
+**Violations**
 - trait heterogeneity
+  - difficult to determine without further understanding of biological pathway
 
 citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
 
 
 ## Other Limitations
-- weak instrument bias
-  - solution : increase sample size
-- very few SNPs for an exposure
-  - solution : proxy SNPs for an exposure, must be carefully interpreted
 - developmenal compensation
    - solution: careful interpretation of results, realizing that both environmental and genetic factors influence an outcome.
 - winner's curse
  - no real solution, must view results in conjunction with other studies and what we already know
 - collider bias
   - be careful in how we interpret the results of our analysis. Based on current knowledge, could the relationship we see in our study be due to other biases like loss to follow up.
+- heterogeneity of effect
+   - estimates are not consistent across independent instruments
+   - use Cochran's Q statistic(IVW) or Rucker's Q statistic(Egger) to test for this
 
+## Ways to Assess Violations
+**Statistical Tests**
+
+**Graphically**
+
+## TWoSampleMR Package
 **Software- TwoSampleMR Package**
 
 R package developed to utilize 2-sample Mendelian Randomization on GWAS studies with curated databases. 
