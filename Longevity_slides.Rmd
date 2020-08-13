@@ -57,11 +57,15 @@ SNPs truly associated with Exposure, as seen from independent studies
 
 **Violations**
 - LD
+  - clump SNPs that are close to each other
 - low power
+  - limit SNP-exposure associations to only those that have been validated in multiple studies
+- weak gIV
+  - solution: limit gIV associated with exposure with high significance in studies from GWAS, and other databases
 
 citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
 
-## Assumption 2 - Confounding
+## Assumption 2 
 
 
 SNPs not associated with E-O confounders
@@ -98,8 +102,9 @@ citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendeli
 
 
 ## Other Limitations
-- developmenal compensation
+- developmenal compensation /canalization
    - solution: careful interpretation of results, realizing that both environmental and genetic factors influence an outcome.
+   - bias towards null
 - winner's curse
  - no real solution, must view results in conjunction with other studies and what we already know
 - collider bias

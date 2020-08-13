@@ -23,6 +23,12 @@ library(tidyverse)
 Downloaded Pilling Data
 ```{r}
 gwas <- readRDS("C:/Users/Me/Desktop/CPMC/data/harmonized/pilling_download_gwas.rds")
+exp <- gwas %>% filter(!duplicated(exposures)) %>% pull(exposures)
+mr_gwas <- vector(mode = "list", length = length(exp))
+for(i in seq_along(exp)){
+  dat <- gwas %>% filter(exposures == exp[i])
+  mr_gwas[[i]] <- mr(dat) %>% mutate(exposure_dat = "GWAS")
+}
 mr_gwas <- mr(gwas)%>%
   mutate(exposure_dat = "GWAS")
 
@@ -64,13 +70,13 @@ gwas <- readRDS("C:/Users/Me/Desktop/CPMC/data/harmonized/timmers_gwas_df.rds")
 mr_gwas <- mr(gwas)%>%
   mutate(exposure_dat = "GWAS")
 saveRDS(mr_gwas, "C:/Users/Me/Desktop/CPMC/data/harmonized/MR_timmers_gwas.rds")
-# protein <-readRDS()
-# mr_protein <- mr(protein) %>%
-#   mutate(exposure_dat = "protein")
-# 
-# metabolite <- readRDS()
-# mr_metabolite <- mr(metabolite)  %>%
-#   mutate(exposure_dat = "metabolite")
+protein <-readRDS("..data/harmonized/timmers_protein_df.rds")
+mr_protein <- mr(protein) %>%
+  mutate(exposure_dat = "protein")
+
+metabolite <- readRDS("..data/harmonized/timmers_metabolite_df.rds")
+mr_metabolite <- mr(metabolite)  %>%
+  mutate(exposure_dat = "metabolite")
 
 
 mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
