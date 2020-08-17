@@ -206,12 +206,12 @@ if(!requireNamespace("BiocManager", quietly = TRUE)){
 
 is_it_here <- function(package_list){
   for( i in seq_along(package_list)){
-    if(!require(i)){
-      install.packages(i)
+    if(!require(package_list[i])){
+      install.packages(package_list[i])
     }
   }
 }
-packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table")
+packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table", "doParallel")
 is_it_here(packages_CRAN)
 ```
 

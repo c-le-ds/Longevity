@@ -8,6 +8,8 @@ Outcomes & Harmonize
 
 Load Libraries
 ```{r}
+
+
 library(TwoSampleMR)
 library(MRInstruments)
 library(tidyverse) #so we can use purrr::map, and no, not just because I got cats
@@ -15,6 +17,8 @@ library(knitr)
 library(ieugwasr)
 library(arsenal)
 library(tidyverse)
+library(doParallel)
+library(foreach)
 ```
 
 
@@ -38,8 +42,10 @@ exposures_genes <- readRDS( "../data/exposures/exposures_genes.rds")
 
 exposures_metabolites <- readRDS("../data/exposures/exposures_metabolites.rds")
 
-# wait for Dan's answer
+
 ```
+
+
 
 
 #### b. Cases 90
@@ -1438,5 +1444,99 @@ saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/error
 saveRDS(timmers, "C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/timmers_gwas_ls.rds")
 saveRDS(timmers_df, "C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/timmers_gwas_df.rds")
 ```
+
+
+
+
+
+
+## Test doParallel for larger exposures
+
+test proteins for deleen cases 99
+
+
+```{r}
+error_log <- data.frame()
+
+exp_unique <- exposures_proteins[!duplicated(exposures_proteins$exposure),] %>% pull(exposure)
+
+cases_99 <- vector(mode = "list", length = length(exp_unique))
+
+c1 <- makeCluster(8)
+
+
+registerDoParallel(c1)
+foreach(i = 1:2, .packages = c("tidyverse", "TwoSampleMR")) %dopar% { 
+ 
+  exp <- exposures_proteins %>%
+    filter(exposure == exp_unique[i])
+  
+   outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "../data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N"),
+    error=function(e) e)
+   
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      cases_99[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        cases_99[[i]] <- harmonize %>%
+          mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    cases_99[[i]] <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+  print(paste0("Harmonized exposure ", exp_unique[i], 
+               " which is iterator ", i)) 
+}
+
+ stopCluster(c1) 
+
+cases_99_df <- bind_rows(cases_90)
+ 
+saveRDS(error_log, "..data/harmonized/error_log_cases_99_protein.rds")
+
+
+saveRDS(cases_99, "..data/harmonized/cases_99_protein.rds")
+saveRDS(cases_99_df, "..data/harmonized/cases_99_protein_df.rds")
+
+  
+
+```
+
 
 
