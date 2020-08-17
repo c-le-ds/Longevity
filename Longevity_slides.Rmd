@@ -37,6 +37,7 @@ knitr::include_graphics("images/2MR_graphic.png")
 
 - Exposure: SNPs as a proxy for Exposure from one dataset
 - Outcome: outcome from another dataset using SNPs from Exposure to assess the causal relationship between Exposure and Outcome, bypassing confounders that influence the E-O relationship.
+
 **Advantages**
   - use publicly available data from two separate studies to inform researchers on the possible relationships between an exposure and outcome
   - simple analyses
@@ -50,6 +51,7 @@ citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendeli
 - Egger
 - Median Weighted
 - Mode Weighted
+
 ## Assumption 1
 
 SNPs truly associated with Exposure, as seen from independent studies
@@ -95,6 +97,7 @@ SNPs are associated with outcome through Exposure only
 - weak instruments    
     
 **Violations**
+
 - trait heterogeneity
   - difficult to determine without further understanding of biological pathway
 
@@ -102,6 +105,7 @@ citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendeli
 
 
 ## Other Limitations
+
 - developmenal compensation /canalization
    - solution: careful interpretation of results, realizing that both environmental and genetic factors influence an outcome.
    - bias towards null
@@ -113,12 +117,9 @@ citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendeli
    - estimates are not consistent across independent instruments
    - use Cochran's Q statistic(IVW) or Rucker's Q statistic(Egger) to test for this
 
-## Ways to Assess Violations
-**Statistical Tests**
-
-**Graphically**
 
 ## TWoSampleMR Package
+
 **Software- TwoSampleMR Package**
 
 R package developed to utilize 2-sample Mendelian Randomization on GWAS studies with curated databases. 
@@ -126,6 +127,21 @@ Allows researchers to more easily perform 2-sample Mendelian Randomization on GW
 
 source: Gibran Hemani, Jie Zheng, Kaitlin H Wade, Charles Laurin, Benjamin Elsworth, Stephen Burgess, Jack Bowden, Ryan Langdon, Vanessa Tan, James Yarmolinsky, Hashem A. $ The MR-Base platform supports systematic causal inference across the human phenome. eLife 2018. doi: https://doi.org/10.7554/eLife.34408 
 
+
+## Ways to Assess Violations
+
+**Statistical Tests**
+Test for Heterogeneity
+ - mr_heterogeneity() function
+  - will perform a test of heterogeneity on harmonized data
+  - if significant and there is the presence of horizontal pleiotropy MR Egger method would result in a better estimate than IVW. 
+  If there is no or negligible horizontal pleiotropy, IVW method i
+
+**Graphically**
+Scatter plot 
+  - can evaluate whether there are outliers in the IV estimates
+  
+Funnel Plot
 
 **Steps**
 1. Find top SNPs associated with each phenotype/exposure, use ld_clump() function  from the ieugwasr package to ensure instruments/SNPs for an exposure are independent.
@@ -208,7 +224,7 @@ readRDS("data/MR/Cases90_multtest.rds")%>%
   
 ```
 
-## Results - Deleen Cases 90
+## Results - Deleen Cases 99
 ```{r}
 readRDS("data/MR/Cases99_multtest.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
