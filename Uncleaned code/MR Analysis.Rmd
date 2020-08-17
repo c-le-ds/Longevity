@@ -22,11 +22,11 @@ library(tidyverse)
 #### a. UK 90 
 Downloaded Pilling Data
 ```{r}
-gwas <- readRDS("C:/Users/Me/Desktop/CPMC/data/harmonized/pilling_download_gwas.rds")
-exp <- gwas %>% filter(!duplicated(exposures)) %>% pull(exposures)
+gwas <- readRDS("../data/harmonized/pilling_download_gwas.rds")
+exp <- gwas %>% filter(!duplicated(exposure)) %>% pull(exposure)
 mr_gwas <- vector(mode = "list", length = length(exp))
-for(i in seq_along(exp)){
-  dat <- gwas %>% filter(exposures == exp[i])
+for(i in 1:5){
+  dat <- gwas %>% filter(exposure == exp[i])
   mr_gwas[[i]] <- mr(dat) %>% mutate(exposure_dat = "GWAS")
 }
 mr_gwas <- mr(gwas)%>%
@@ -61,9 +61,10 @@ mt.pval$adjp
 MR <- MR %>%
    mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
 
+saveRDS(MR, "../data/MR/Pilling_multtest.rds")
 ```
 
-Timmers data
+#### b. Timmers data
 
 ```{r}
 gwas <- readRDS("C:/Users/Me/Desktop/CPMC/data/harmonized/timmers_gwas_df.rds")
@@ -82,4 +83,43 @@ mr_metabolite <- mr(metabolite)  %>%
 mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 
 saveRDS(mr, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/MR_pilling.rds")
+```
+
+
+Control for multiple testing
+```{r}
+
+# Look only at the Inverse variance weighted method for unique exposures
+MR <- mr %>%
+  filter(method == "Inverse variance weighted") %>%
+  filter(!duplicated(exposure))
+
+mt.pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
+
+mt.pval$adjp
+
+MR <- MR %>%
+   mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
+
+saveRDS(MR, "../data/MR/Timmers_multtest.rds")
+```
+#### c. Deleen cases 90
+
+```{r}
+gwas <- readRDS("../data/harmonized/cases_90_gwas_df.rds")
+mr_gwas <- mr(gwas)%>%
+  mutate(exposure_dat = "GWAS")
+saveRDS(mr_gwas, "../data/MR/MR_cases_90_gwas.rds")
+protein <-readRDS("../data/harmonized/cases_90_protein_df.rds")
+mr_protein <- mr(protein) %>%
+  mutate(exposure_dat = "protein")
+
+metabolite <- readRDS("../data/harmonized/cases_90_metabolites_df.rds")
+mr_metabolite <- mr(metabolite)  %>%
+  mutate(exposure_dat = "metabolite")
+
+
+mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
+
+saveRDS(mr, "../data/MR/MR_cases_90.rds")
 ```

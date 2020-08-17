@@ -553,7 +553,7 @@ exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exp
 cases_90 <- vector(mode = "list", length = length(exp_unique))
 
 # for(i in seq_along(exp_unique)){ 
-for(i in 3001:4500){  
+for(i in 4501:5917){  
   exp <- exposures_gwas %>%
     filter(exposure == exp_unique[i])
   
@@ -618,6 +618,11 @@ saveRDS(error_log, "data/harmonized/error_log_cases_90_gwas.rds")
 saveRDS(cases_90, "data/harmonized/cases_90_gwas_ls.rds")
 saveRDS(cases_90_df, "data/harmonized/cases_90_gwas_df.rds")
 ```
+
+1219 harmonizing errors
+173 exposure rsids not in outcome
+
+
 PROTEIN EXPOSURES
 
 ```{r}
@@ -635,7 +640,7 @@ for(i in seq_along(exp_unique)){
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "../data/outcomes/cases90rsid.csv",
+    filename = "data/outcomes/cases90rsid.csv",
     sep = ",",
     snp_col = "rsid",
     beta_col = "Beta",
@@ -687,16 +692,14 @@ for(i in seq_along(exp_unique)){
 
 cases_90_df <- bind_rows(cases_90)
  
-saveRDS(error_log, "..data/harmonized/error_log_cases_90_protein.rds")
+saveRDS(error_log, "data/harmonized/error_log_cases_90_protein.rds")
 
 
-saveRDS(cases_90, "..data/harmonized/cases_90_protein.rds")
-saveRDS(cases_90_df, "..data/harmonized/cases_90_protein_df.rds")
+saveRDS(cases_90, "data/harmonized/cases_90_protein.rds")
+saveRDS(cases_90_df, "data/harmonized/cases_90_protein_df.rds")
 ```
-
-
-
-
+0 errors in harmonizing
+matching SNPs found for each protein
 METABOLITES
 
 
@@ -716,7 +719,7 @@ for(i in seq_along(exp_unique)){
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "../data/outcomes/cases90rsid.csv",
+    filename = "data/outcomes/cases90rsid.csv",
     sep = ",",
     snp_col = "rsid",
     beta_col = "Beta",
@@ -768,13 +771,12 @@ for(i in seq_along(exp_unique)){
 
 cases_90_df <- bind_rows(cases_90)
  
-saveRDS(error_log, "..data/harmonized, error_log_cases90_metabolites.rds")
+saveRDS(error_log, "data/harmonized/error_log_cases90_metabolites.rds")
 
 
-saveRDS(cases_90, "..data/harmonized/cases_90_metabolites.rds")
-saveRDS(cases_90_df, "..data/harmonized/cases_90_metabolites_df.rds")
+saveRDS(cases_90, "data/harmonized/cases_90_metabolites.rds")
+saveRDS(cases_90_df, "data/harmonized/cases_90_metabolites_df.rds")
 ```
-
 
 
 
@@ -954,14 +956,14 @@ exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exp
 cases_99 <- vector(mode = "list", length = length(exp_unique))
 
 # for(i in seq_along(exp_unique)){ 
-for(i in 1:1){  
+for(i in 4001:5917){  
   exp <- exposures_gwas %>%
     filter(exposure == exp_unique[i])
   
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "../data/outcomes/cases99rsid.csv",
+    filename = "data/outcomes/cases99rsid.csv",
     sep = ",",
     snp_col = "rsid",
     beta_col = "Beta",
@@ -1011,15 +1013,17 @@ for(i in 1:1){
 }
  
 
-cases_90_df <- bind_rows(cases_90)
+cases_99_df <- bind_rows(cases_99)
 
-saveRDS(error_log, "..data/harmonized/error_log_cases_99_gwas.rds")
+saveRDS(error_log, "data/harmonized/error_log_cases_99_gwas.rds")
 
 
-saveRDS(cases_99, "..data/harmonized/cases_99_gwas_ls.rds")
-saveRDS(cases_99_df, "..data/harmonized/cases_99_gwas_df.rds")
+saveRDS(cases_99, "data/harmonized/cases_99_gwas_ls.rds")
+saveRDS(cases_99_df, "data/harmonized/cases_99_gwas_df.rds")
 ```
+178 exposures with no matching rsids in outcome
 
+1216 harmonizing errors
 PROTEIN EXPOSURES
 
 ```{r}
@@ -1037,88 +1041,7 @@ for(i in seq_along(exp_unique)){
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "../data/outcomes/cases99rsid.csv",
-    sep = ",",
-    snp_col = "rsid",
-    beta_col = "Beta",
-    se_col = "SE",
-    effect_allele_col = "EA",
-    other_allele_col = "NEA",
-    eaf_col = "EAF",
-    pval_col = "pval",
-    samplesize_col = "effective_N"),
-    error=function(e) e)
-
-  if(inherits(outcome, "error") == FALSE){
-
-    harmonize <- tryCatch(
-    harmonise_data(exp, outcome),
-    error=function(e) e)
-
-    if(inherits(harmonize, "error") == TRUE){
-      cases_99[[i]] <- merge(exp, outcome, by = "SNP") %>%
-        mutate(error = "Harmonize")
-      error <-tibble(error = harmonize$message, 
-               location_i = i,
-               exposure = exp_unique[i],
-               message = "harmonizing error")
-      
-      error_log <- rbind(error_log, error)
-
-      }else {
-        cases_99[[i]] <- harmonize %>%
-          mutate(error = "FALSE")
-  
-
-      }
-    
-
-  }else{
-    cases_99[[i]] <- tibble(error = "no matching rsids in outcome")
-    error <- tibble(error = outcome$message,
-                    location_i = i,
-                    exposure = exp_unique[i],
-                    message = "no matching rsids in outcome")
-    error_log <- rbind(error_log, error)
-  }
-    
-  print(paste0("Harmonized exposure ", exp_unique[i], 
-               " which is iterator ", i)) 
-}
- 
-
-cases_90_df <- bind_rows(cases_90)
- 
-saveRDS(error_log, "..data/harmonized/error_log_cases_99_protein.rds")
-
-
-saveRDS(cases_99, "..data/harmonized/cases_99_protein.rds")
-saveRDS(cases_99_df, "..data/harmonized/cases_99_protein_df.rds")
-```
-
-
-
-
-METABOLITES
-
-
-```{r}
-
-error_log <- data.frame()
-
-exp_unique <- exposures_metabolites[!duplicated(exposures_metabolites$exposure),] %>% pull(exposure)
-
-cases_99 <- vector(mode = "list", length = length(exp_unique))
-
-for(i in seq_along(exp_unique)){ 
-  
-  exp <- exposures_metabolites %>%
-    filter(exposure == exp_unique[i])
-  
-  outcome <- tryCatch( 
-    read_outcome_data(
-    snps = exp$SNP,
-    filename = "../data/outcomes/cases99rsid.csv",
+    filename = "data/outcomes/cases99rsid.csv",
     sep = ",",
     snp_col = "rsid",
     beta_col = "Beta",
@@ -1170,14 +1093,95 @@ for(i in seq_along(exp_unique)){
 
 cases_99_df <- bind_rows(cases_99)
  
-saveRDS(error_log, "..data/harmonized, error_log_cases_99_metabolites.rds")
+saveRDS(error_log, "data/harmonized/error_log_cases_99_protein.rds")
 
 
-saveRDS(cases_99, "..data/harmonized/cases_99_metabolites.rds")
-saveRDS(cases_99_df, "..data/harmonized/cases_99_metabolites_df.rds")
+saveRDS(cases_99, "data/harmonized/cases_99_protein.rds")
+saveRDS(cases_99_df, "data/harmonized/cases_99_protein_df.rds")
 ```
 
+no errors
 
+
+METABOLITES
+
+
+```{r}
+
+error_log <- data.frame()
+
+exp_unique <- exposures_metabolites[!duplicated(exposures_metabolites$exposure),] %>% pull(exposure)
+
+cases_99 <- vector(mode = "list", length = length(exp_unique))
+
+for(i in seq_along(exp_unique)){ 
+  
+  exp <- exposures_metabolites %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N"),
+    error=function(e) e)
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      cases_99[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        cases_99[[i]] <- harmonize %>%
+          mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    cases_99[[i]] <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+  print(paste0("Harmonized exposure ", exp_unique[i], 
+               " which is iterator ", i)) 
+}
+ 
+
+cases_99_df <- bind_rows(cases_99)
+ 
+saveRDS(error_log, "data/harmonized/error_log_cases_99_metabolites.rds")
+
+
+saveRDS(cases_99, "data/harmonized/cases_99_metabolites.rds")
+saveRDS(cases_99_df, "data/harmonized/cases_99_metabolites_df.rds")
+```
+
+1 exposure with no matching rsids
 
 
 
@@ -2043,6 +2047,7 @@ mr_gwas <- mr(gwas)%>%
   mutate(exposure_dat = "GWAS")
 
 protein <-readRDS("data/harmonized/timmers_protein_df.rds")
+
 mr_protein <- mr(protein) %>%
   mutate(exposure_dat = "protein")
 
@@ -2053,5 +2058,102 @@ mr_metabolite <- mr(metabolite)  %>%
 
 mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 
-saveRDS(mr, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/MR_pilling.rds")
+saveRDS(mr, "data/MR/MR_timmers.rds")
+```
+
+Control for multiple testing
+```{r}
+
+# Look only at the Inverse variance weighted method for unique exposures
+MR <- mr %>%
+  filter(method == "Inverse variance weighted") %>%
+  filter(!duplicated(exposure))
+
+mt.pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
+
+mt.pval$adjp
+
+MR <- MR %>%
+   mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
+
+saveRDS(MR, "../data/MR/Timmers_multtest.rds")
+```
+#### c. Cases 90 from Deleen et al
+Deleen cases 90
+
+```{r}
+gwas <- readRDS("data/harmonized/cases_90_gwas_df.rds")
+mr_gwas <- mr(gwas)%>%
+  mutate(exposure_dat = "GWAS")
+saveRDS(mr_gwas, "data/harmonized/MR_cases_90_gwas.rds")
+protein <-readRDS("data/harmonized/cases_90_protein_df.rds")
+mr_protein <- mr(protein) %>%
+  mutate(exposure_dat = "protein")
+
+metabolite <- readRDS("data/harmonized/cases_90_metabolites_df.rds")
+mr_metabolite <- mr(metabolite)  %>%
+  mutate(exposure_dat = "metabolite")
+
+
+mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
+
+saveRDS(mr, "data/MR/MR_cases_90.rds")
+```
+
+
+Control for multiple testing
+```{r}
+
+# Look only at the Inverse variance weighted method for unique exposures
+MR <- mr %>%
+  filter(method == "Inverse variance weighted") %>%
+  filter(!duplicated(exposure))
+
+mt.pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
+
+mt.pval$adjp
+
+MR <- MR %>%
+   mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
+
+saveRDS(MR, "data/MR/Cases90_multtest.rds")
+```
+
+#### d. Cases 99 from Deleen et al
+```{r}
+gwas <- readRDS("data/harmonized/cases_99_gwas_df.rds")
+
+mr_gwas <- mr(gwas)%>%
+  mutate(exposure_dat = "GWAS")
+saveRDS(mr_gwas, "data/harmonized/MR_cases_99_gwas.rds")
+protein <-readRDS("data/harmonized/cases_99_protein_df.rds")
+mr_protein <- mr(protein) %>%
+  mutate(exposure_dat = "protein")
+
+metabolite <- readRDS("data/harmonized/cases_99_metabolites_df.rds")
+mr_metabolite <- mr(metabolite)  %>%
+  mutate(exposure_dat = "metabolite")
+
+
+mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
+
+saveRDS(mr, "data/MR/MR_cases_99.rds")
+```
+
+Control for multiple testing
+```{r}
+
+# Look only at the Inverse variance weighted method for unique exposures
+MR <- mr %>%
+  filter(method == "Inverse variance weighted") %>%
+  filter(!duplicated(exposure))
+
+mt.pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
+
+mt.pval$adjp
+
+MR <- MR %>%
+   mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
+
+saveRDS(MR, "data/MR/Cases99_multtest.rds")
 ```
