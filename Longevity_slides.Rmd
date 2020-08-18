@@ -109,8 +109,6 @@ citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendeli
 - developmenal compensation /canalization
    - solution: careful interpretation of results, realizing that both environmental and genetic factors influence an outcome.
    - bias towards null
-- winner's curse
- - no real solution, must view results in conjunction with other studies and what we already know
 - collider bias
   - be careful in how we interpret the results of our analysis. Based on current knowledge, could the relationship we see in our study be due to other biases like loss to follow up.
 - heterogeneity of effect
