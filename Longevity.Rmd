@@ -205,9 +205,9 @@ if(!requireNamespace("BiocManager", quietly = TRUE)){
 
 
 is_it_here <- function(package_list){
-  for( i in seq_along(package_list)){
-    if(!require(i)){
-      install.packages(i)
+  for( i in length(package_list)){
+    if(!require(package_list[i])){
+      install.packages(package_list[i])
     }
   }
 }
@@ -225,6 +225,7 @@ library(ieugwasr)
 library(arsenal)
 library(tidyverse)
 library(multtest)
+library(doParallel)
 ```
 
 ###II.  Exposures from each catalog

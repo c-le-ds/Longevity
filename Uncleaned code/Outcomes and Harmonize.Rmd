@@ -14,7 +14,7 @@ library(tidyverse) #so we can use purrr::map, and no, not just because I got cat
 library(knitr)
 library(ieugwasr)
 library(arsenal)
-library(tidyverse)
+library(doParallel)
 ```
 
 
@@ -22,8 +22,7 @@ Load Exposures
 
 ```{r}
 
-#set working directory
-setwd("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity")
+
 #GWAS
 load("../data/exposures/exposures_gwas.Rdata")
 
@@ -41,6 +40,8 @@ exposures_metabolites <- readRDS("../data/exposures/exposures_metabolites.rds")
 # wait for Dan's answer
 ```
 
+
+## Test Parallel programm
 
 #### b. Cases 90
 GWAS
