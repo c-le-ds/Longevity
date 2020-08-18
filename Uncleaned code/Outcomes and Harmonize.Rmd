@@ -1466,7 +1466,7 @@ c1 <- makeCluster(8)
 
 
 registerDoParallel(c1)
-foreach(i = 1:seq_along(exp_unique), .packages = c("tidyverse", "TwoSampleMR")) %dopar% { 
+foreach(i = 1:2, .packages = c("tidyverse", "TwoSampleMR")) %dopar% { 
  
   exp <- exposures_proteins %>%
     filter(exposure == exp_unique[i])
@@ -1524,9 +1524,9 @@ foreach(i = 1:seq_along(exp_unique), .packages = c("tidyverse", "TwoSampleMR")) 
                " which is iterator ", i)) 
 }
 
-stopCluster(c1) 
+ stopCluster(c1) 
 
-cases_90_df <- bind_rows(cases_90)
+cases_99_df <- bind_rows(cases_90)
  
 saveRDS(error_log, "..data/harmonized/error_log_cases_99_protein.rds")
 

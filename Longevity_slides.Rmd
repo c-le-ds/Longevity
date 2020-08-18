@@ -1,4 +1,4 @@
----
++---
 title: "Two Sample Mendelian Randomization on Longevity GWAS"
 author: "Christine Le"
 date:  "`r format(Sys.time(), '%d %B, %Y')`"
