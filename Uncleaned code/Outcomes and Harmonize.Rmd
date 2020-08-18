@@ -1460,20 +1460,26 @@ error_log <- data.frame()
 
 exp_unique <- exposures_proteins[!duplicated(exposures_proteins$exposure),] %>% pull(exposure)
 
-cases_99 <- vector(mode = "list", length = length(exp_unique))
+
 
 c1 <- makeCluster(8)
-
-
 registerDoParallel(c1)
-foreach(i = 1:2, .packages = c("tidyverse", "TwoSampleMR")) %dopar% { 
+
+# to make things run faster, the outcome and harmonizing steps will be split
+
+
+# For each outcome create a list of databases
+# as a function
+
+
+
+cases_99 <- foreach(i = 1:2, .packages = c("tidyverse", "TwoSampleMR")) %dopar% {
  
-  exp <- exposures_proteins %>%
+ exposure <- exposures_proteins %>%
     filter(exposure == exp_unique[i])
-  
-   outcome <- tryCatch( 
-    read_outcome_data(
-    snps = exp$SNP,
+ 
+ outcome <- tryCatch(read_outcome_data(
+    snps = exposure_ls[[i]],
     filename = "../data/outcomes/cases99rsid.csv",
     sep = ",",
     snp_col = "rsid",
@@ -1485,7 +1491,7 @@ foreach(i = 1:2, .packages = c("tidyverse", "TwoSampleMR")) %dopar% {
     pval_col = "pval",
     samplesize_col = "effective_N"),
     error=function(e) e)
-   
+
 
   if(inherits(outcome, "error") == FALSE){
 
@@ -1494,17 +1500,16 @@ foreach(i = 1:2, .packages = c("tidyverse", "TwoSampleMR")) %dopar% {
     error=function(e) e)
 
     if(inherits(harmonize, "error") == TRUE){
-      cases_99[[i]] <- merge(exp, outcome, by = "SNP") %>%
+      result<- merge(exp, outcome, by = "SNP") %>%
         mutate(error = "Harmonize")
-      error <-tibble(error = harmonize$message, 
-               location_i = i,
-               exposure = exp_unique[i],
-               message = "harmonizing error")
+      # error <-tibble(error = harmonize$message, 
+      #          location_i = i,
+      #          exposure = exp_unique[i],
+      #          message = "harmonizing error")
       
-      error_log <- rbind(error_log, error)
 
       }else {
-        cases_99[[i]] <- harmonize %>%
+        result <- harmonize %>%
           mutate(error = "FALSE")
   
 
@@ -1512,19 +1517,19 @@ foreach(i = 1:2, .packages = c("tidyverse", "TwoSampleMR")) %dopar% {
     
 
   }else{
-    cases_99[[i]] <- tibble(error = "no matching rsids in outcome")
-    error <- tibble(error = outcome$message,
-                    location_i = i,
-                    exposure = exp_unique[i],
-                    message = "no matching rsids in outcome")
-    error_log <- rbind(error_log, error)
+    result <- tibble(error = "no matching rsids in outcome")
+    # error <- tibble(error = outcome$message,
+    #                 location_i = i,
+    #                 exposure = exp_unique[i],
+    #                 message = "no matching rsids in outcome")
+    
   }
     
   print(paste0("Harmonized exposure ", exp_unique[i], 
                " which is iterator ", i)) 
 }
 
- stopCluster(c1) 
+stopCluster(c1) 
 
 cases_99_df <- bind_rows(cases_90)
  
@@ -1539,4 +1544,38 @@ saveRDS(cases_99_df, "..data/harmonized/cases_99_protein_df.rds")
 ```
 
 
+```{r}
+library(doParallel)
+library(foreach)
+x <- rnorm(100)
+
+squareandroot <- function(root = NULL, square = NULL, half = NULL, double = NULL)
+{
+  dat <- list(
+    root = root,
+    square = square
+  )
+  
+  dat2 <- list(
+    half = half,
+    double = double
+  )
+  #set class name
+  class(dat) <- append(class(dat), "squareandroot")
+  return(dat)
+  
+}
+ y <- foreach(i = 1:length(x)) %dopar% {
+   root <- sqrt(x[i])
+   square <- (x[i])^2
+   
+   result <- squareandroot()
+   result$root <- root
+   result$square <- square
+   return(result)
+}
+y$square
+
+root <- bind_rows(y)
+```
 
