@@ -1,4 +1,4 @@
-+---
+---
 title: "Two Sample Mendelian Randomization on Longevity GWAS"
 author: "Christine Le"
 date:  "`r format(Sys.time(), '%d %B, %Y')`"
@@ -230,6 +230,142 @@ readRDS("data/MR/Cases99_multtest.rds")%>%
   arrange(pval)%>%
   kable()
   
+```
+
+
+
+## Common and Unique Exposures in Each Study - Venn Diagram
+
+
+```{r, echo=FALSE, results='hide',message=FALSE}
+library(VennDiagram)
+library(tidyverse)
+Pilling_dat <- readRDS("data/MR/Pilling_multtest.rds")
+Timmers_dat <- readRDS("data/MR/Timmers_multtest.rds")
+Cases90_dat <- readRDS("data/MR/Cases90_multtest.rds")
+Cases99_dat <- readRDS("data/MR/Cases99_multtest.rds")
+
+
+```
+
+
+```{r, eval=FALSE}
+venn.diagram(
+  x = list(
+    Pilling_dat %>% 
+      filter(method == "Inverse variance weighted", pval_BH < 0.05) %>% 
+      select(exposure) %>% unlist(),
+    Timmers_dat %>% 
+      filter(method == "Inverse variance weighted", pval_BH < 0.05) %>% 
+      select(exposure) %>% unlist(),
+    Cases90_dat %>% 
+      filter(method == "Inverse variance weighted", pval_BH < 0.05) %>% 
+      select(exposure) %>% unlist(),
+    Cases99_dat %>% 
+      filter(method == "Inverse variance weighted", pval_BH < 0.05) %>% 
+      select(exposure) %>% unlist()
+  ),
+  category.names = c("Pilling", "Timmers", "Deleen 90th", "Deleen 99th"),
+  filename = "images/FourOutcomesVenn.png",
+  output = TRUE,
+          imagetype="png" ,
+          height = 900 , 
+          width = 1200 , 
+          resolution = 300,
+          compression = "lzw",
+          lwd = 1,
+          col=c("#440154ff", '#21908dff', '#fde725ff', '#ff3374'),
+          fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#fde725ff',0.3), alpha('#ff3374', 0.3))
+
+  
+)
+```
+```{r, out.width = "50%", fig.pos="h"}
+knitr::include_graphics("images/FourOutcomesVenn.png")
+```
+
+
+
+Table of Common and Unique Exposures among Four Outcomes who are significant(adjusted p-value $\leq$ 0.05) using the Inverse Variance Weighted Method
+
+```{r, echo=FALSE, results='hide',message=FALSE}}
+library(reactable)
+library(tidyverse)
+```
+```{r}
+
+#Create a table containing adjusted p-values and informationon exposure dataset, and outcome dataset sources
+PillingA <- Pilling_dat %>% 
+  mutate(Pilling = "Yes", Exposure.Dataset.Pilling = exposure_dat, Adjusted.p.Pilling = pval_BH) %>% 
+  select(exposure,  Exposure.Dataset.Pilling, Adjusted.p.Pilling, Pilling) 
+TimmersA <- Timmers_dat %>% 
+  mutate(Timmers = "Yes", Exposure.Dataset.Timmers = exposure_dat, Adjusted.p.Timmers = pval_BH) %>% 
+  select(exposure, Exposure.Dataset.Timmers, Adjusted.p.Timmers, Timmers) 
+Cases90A <- Cases90_dat %>% 
+  mutate(Cases90 = "Yes", Exposure.Dataset.Cases90 = exposure_dat, Adjusted.p.Cases90 = pval_BH) %>% 
+  select(exposure, Exposure.Dataset.Cases90, Adjusted.p.Cases90, Cases90)
+Cases99A <- Cases99_dat %>% 
+  mutate(Cases99 = "Yes", Exposure.Dataset.Cases99 = exposure_dat, Adjusted.p.Cases99 = pval_BH) %>% 
+  select(exposure, Exposure.Dataset.Cases99, Adjusted.p.Cases99, Cases99)
+
+dat <- merge(TimmersA, PillingA, by = "exposure", all = TRUE)
+dat <- merge(dat, Cases90A, by = "exposure", all = TRUE)
+dat <- merge(dat, Cases99A, by = "exposure", all = TRUE) %>%
+  select(exposure, Pilling, Timmers, Cases90, Cases99, Adjusted.p.Pilling, Adjusted.p.Timmers, Adjusted.p.Cases90, Adjusted.p.Cases99, Exposure.Dataset.Pilling, Exposure.Dataset.Timmers, Exposure.Dataset.Cases90, Exposure.Dataset.Cases99)
+
+
+#replace NAs in Dataset columns with "No"
+dat2 <- dat
+dat$Pilling <- ifelse(is.na(dat$Pilling), "NO", "YES")
+dat$Timmers <- ifelse(is.na(dat$Timmers), "NO", "YES")
+dat$Cases90 <- ifelse(is.na(dat$Cases90), "NO", "YES")
+dat$Cases99 <- ifelse(is.na(dat$Cases99), "NO", "YES")
+
+
+#Make one Exposure Dataset column
+
+dat$Exposure.Dataset <- ifelse(dat$Pilling == "YES", dat$Exposure.Dataset.Pilling,
+                               ifelse(dat$Timmers == "YES", dat$Exposure.Dataset.Timmers,
+                                      ifelse(dat$Cases90 == "YES", dat$Exposure.Dataset.Cases90,
+                                             ifelse(dat$Cases99 == "YES", dat$Exposure.Dataset.Cases99, NA)
+                                             )
+                                      )
+                               )
+#remove extra exposure dataset columns
+dat <- dat %>%
+  select(-Exposure.Dataset.Pilling, -Exposure.Dataset.Timmers, -Exposure.Dataset.Cases90, -Exposure.Dataset.Cases99)
+
+#create a filterable table
+reactable(dat, filterable = TRUE, paginationType = "jump", defaultPageSize = 20, showSortable = TRUE,
+          columns = list(
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Timmers = colDef(name = "Adjusted p-value (Timmers)", 
+                                        align = "center", headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE),         
+            Adjusted.p.Pilling = colDef(name = "Adjusted p-value (Pilling)", 
+                                        align = "center",headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE),
+            Adjusted.p.Cases90 = colDef(name = "Adjusted p-value (Cases90)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE),
+            Adjusted.p.Cases99 = colDef(name = "Adjusted p-value (Cases99)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE),
+            Exposure.Dataset = colDef(name = "Exposure Dataset", 
+                                              align = "center",headerStyle = list(background = "#f7f7f8")),
+            Pilling = colDef(cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Timmers = colDef(cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Cases90 = colDef(name = "90th Percentile", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Cases99 = colDef(name = "99th Percentile", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            })
+          ))
 ```
 
 ## Discussion
