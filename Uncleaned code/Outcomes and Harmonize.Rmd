@@ -1445,7 +1445,79 @@ saveRDS(timmers, "C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/timmers
 saveRDS(timmers_df, "C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/timmers_gwas_df.rds")
 ```
 
+Genes
+```{r}
+error_log <- data.frame()
 
+exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(exposure)
+timmers <- vector(mode = "list", length = length(exp_unique))
+
+# for(i in seq_along(exp_unique)){ 
+for(i in 65001:85000){  
+  exp <- exposures_genes %>%
+    filter(exposure == exp_unique[i])
+  
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "../data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p"),
+    error=function(e) e)
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      timmers[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
+      error <-tibble(error = harmonize$message, 
+               location_i = i,
+               exposure = exp_unique[i],
+               message = "harmonizing error")
+      
+      error_log <- rbind(error_log, error)
+
+      }else {
+        timmers[[i]] <- harmonize %>%
+          mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    timmers[[i]] <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+  print(paste0("Harmonized exposure ", exp_unique[i], 
+               " which is iterator ", i)) 
+}
+ 
+
+
+timmers_df <- bind_rows(timmers)
+
+saveRDS(error_log, "../data/harmonized/error_log_timmers_genes.rds")
+
+
+saveRDS(timmers, "../data/harmonized/timmers_genes_ls.rds")
+saveRDS(timmers_df, "../data/harmonized/timmers_genes_df.rds")
+```
 
 
 
