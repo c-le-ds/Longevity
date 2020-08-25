@@ -1,4 +1,4 @@
-+---
+---
 title: "Two Sample Mendelian Randomization on Longevity GWAS"
 author: "Christine Le"
 date:  "`r format(Sys.time(), '%d %B, %Y')`"
@@ -37,6 +37,7 @@ knitr::include_graphics("images/2MR_graphic.png")
 
 - Exposure: SNPs as a proxy for Exposure from one dataset
 - Outcome: outcome from another dataset using SNPs from Exposure to assess the causal relationship between Exposure and Outcome, bypassing confounders that influence the E-O relationship.
+
 **Advantages**
   - use publicly available data from two separate studies to inform researchers on the possible relationships between an exposure and outcome
   - simple analyses
@@ -50,6 +51,7 @@ citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendeli
 - Egger
 - Median Weighted
 - Mode Weighted
+
 ## Assumption 1
 
 SNPs truly associated with Exposure, as seen from independent studies
@@ -95,6 +97,7 @@ SNPs are associated with outcome through Exposure only
 - weak instruments    
     
 **Violations**
+
 - trait heterogeneity
   - difficult to determine without further understanding of biological pathway
 
@@ -102,23 +105,19 @@ citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendeli
 
 
 ## Other Limitations
+
 - developmenal compensation /canalization
    - solution: careful interpretation of results, realizing that both environmental and genetic factors influence an outcome.
    - bias towards null
-- winner's curse
- - no real solution, must view results in conjunction with other studies and what we already know
 - collider bias
   - be careful in how we interpret the results of our analysis. Based on current knowledge, could the relationship we see in our study be due to other biases like loss to follow up.
 - heterogeneity of effect
    - estimates are not consistent across independent instruments
    - use Cochran's Q statistic(IVW) or Rucker's Q statistic(Egger) to test for this
 
-## Ways to Assess Violations
-**Statistical Tests**
-
-**Graphically**
 
 ## TWoSampleMR Package
+
 **Software- TwoSampleMR Package**
 
 R package developed to utilize 2-sample Mendelian Randomization on GWAS studies with curated databases. 
@@ -126,6 +125,21 @@ Allows researchers to more easily perform 2-sample Mendelian Randomization on GW
 
 source: Gibran Hemani, Jie Zheng, Kaitlin H Wade, Charles Laurin, Benjamin Elsworth, Stephen Burgess, Jack Bowden, Ryan Langdon, Vanessa Tan, James Yarmolinsky, Hashem A. $ The MR-Base platform supports systematic causal inference across the human phenome. eLife 2018. doi: https://doi.org/10.7554/eLife.34408 
 
+
+## Ways to Assess Violations
+
+**Statistical Tests**
+Test for Heterogeneity
+ - mr_heterogeneity() function
+  - will perform a test of heterogeneity on harmonized data
+  - if significant and there is the presence of horizontal pleiotropy MR Egger method would result in a better estimate than IVW. 
+  If there is no or negligible horizontal pleiotropy, IVW method i
+
+**Graphically**
+Scatter plot 
+  - can evaluate whether there are outliers in the IV estimates
+  
+Funnel Plot
 
 **Steps**
 1. Find top SNPs associated with each phenotype/exposure, use ld_clump() function  from the ieugwasr package to ensure instruments/SNPs for an exposure are independent.
@@ -175,14 +189,21 @@ GWAS results from 1 million parental lifespans of 500,000 particpants with data 
 ## Results - Pilling
 ```{r, echo=FALSE, results='hide',message=FALSE}
 library(tidyverse)
-library(knitr)
+library(reactable)
 ```
 ```{r}
 readRDS("data/MR/Pilling_multtest.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
   select(-id.exposure, -id.outcome, -outcome, -method)%>%
   arrange(pval)%>%
-  kable()
+  reactable(columns = list(
+    exposure = colDef(name = "Exposure"),
+    exposure_dat = colDef(name = "Exposure Dataset"),
+    pval_BH = colDef(name = "BH Adjusted p-value", format = colFormat(digits = 5)),
+    b = colDef(format = colFormat(digits = 5)),
+    se = colDef(format = colFormat(digits = 5)),
+    pval = colDef(format = colFormat(digits = 5))
+  ))
   
 ```
 
@@ -192,7 +213,14 @@ readRDS("data/MR/Timmers_multtest.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
   select(-id.exposure, -id.outcome, -outcome, -method)%>%
   arrange(pval)%>%
-  kable()
+  reactable(columns = list(
+    exposure = colDef(name = "Exposure"),
+    exposure_dat = colDef(name = "Exposure Dataset"),
+    pval_BH = colDef(name = "BH Adjusted p-value", format = colFormat(digits = 5)),
+    b = colDef(format = colFormat(digits = 5)),
+    se = colDef(format = colFormat(digits = 5)),
+    pval = colDef(format = colFormat(digits = 5))
+  ))
   
 ```
 
@@ -204,20 +232,487 @@ readRDS("data/MR/Cases90_multtest.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
   select(-id.exposure, -id.outcome, -outcome, -method)%>%
   arrange(pval)%>%
-  kable()
+  reactable(columns = list(
+    exposure = colDef(name = "Exposure"),
+    exposure_dat = colDef(name = "Exposure Dataset"),
+    pval_BH = colDef(name = "BH Adjusted p-value", format = colFormat(digits = 5)),
+    b = colDef(format = colFormat(digits = 5)),
+    se = colDef(format = colFormat(digits = 5)),
+    pval = colDef(format = colFormat(digits = 5))
+  ))
   
 ```
 
-## Results - Deleen Cases 90
+## Results - Deleen Cases 99
 ```{r}
 readRDS("data/MR/Cases99_multtest.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
   select(-id.exposure, -id.outcome, -outcome, -method)%>%
   arrange(pval)%>%
-  kable()
+  reactable(columns = list(
+    exposure = colDef(name = "Exposure"),
+    exposure_dat = colDef(name = "Exposure Dataset"),
+    pval_BH = colDef(name = "BH Adjusted p-value", format = colFormat(digits = 5)),
+    b = colDef(format = colFormat(digits = 5)),
+    se = colDef(format = colFormat(digits = 5)),
+    pval = colDef(format = colFormat(digits = 5))
+  ))
   
 ```
 
+
+
+## Common and Unique Exposures in Each Study - Venn Diagram
+
+
+```{r, echo=FALSE, results='hide',message=FALSE}
+library(VennDiagram)
+library(tidyverse)
+Pilling_dat <- readRDS("data/MR/Pilling_multtest.rds")
+Timmers_dat <- readRDS("data/MR/Timmers_multtest.rds")
+Cases90_dat <- readRDS("data/MR/Cases90_multtest.rds")
+Cases99_dat <- readRDS("data/MR/Cases99_multtest.rds")
+
+
+```
+
+
+```{r, eval=FALSE}
+venn.diagram(
+  x = list(
+    Pilling_dat %>% 
+      filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>% 
+      select(exposure) %>% unlist(),
+    Timmers_dat %>% 
+      filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>% 
+      select(exposure) %>% unlist(),
+    Cases90_dat %>% 
+      filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>% 
+      select(exposure) %>% unlist(),
+    Cases99_dat %>% 
+      filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>% 
+      select(exposure) %>% unlist()
+  ),
+  category.names = c("Pilling", "Timmers", "Deleen 90th", "Deleen 99th"),
+  filename = "images/FourOutcomesVenn.png",
+  output = TRUE,
+          imagetype="png" ,
+          height = 900 , 
+          width = 1200 , 
+          resolution = 300,
+          compression = "lzw",
+          lwd = 1,
+          col=c("#440154ff", '#21908dff', '#fde725ff', '#ff3374'),
+          fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#fde725ff',0.3), alpha('#ff3374', 0.3))
+
+  
+)
+```
+```{r, out.width = "50%", fig.pos="h"}
+knitr::include_graphics("images/FourOutcomesVenn.png")
+```
+
+- no common exposures among Pilling, cases90 & cases 99
+- no common exposures among pilling & cases 99
+- no common exposures among pilling , timmers and cases 99
+
+## Results - Table
+
+```{r, echo=FALSE, results='hide',message=FALSE}
+library(reactable)
+library(tidyverse)
+```
+```{r}
+
+#Create a table containing adjusted p-values and informationon exposure dataset, and outcome dataset sources
+PillingA <- Pilling_dat %>% 
+  filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>%
+  mutate(Pilling = "Yes") %>%
+  rename(Exposure.Dataset.Pilling = exposure_dat, Adjusted.p.Pilling = pval_BH, 
+         b.pilling = b, se.pilling = se, nsnp.pilling = nsnp, pval.pilling = pval ) %>% 
+  select(-id.exposure, -id.outcome, -outcome, -method) 
+TimmersA <- Timmers_dat %>% 
+  filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>%
+  mutate(Timmers = "Yes") %>%
+  rename(Exposure.Dataset.Timmers = exposure_dat, Adjusted.p.Timmers = pval_BH, 
+         b.timmers = b, se.timmers = se, nsnp.timmers = nsnp, pval.timmers = pval) %>% 
+  select(-id.exposure, -id.outcome, -outcome, -method) 
+Cases90A <- Cases90_dat %>%
+  filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>%
+  mutate(Cases90 = "Yes") %>%
+  rename(Exposure.Dataset.Cases90 = exposure_dat, Adjusted.p.Cases90 = pval_BH, 
+         b.90 = b, se.90 = se, nsnp.90 = nsnp, pval.90 = pval) %>% 
+  select(-id.exposure, -id.outcome, -outcome, -method)
+Cases99A <- Cases99_dat %>%
+  filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>%
+  mutate(Cases99 = "Yes") %>%
+  rename(Exposure.Dataset.Cases99 = exposure_dat, Adjusted.p.Cases99 = pval_BH,
+         b.99 = b, se.99 = se, nsnp.99 = nsnp, pval.99 = pval) %>% 
+  select(-id.exposure, -id.outcome, -outcome, -method)
+
+dat_all <- merge(TimmersA, PillingA, by = "exposure", all = TRUE)
+dat_all <- merge(dat_all, Cases90A, by = "exposure", all = TRUE)
+dat_all <- merge(dat_all, Cases99A, by = "exposure", all = TRUE)
+
+
+#replace NAs in Dataset columns with "No"
+
+dat_all$Pilling <- ifelse(is.na(dat_all$Pilling), "NO", "YES")
+dat_all$Timmers <- ifelse(is.na(dat_all$Timmers), "NO", "YES")
+dat_all$Cases90 <- ifelse(is.na(dat_all$Cases90), "NO", "YES")
+dat_all$Cases99 <- ifelse(is.na(dat_all$Cases99), "NO", "YES")
+
+
+
+#Make one Exposure Dataset column
+
+dat_all$Exposure.Dataset <- ifelse(dat_all$Pilling == "YES", dat_all$Exposure.Dataset.Pilling,
+                               ifelse(dat_all$Timmers == "YES", dat_all$Exposure.Dataset.Timmers,
+                                      ifelse(dat_all$Cases90 == "YES", dat_all$Exposure.Dataset.Cases90,
+                                             ifelse(dat_all$Cases99 == "YES", dat_all$Exposure.Dataset.Cases99, NA)
+                                             )
+                                      )
+                               )
+#remove extra exposure dataset columns
+dat <- dat_all
+dat <- dat %>%
+ select(exposure, Pilling, Timmers, Cases90, Cases99, Adjusted.p.Pilling, Adjusted.p.Timmers, Adjusted.p.Cases90, Adjusted.p.Cases99, Exposure.Dataset)
+
+
+#save results for future use
+
+saveRDS(dat, "results/results_201908.rds")
+saveRDS(dat_all, "results/full_results_201908.rds")
+
+
+#create a filterable table
+reactable(dat, filterable = TRUE, paginationType = "jump", defaultPageSize = 20, showSortable = TRUE,
+          columns = list(
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Timmers = colDef(name = "Adjusted p-value (Timmers)", 
+                                        align = "center", headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE, format = colFormat(digits = 5)),         
+            Adjusted.p.Pilling = colDef(name = "Adjusted p-value (Pilling)", 
+                                        align = "center",headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE, format = colFormat(digits = 5)),
+            Adjusted.p.Cases90 = colDef(name = "Adjusted p-value (Cases90)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5)),
+            Adjusted.p.Cases99 = colDef(name = "Adjusted p-value (Cases99)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5)),
+            Exposure.Dataset = colDef(name = "Exposure Dataset", 
+                                              align = "center",headerStyle = list(background = "#f7f7f8")),
+            Pilling = colDef(name = "Pilling", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Timmers = colDef(cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Cases90 = colDef(name = "90th Percentile", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Cases99 = colDef(name = "99th Percentile", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            })
+          ))
+```
+
+Table 1. Exposures among Four Outcomes who are significant(adjusted p-value $\leq$ 0.05) using the Inverse Variance Weighted Method
+
+
+## Pilling - Unique Exposures
+
+```{r}
+dat_all %>% filter(Pilling == "YES" & Timmers == "NO" & Cases90 == "NO" & Cases99 == "NO") %>%
+  select(exposure, nsnp.pilling, b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling, Exposure.Dataset.Pilling) %>%
+  reactable(columns = list(
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Pilling = colDef(name = "Adjusted p-value", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Exposure.Dataset.Pilling = colDef(name = "Exposure Dataset", align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            nsnp.pilling = colDef(name = "nsnp", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.pilling = colDef(name = "Beta", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.pilling = colDef(name = "SE", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.pilling =colDef(name = "p-value", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)) 
+            
+            ))
+```
+Table 2. Exposures unique only to the Pilling dataset
+
+## Timmers - Unique Exposures
+```{r}
+dat_all %>% filter(Pilling == "NO" & Timmers == "YES" & Cases90 == "NO" & Cases99 == "NO") %>%
+  select(exposure, nsnp.timmers, b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, Exposure.Dataset.Timmers) %>%
+  reactable(columns = list(
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Timmers = colDef(name = "Adjusted p-value", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Exposure.Dataset.Timmers = colDef(name = "Exposure Dataset", align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            nsnp.timmers = colDef(name = "nsnp", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.timmers = colDef(name = "Beta", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.timmers = colDef(name = "SE", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.timmers =colDef(name = "p-value", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)) 
+            
+            ))
+```
+Table 3. Exposures unique only to the Timmers dataset
+
+## Deleen Cases 90 - Unique Exposures
+```{r}
+dat_all %>% filter(Pilling == "NO" & Timmers == "NO" & Cases90 == "YES" & Cases99 == "NO") %>%
+  select(exposure, nsnp.90, b.90, se.90, pval.90, Adjusted.p.Cases90, Exposure.Dataset.Cases90) %>%
+  reactable(columns = list(
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Cases90 = colDef(name = "Adjusted p-value", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Exposure.Dataset.Cases90 = colDef(name = "Exposure Dataset", align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            nsnp.90 = colDef(name = "nsnp", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.90 = colDef(name = "Beta", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.90 = colDef(name = "SE", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.90 = colDef(name = "p-value", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)) 
+            
+            ))
+```
+
+Table 4. Exposures unique only to the 90th Percentile 
+
+
+## Deleen 99th Percentile - Unique Exposures
+
+```{r}
+dat_all %>% filter(Pilling == "NO" & Timmers == "NO" & Cases90 == "NO" & Cases99 == "YES") %>%
+  select(exposure, nsnp.99, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset.Cases99) %>%
+  reactable(columns = list(
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Cases99 = colDef(name = "Adjusted p-value", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Exposure.Dataset.Cases99 = colDef(name = "Exposure Dataset", align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            nsnp.99 = colDef(name = "nsnp", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.99 = colDef(name = "Beta", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.99 = colDef(name = "SE", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.99 = colDef(name = "p-value", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)) 
+            
+            ))
+```
+
+
+Table 5. Exposures unique only to the 99th Percentile
+
+
+## Common Exposures - All four datasets
+8 common Exposures
+
+```{r}
+
+dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases90 == "YES" & Cases99 == "YES") %>%
+  select(exposure, nsnp.pilling, b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling, nsnp.timmers, b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, nsnp.90, b.90, se.90, pval.90, Adjusted.p.Cases90, nsnp.99, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset) %>%
+  reactable(columns = list(
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Cases90 = colDef(name = "90th Percentile", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Exposure.Dataset = colDef(name = "Exposure Dataset", align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            nsnp.90 = colDef(name = "90th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.90 = colDef(name = "90th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.90 = colDef(name = "90th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.90 = colDef(name = "90th Percentile", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Adjusted.p.Cases99 = colDef(name = "99th Percentile", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            nsnp.99 = colDef(name = "99th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.99 = colDef(name = "99th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.99 = colDef(name = "99th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.99 = colDef(name = "99th Percentile", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Adjusted.p.Timmers = colDef(name = "Timmers", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            nsnp.timmers = colDef(name = "Timmers", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.timmers = colDef(name = "Timmers", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.timmers = colDef(name = "Timmers", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.timmers =colDef(name = "Timmers", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Adjusted.p.Pilling = colDef(name = "Pilling", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            nsnp.pilling = colDef(name = "Pilling", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.pilling = colDef(name = "Pilling", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.pilling = colDef(name = "Pilling", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.pilling =colDef(name = "Pilling", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5))
+            
+            ),
+            columnGroups = list(
+              colGroup(name = "nsnp", columns = c("nsnp.timmers", "nsnp.pilling", "nsnp.90", "nsnp.99")),
+              colGroup(name = "Beta", columns = c("b.pilling", "b.timmers", "b.90", "b.99")),
+              colGroup(name = "SE", columns = c("se.pilling", "se.timmers", "se.90", "se.99")),
+              colGroup(name = "p-value", columns = c("pval.pilling", "pval.timmers", "pval.90", "pval.99")),
+              colGroup(name = "Adjusted BH p-value", columns = c("Adjusted.p.Pilling", "Adjusted.p.Timmers", "Adjusted.p.Cases90", "Adjusted.p.Cases99"))
+            ))
+```
+
+## Common Among UK Biobank studies
+```{r}
+
+dat_all %>% filter(Pilling == "YES" & Timmers == "YES") %>%
+  select(exposure, nsnp.pilling, b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling, nsnp.timmers, b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers,  Exposure.Dataset) %>%
+  reactable(columns = list(
+            exposure = colDef(name = "Exposure"),
+            Exposure.Dataset = colDef(name = "Exposure Dataset", align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            Adjusted.p.Timmers = colDef(name = "Timmers", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            nsnp.timmers = colDef(name = "Timmers", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.timmers = colDef(name = "Timmers", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.timmers = colDef(name = "Timmers", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.timmers =colDef(name = "Timmers", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Adjusted.p.Pilling = colDef(name = "Pilling", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            nsnp.pilling = colDef(name = "Pilling", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.pilling = colDef(name = "Pilling", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.pilling = colDef(name = "Pilling", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.pilling =colDef(name = "Pilling", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5))
+            
+            ),
+            columnGroups = list(
+              colGroup(name = "nsnp", columns = c("nsnp.timmers", "nsnp.pilling" )),
+              colGroup(name = "Beta", columns = c("b.pilling", "b.timmers")),
+              colGroup(name = "SE", columns = c("se.pilling", "se.timmers")),
+              colGroup(name = "p-value", columns = c("pval.pilling", "pval.timmers")),
+              colGroup(name = "Adjusted BH p-value", columns = c("Adjusted.p.Pilling", "Adjusted.p.Timmers"))
+            ))
+```
+
+## Common Exposures Among Deleen Outcomes
+
+```{r}
+
+dat_all %>% filter(Cases90 == "YES" & Cases99 == "YES") %>%
+  select(exposure, nsnp.90, b.90, se.90, pval.90, Adjusted.p.Cases90, nsnp.99, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset) %>%
+  reactable(columns = list(
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Cases90 = colDef(name = "90th Percentile", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Exposure.Dataset = colDef(name = "Exposure Dataset", align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            nsnp.90 = colDef(name = "90th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.90 = colDef(name = "90th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.90 = colDef(name = "90th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.90 = colDef(name = "90th Percentile", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Adjusted.p.Cases99 = colDef(name = "99th Percentile", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            nsnp.99 = colDef(name = "99th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.99 = colDef(name = "99th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.99 = colDef(name = "99th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.99 = colDef(name = "99th Percentile", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5))
+            
+            
+            ),
+            columnGroups = list(
+              colGroup(name = "nsnp", columns = c("nsnp.90", "nsnp.99")),
+              colGroup(name = "Beta", columns = c("b.90", "b.99")),
+              colGroup(name = "SE", columns = c("se.90", "se.99")),
+              colGroup(name = "p-value", columns = c("pval.90", "pval.99")),
+              colGroup(name = "Adjusted BH p-value", columns = c("Adjusted.p.Cases90", "Adjusted.p.Cases99"))
+            ))
+```
+
+## Common Exposures among Longevity studies that looked at 90th Percentile 
+```{r}
+
+dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases90 == "YES" ) %>%
+  select(exposure, nsnp.pilling, b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling, nsnp.timmers, b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, nsnp.90, b.90, se.90, pval.90, Adjusted.p.Cases90, Exposure.Dataset) %>%
+  reactable(columns = list(
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Cases90 = colDef(name = "90th Percentile", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Exposure.Dataset = colDef(name = "Exposure Dataset", align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            nsnp.90 = colDef(name = "90th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.90 = colDef(name = "90th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.90 = colDef(name = "90th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.90 = colDef(name = "90th Percentile", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Adjusted.p.Timmers = colDef(name = "Timmers", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            nsnp.timmers = colDef(name = "Timmers", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.timmers = colDef(name = "Timmers", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.timmers = colDef(name = "Timmers", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.timmers =colDef(name = "Timmers", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Adjusted.p.Pilling = colDef(name = "Pilling", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            nsnp.pilling = colDef(name = "Pilling", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.pilling = colDef(name = "Pilling", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.pilling = colDef(name = "Pilling", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            pval.pilling =colDef(name = "Pilling", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5))
+            
+            ),
+            columnGroups = list(
+              colGroup(name = "nsnp", columns = c("nsnp.timmers", "nsnp.pilling", "nsnp.90")),
+              colGroup(name = "Beta", columns = c("b.pilling", "b.timmers", "b.90")),
+              colGroup(name = "SE", columns = c("se.pilling", "se.timmers", "se.90")),
+              colGroup(name = "p-value", columns = c("pval.pilling", "pval.timmers", "pval.90")),
+              colGroup(name = "Adjusted BH p-value", columns = c("Adjusted.p.Pilling", "Adjusted.p.Timmers", "Adjusted.p.Cases90"))
+            ))
+```
 ## Discussion
 
 

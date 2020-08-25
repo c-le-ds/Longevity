@@ -2157,3 +2157,9 @@ MR <- MR %>%
 
 saveRDS(MR, "data/MR/Cases99_multtest.rds")
 ```
+
+
+```{r}
+sum(exposure_Timmers %>% exposure_case90)/length(exposure_Timmerspar)
+```
+
