@@ -34,7 +34,7 @@ system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_3
 Download Pilling outcomes
 ```{r, eval = FALSE}
 
-
+system(wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/PillingLC_29227965_GCST006698/harmonised/
 
 ```
 
@@ -42,7 +42,7 @@ Download Timmers outcomes
 
 ```{r}
 
-system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/DeelenJ_31413261_GCST008598/Results_90th_percentile.txt.gz")
+system("wget ftp://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/PillingLC_29227965_GCST006698/harmonised/29227965-GCST006698-EFO_0007796-build37.f.tsv.gz")
 ```
 
 ### I. First Outcome: cases 90
@@ -791,7 +791,7 @@ exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(e
 cases_90 <- vector(mode = "list", length = length(exp_unique))
 
 # for(i in seq_along(exp_unique)){ 
-for(i in 1:){#finished
+for(i in 1:seq_along(exp_unique)){#finished
   
   exp <- exposures_genes %>%
     filter(exposure == exp_unique[i])
@@ -1195,7 +1195,7 @@ exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(e
 cases_99 <- vector(mode = "list", length = length(exp_unique))
 
 # for(i in seq_along(exp_unique)){ 
-for(i in 1:){#finished
+for(i in 1:seq_along(exp_unique)){#finished
   
   exp <- exposures_genes %>%
     filter(exposure == exp_unique[i])
@@ -1997,27 +1997,45 @@ saveRDS(timmers_df, "data/harmonized/timmers_metabolite_df.rds")
 
 
 
-### IV. MR Analysis
+## D. MR Analysis
 
-#### a. UK 90 
+### I. UK 90 
 Downloaded Pilling Data
 ```{r}
-gwas <- readRDS("data/harmonized/pilling_download_gwas.rds")
-mr_gwas <- mr(gwas)%>%
+gwas <- readRDS("data/harmonized/Pilling/pilling_download_gwas.rds")
+mr_gwas <- gwas %>% 
+  filter(error == "FALSE") %>%
+  mr()%>%
   mutate(exposure_dat = "GWAS")
 
-protein <-readRDS("data/harmonized/pilling_download_protein.rds")
-mr_protein <- mr(protein) %>%
+protein <-readRDS("data/harmonized/Pilling/pilling_download_protein.rds")
+mr_protein <- protein %>%
+  filter(error == "FALSE") %>%
+  mr() %>%
   mutate(exposure_dat = "protein")
 
-metabolite <- readRDS("data/harmonized/pilling_download_metabolites.rds")
-mr_metabolite <- mr(metabolite)  %>%
+metabolite <- readRDS("data/harmonized/Pilling/pilling_download_metabolites.rds")
+mr_metabolite <- metabolite %>%
+  filter(error == "FALSE") %>%
+  mr()  %>%
   mutate(exposure_dat = "metabolite")
 
+methylation <- readRDS("data/harmonized/Pilling/pilling_download_methylation_df.rds")
+mr_methylation <- methylation %>%
+  filter(error =="FALSE") %>%
+  mr()%>%
+  mutate(exposure_dat = "methylation")
 
-mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
+genes <- readRDS("data/harmonized/Pilling/pilling_download_genes_df.rds")
+mr_genes <- genes %>%
+  filter(error == "FALSE") %>%
+  mr() %>%
+  mutate(exposure_dat = "genes")
 
-saveRDS(mr, "data/MR/MR_pilling.rds")
+
+mr <- rbind(mr_gwas, mr_protein, mr_metabolite, mr_methylation, mr_genes)
+
+saveRDS(mr, "data/MR/MR_pilling_filterF.rds")
 ```
 
 Control for multiple testing
@@ -2025,8 +2043,7 @@ Control for multiple testing
 
 # Look only at the Inverse variance weighted method for unique exposures
 MR <- mr %>%
-  filter(method == "Inverse variance weighted") %>%
-  filter(!duplicated(exposure))
+  filter(method == "Inverse variance weighted") 
 
 mt.pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
 
@@ -2035,30 +2052,47 @@ mt.pval$adjp
 MR <- MR %>%
    mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
 
+#check for duplicate significant exposures
+
+dup <- MR %>%
+  filter(method == "Inverse variance weighted", pval_BH < 0.05)
+
+
+result <- dup %>%
+    filter(!duplicated(exposure))
+
+saveRDS(MR, "data/MR/Pilling_multtest_F.rds")
+
 ```
 
+no duplicates in significant exposures after adjusting for multiple testing
 
-
-#### b. Timmers data
+### II. Timmers data
 
 ```{r}
-gwas <- readRDS("data/harmonized/timmers_gwas_df.rds")
-mr_gwas <- mr(gwas)%>%
+gwas <- readRDS("data/harmonized/Timmers/timmers_gwas_df.rds")
+mr_gwas <- gwas %>%
+  filter(error == "FALSE") %>%
+  mr()%>%
   mutate(exposure_dat = "GWAS")
 
-protein <-readRDS("data/harmonized/timmers_protein_df.rds")
+protein <-readRDS("data/harmonized/Timmers/timmers_protein_df.rds")
 
-mr_protein <- mr(protein) %>%
+mr_protein <- protein %>%
+  filter(error == "FALSE") %>%
+  mr() %>%
   mutate(exposure_dat = "protein")
 
-metabolite <- readRDS("data/harmonized/timmers_metabolite_df.rds")
-mr_metabolite <- mr(metabolite)  %>%
+metabolite <- readRDS("data/harmonized/Timmers/timmers_metabolite_df.rds")
+mr_metabolite <- metabolite %>%
+  filter(error == "FALSE") %>%
+  mr()  %>%
   mutate(exposure_dat = "metabolite")
 
 
 mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 
-saveRDS(mr, "data/MR/MR_timmers.rds")
+saveRDS(mr, "data/MR/MR_timmers_F.rds")
 ```
 
 Control for multiple testing
@@ -2066,8 +2100,7 @@ Control for multiple testing
 
 # Look only at the Inverse variance weighted method for unique exposures
 MR <- mr %>%
-  filter(method == "Inverse variance weighted") %>%
-  filter(!duplicated(exposure))
+  filter(method == "Inverse variance weighted")
 
 mt.pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
 
@@ -2076,28 +2109,48 @@ mt.pval$adjp
 MR <- MR %>%
    mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
 
-saveRDS(MR, "../data/MR/Timmers_multtest.rds")
+
+#check for duplicate significant exposures
+
+dup <- MR %>%
+  filter(method == "Inverse variance weighted", pval_BH < 0.05)
+
+
+result <- dup%>%
+    filter(!duplicated(exposure))
+
+#no duplicate exposures in signficant results where adjusted pvalue exists
+
+saveRDS(MR, "data/MR/Timmers_multtest.rds")
 ```
-#### c. Cases 90 from Deleen et al
+### III. Cases 90 from Deleen et al
 Deleen cases 90
 
 ```{r}
-gwas <- readRDS("data/harmonized/cases_90_gwas_df.rds")
-mr_gwas <- mr(gwas)%>%
+gwas <- readRDS("data/harmonized/Cases90/cases_90_gwas_df.rds")
+mr_gwas <- gwas %>%
+  filter(error == "FALSE") %>%
+  mr()%>%
   mutate(exposure_dat = "GWAS")
-saveRDS(mr_gwas, "data/harmonized/MR_cases_90_gwas.rds")
-protein <-readRDS("data/harmonized/cases_90_protein_df.rds")
-mr_protein <- mr(protein) %>%
+saveRDS(mr_gwas, "data/harmonized/Cases90/MR_cases_90_gwas_F.rds")
+
+
+protein <-readRDS("data/harmonized/Cases90/cases_90_protein_df.rds")
+mr_protein <- protein %>%
+  filter(error == "FALSE") %>%
+  mr() %>%
   mutate(exposure_dat = "protein")
 
-metabolite <- readRDS("data/harmonized/cases_90_metabolites_df.rds")
-mr_metabolite <- mr(metabolite)  %>%
+metabolite <- readRDS("data/harmonized/Cases90/cases_90_metabolites_df.rds")
+mr_metabolite <- metabolite %>%
+  filter(error == "FALSE") %>%
+  mr()  %>%
   mutate(exposure_dat = "metabolite")
 
 
 mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 
-saveRDS(mr, "data/MR/MR_cases_90.rds")
+saveRDS(mr, "data/MR/MR_cases_90_F.rds")
 ```
 
 
@@ -2106,8 +2159,7 @@ Control for multiple testing
 
 # Look only at the Inverse variance weighted method for unique exposures
 MR <- mr %>%
-  filter(method == "Inverse variance weighted") %>%
-  filter(!duplicated(exposure))
+  filter(method == "Inverse variance weighted")
 
 mt.pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
 
@@ -2116,28 +2168,45 @@ mt.pval$adjp
 MR <- MR %>%
    mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
 
-saveRDS(MR, "data/MR/Cases90_multtest.rds")
+#check for duplicate significant exposures
+
+dup <- MR %>%
+  filter(method == "Inverse variance weighted", pval_BH <= 0.05)
+
+
+result <- dup %>%
+    filter(!duplicated(exposure))
+#no duplicate exposures for adjusted p-values < = 0.05
+
+saveRDS(MR, "data/MR/Cases90_multtest_F.rds")
 ```
 
-#### d. Cases 99 from Deleen et al
+### IV. Cases 99 from Deleen et al
 ```{r}
-gwas <- readRDS("data/harmonized/cases_99_gwas_df.rds")
+gwas <- readRDS("data/harmonized/Cases99/cases_99_gwas_df.rds")
 
-mr_gwas <- mr(gwas)%>%
+mr_gwas <- gwas %>%
+  filter(error == "FALSE") %>%
+  mr() %>%
   mutate(exposure_dat = "GWAS")
-saveRDS(mr_gwas, "data/harmonized/MR_cases_99_gwas.rds")
-protein <-readRDS("data/harmonized/cases_99_protein_df.rds")
-mr_protein <- mr(protein) %>%
+
+
+protein <-readRDS("data/harmonized/Cases99/cases_99_protein_df.rds")
+mr_protein <- protein %>%
+  filter(error == "FALSE") %>%
+  mr() %>%
   mutate(exposure_dat = "protein")
 
-metabolite <- readRDS("data/harmonized/cases_99_metabolites_df.rds")
-mr_metabolite <- mr(metabolite)  %>%
+metabolite <- readRDS("data/harmonized/Cases99/cases_99_metabolites_df.rds")
+mr_metabolite <- metabolite %>%
+  filter(error == "FALSE") %>%
+  mr()  %>%
   mutate(exposure_dat = "metabolite")
 
 
 mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 
-saveRDS(mr, "data/MR/MR_cases_99.rds")
+saveRDS(mr, "data/MR/MR_cases_99_F.rds")
 ```
 
 Control for multiple testing
@@ -2145,8 +2214,7 @@ Control for multiple testing
 
 # Look only at the Inverse variance weighted method for unique exposures
 MR <- mr %>%
-  filter(method == "Inverse variance weighted") %>%
-  filter(!duplicated(exposure))
+  filter(method == "Inverse variance weighted")
 
 mt.pval <- mt.rawp2adjp(MR$pval, proc = "BH", alpha = 0.05)
 
@@ -2155,7 +2223,16 @@ mt.pval$adjp
 MR <- MR %>%
    mutate(pval_BH = mt.pval[["adjp"]][order(mt.pval$index), "BH"])
 
-saveRDS(MR, "data/MR/Cases99_multtest.rds")
+#check for duplicate significant exposures
+
+dup <- MR %>%
+  filter(method == "Inverse variance weighted", pval_BH <= 0.05)
+
+
+result <- dup %>%
+    filter(!duplicated(exposure))
+
+saveRDS(MR, "data/MR/Cases99_multtest_F.rds")
 ```
 
 
