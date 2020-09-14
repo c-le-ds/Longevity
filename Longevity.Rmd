@@ -1929,7 +1929,7 @@ timmers <- vector(mode = "list", length = length(exp_unique))
 
 for(i in seq_along(exp_unique)){ 
   
-  exp <- exposures_proteins %>%
+  exp <- exposures_metabolites %>%
     filter(exposure == exp_unique[i])
   
   outcome <- tryCatch( 
@@ -1971,7 +1971,7 @@ for(i in seq_along(exp_unique)){
     
 
   }else{
-    pilling_download[[i]] <- tibble(error = "no matching rsids in outcome")
+    timmers[[i]] <- tibble(error = "no matching rsids in outcome")
     error <- tibble(error = outcome$message,
                     location_i = i,
                     exposure = exp_unique[i],
@@ -2232,6 +2232,8 @@ dup <- MR %>%
 result <- dup %>%
     filter(!duplicated(exposure))
 
+#no duplicate exposures
+
 saveRDS(MR, "data/MR/Cases99_multtest_F.rds")
 ```
 
@@ -2240,3 +2242,111 @@ saveRDS(MR, "data/MR/Cases99_multtest_F.rds")
 sum(exposure_Timmers %>% exposure_case90)/length(exposure_Timmerspar)
 ```
 
+
+
+### V. Check Assumptions
+For significant results (adjusted p-value <0.05), we will check MR assumptions to see if further analysis or other MR methods should be used to obtain a better estimate of the relationship between the exposure and longevity, our outcome of interest.
+
+
+First, lets get the significant exposures
+```{r}
+library(tidyverse)
+library(reactable)
+library(TwoSampleMR)
+dat <- readRDS( "results/full_results_201908.rds")
+
+timmers_exp <- dat %>%
+  filter(Timmers == "YES") %>%
+  pull(exposure)
+
+pilling_exp <- dat %>%
+  filter(Pilling == "YES") %>%
+  pull(exposure)
+
+cases90_exp <- dat %>%
+  filter(Cases90 == "YES") %>%
+  pull(exposure)
+
+cases99_exp <- dat %>%
+  filter(Cases99 == "YES") %>%
+  pull(exposure)
+```
+
+Then let's pull the exposures from the harmonized datasets
+Timmers Dataset
+```{r}
+gwas <- readRDS("data/harmonized/Timmers/timmers_gwas_df.rds") %>%
+  mutate(data_source.exposure = "gwas")
+metabolite <- readRDS("data/harmonized/Timmers/timmers_metabolite_df.rds") %>%
+  rename(pval.exposure = pval)%>%
+  mutate(units.exposure = NA, 
+         units.exposure_dat = NA,
+         gene.exposure = NA,
+         chr.exposure = NA)
+protein <- readRDS("data/harmonized/Timmers/timmers_protein_df.rds")%>%
+  mutate(units.exposure = NA, 
+         units.exposure_dat = NA) %>%
+  rename(pval.exposure = pval)
+
+timmers <- rbind(gwas, metabolite, protein)
+
+dat <- timmers %>%
+  filter(exposure %in% timmers_exp)
+```
+
+Run the assumptions test
+```{r}
+#Test for heterogeneity
+
+het_test <- mr_heterogeneity(dat)
+pleio_test <- mr_pleiotropy_test(dat)
+leaveoo <- mr_leaveoneout(dat)
+```
+
+Plots 
+```{r}
+result <-readRDS("data/MR/MR_timmers_F.rds")
+
+p1 <- mr_scatter_plot(result, dat)
+p1[8]
+```
+
+Cases99
+Then let's pull the exposures from the harmonized datasets
+Timmers Dataset
+```{r}
+gwas <- readRDS("data/harmonized/Cases99/cases_99_gwas_df.rds") %>%
+  mutate(data_source.exposure = "gwas")
+metabolite <- readRDS("data/harmonized/Cases99/cases_99_metabolites_df.rds") %>%
+  rename(pval.exposure = pval)%>%
+  mutate(units.exposure = NA, 
+         units.exposure_dat = NA,
+         gene.exposure = NA,
+         chr.exposure = NA)
+protein <- readRDS("data/harmonized/Cases99/cases_99_protein_df.rds")%>%
+  mutate(units.exposure = NA, 
+         units.exposure_dat = NA) %>%
+  rename(pval.exposure = pval)
+
+cases99<- rbind(gwas, metabolite, protein)
+
+dat <- cases99%>%
+  filter(exposure %in% cases99_exp)
+```
+
+Run the assumptions test
+```{r}
+#Test for heterogeneity
+
+het_test <- mr_heterogeneity(dat)
+pleio_test <- mr_pleiotropy_test(dat)
+leaveoo <- mr_leaveoneout(dat)
+```
+
+Plots 
+```{r}
+result <-readRDS("data/MR/MR_cases_99_F.rds")
+
+p1 <- mr_scatter_plot(result, dat)
+p1[5]
+```

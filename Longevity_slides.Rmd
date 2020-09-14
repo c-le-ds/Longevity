@@ -21,15 +21,16 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Background
 
-```{r}
+```{r agingfig}
 knitr::include_graphics("images/An_Aging_Nation.png")
 ```
 
 
+
 ## Methods
 
-```{r}
-knitr::include_graphics("images/2MR_graphic.png")
+```{r twomrfig, out.width= "50%"}
+knitr::include_graphics("images/2MR.png")
 ```
 
 
@@ -39,69 +40,63 @@ knitr::include_graphics("images/2MR_graphic.png")
 - Outcome: outcome from another dataset using SNPs from Exposure to assess the causal relationship between Exposure and Outcome, bypassing confounders that influence the E-O relationship.
 
 **Advantages**
-  - use publicly available data from two separate studies to inform researchers on the possible relationships between an exposure and outcome
+
+  - readily available data
+  
   - simple analyses
+  
   - cost-efficient
 
-citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
+**Estimate Method - Inverse Variance Weighted**
 
-
-## Methods for Determining Estimates
-- Inverse Variance Weighted
-- Egger
-- Median Weighted
-- Mode Weighted
+- simplest method to calculate the MR estimate
+- requires all assumptions of the model to be med
 
 ## Assumption 1
 
-SNPs truly associated with Exposure, as seen from independent studies
+SNPs are truly associated with Exposure, as seen from independent studies
 
 
 **Violations**
-- LD
-  - clump SNPs that are close to each other
+
 - low power
+
   - limit SNP-exposure associations to only those that have been validated in multiple studies
+  
 - weak gIV
+
   - solution: limit gIV associated with exposure with high significance in studies from GWAS, and other databases
 
-citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
+- LD
+  - clump SNPs that are close to each other
 
+
+- Weighted Median approach
+      - allows up to 50% of SNPs to be weak or invalid instruments
+      
 ## Assumption 2 
-
-
-SNPs not associated with E-O confounders
-- difficult to prove positively to due complex biological pathways and unknown confounders
-- can be tested with known confounders of the Exposure-Outcome relationship
-
-citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
-
-## Assumption 3
 
 SNPs are associated with outcome through Exposure only
 
 **Violations**
 - Horizontal Pleiotropy
+
   - when a SNP is related to multiple traits independent of the exposure
+  
   - we can use different methods to try and detect the prescence of horizontal pleiotropy
+  
   - requires adjusted methods to estimate our association of interest even when present 
-    - MR Egger 
-      - InSIDE(Instrument Strength Independent of Direct Effect)
-        assumes no correlation between SNP-exposure association and direct efect of SNP-outcome
-      - suffers from low power
-      - weak instruments can influence the regression and therefore the estimate
-    - Weighted Median approach
-      - allows up to 50% of SNPs to be weak or invalid instruments
-    - Mode based approach
-      - futher relaxes pleiotropy assumption requirements
-- weak instruments    
-    
-**Violations**
+  
+    - MR Egger : ubiased estimate even in the prescence of horizontal pleiotropy
+      
 
-- trait heterogeneity
-  - difficult to determine without further understanding of biological pathway
+## Assumption 3
 
-citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
+SNPs not associated with E-O confounders
+
+- difficult to prove positively to due complex biological pathways and unknown confounders
+
+- can be tested with known confounders of the Exposure-Outcome relationship
 
 
 ## Other Limitations
@@ -114,6 +109,19 @@ citation: Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendeli
 - heterogeneity of effect
    - estimates are not consistent across independent instruments
    - use Cochran's Q statistic(IVW) or Rucker's Q statistic(Egger) to test for this
+
+## Methods for Determining Estimates
+- Inverse Variance Weighted
+- Egger
+    
+  - InSIDE(Instrument Strength Independent of Direct Effect)
+   assumes no correlation between SNP-exposure association and direct efect of SNP-outcome
+        
+    - suffers from low power
+    
+    - weak instruments can influence the regression and therefore the estimate
+- Median Weighted
+- Mode Weighted
 
 
 ## TWoSampleMR Package
@@ -209,7 +217,7 @@ readRDS("data/MR/Pilling_multtest_F.rds")%>%
 
 ## Results - Timmers
 ```{r}
-readRDS("data/MR/Timmers_multtest.rds")%>%
+readRDS("data/MR/Timmers_multtest_F.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
   select(-id.exposure, -id.outcome, -outcome, -method)%>%
   arrange(pval)%>%
@@ -228,7 +236,7 @@ readRDS("data/MR/Timmers_multtest.rds")%>%
 
 ## Results - Deleen Cases 90
 ```{r}
-readRDS("data/MR/Cases90_multtest.rds")%>%
+readRDS("data/MR/Cases90_multtest_F.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
   select(-id.exposure, -id.outcome, -outcome, -method)%>%
   arrange(pval)%>%
@@ -245,7 +253,7 @@ readRDS("data/MR/Cases90_multtest.rds")%>%
 
 ## Results - Deleen Cases 99
 ```{r}
-readRDS("data/MR/Cases99_multtest.rds")%>%
+readRDS("data/MR/Cases99_multtest_F.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
   select(-id.exposure, -id.outcome, -outcome, -method)%>%
   arrange(pval)%>%
@@ -268,10 +276,10 @@ readRDS("data/MR/Cases99_multtest.rds")%>%
 ```{r, echo=FALSE, results='hide',message=FALSE}
 library(VennDiagram)
 library(tidyverse)
-Pilling_dat <- readRDS("data/MR/Pilling_multtest.rds")
-Timmers_dat <- readRDS("data/MR/Timmers_multtest.rds")
-Cases90_dat <- readRDS("data/MR/Cases90_multtest.rds")
-Cases99_dat <- readRDS("data/MR/Cases99_multtest.rds")
+Pilling_dat <- readRDS("data/MR/Pilling_multtest_F.rds")
+Timmers_dat <- readRDS("data/MR/Timmers_multtest_F.rds")
+Cases90_dat <- readRDS("data/MR/Cases90_multtest_F.rds")
+Cases99_dat <- readRDS("data/MR/Cases99_multtest_F.rds")
 
 
 ```
@@ -842,7 +850,7 @@ dat_all %>% filter(Cases90 == "YES" | Pilling == "YES") %>%
 
 
 ## Comparison - Deleen 90th Percentile versus Pilling 90th Percentile Longevity
-
+Table 12. 
 ```{r}
 dat_all %>% filter(Cases90 == "YES" | Timmers == "YES") %>%
   select(exposure, Cases90, Timmers, nsnp.90, b.90, se.90, pval.90, Adjusted.p.Cases90,  nsnp.timmers, b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, Exposure.Dataset) %>%
@@ -891,9 +899,41 @@ dat_all %>% filter(Cases90 == "YES" | Timmers == "YES") %>%
 ```
 
 
-select(exposure, Exposure.Dataset.Timmers) %>%
-  reactable(columns = list(
+Table 13 . Exposures among Four Outcomes who are significant(adjusted p-value $\leq$ 0.05) using the Inverse Variance Weighted Method with unadjusted and adjusted p-values
+```{r}
+#filter on OR 
+#create a filterable table
+dat_all %>% select(exposure, Adjusted.p.Timmers,Adjusted.p.Pilling, Adjusted.p.Cases90, Adjusted.p.Cases99, pval.timmers, pval.pilling, pval.90, pval.99)%>%
+  reactable(filterable = TRUE, paginationType = "jump", showSortable = TRUE,
+          columns = list(
             exposure = colDef(name = "Exposure"),
+            Adjusted.p.Timmers = colDef(name = "Adjusted p-value (Timmers)", 
+                                        align = "center", headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE, format = colFormat(digits = 5)),         
+            Adjusted.p.Pilling = colDef(name = "Adjusted p-value (Pilling)", 
+                                        align = "center",headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE, format = colFormat(digits = 5)),
+            Adjusted.p.Cases90 = colDef(name = "Adjusted p-value (Cases90)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5)),
+            Adjusted.p.Cases99 = colDef(name = "Adjusted p-value (Cases99)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5)),
+            pval.timmers = colDef(name = "p-value (Timmers)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5)),
+            pval.pilling = colDef(name = "p-value (Pilling)", 
+                                        align = "center",headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE, format = colFormat(digits = 5)),
+            pval.90 = colDef(name = "p-value (Cases90)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5)),
+            pval.99 = colDef(name = "p-value (Cases99)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5))
+            
+          ))
+```
             
 ## Conclusion
 
@@ -901,3 +941,11 @@ select(exposure, Exposure.Dataset.Timmers) %>%
 
 ## Limitations and Next Steps
 
+
+#Citations 
+Stephen Burgess, Simon G Thompson, CRP CHD Genetics Collaboration, Avoiding bias from weak instruments in Mendelian randomization studies, International Journal of Epidemiology, Volume 40, Issue 3, June 2011, Pages 755–764, https://doi.org/10.1093/ije/dyr036
+
+
+Davies NM, Holmes MV, Davey Smith G. Reading Mendelian randomisation studies: a guide, glossary, and checklist for clinicians. BMJ. 2018;362:k601. Published 2018 Jul 12. doi:10.1136/bmj.k601
+
+Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
