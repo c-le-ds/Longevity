@@ -27,7 +27,7 @@ Load Exposures
 ```{r}
 
 #set working directory
-setwd("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity")
+
 #GWAS
 load("../data/exposures/exposures_gwas.Rdata")
 
@@ -200,11 +200,7 @@ saveRDS(cases_90, "..data/harmonized/cases_90_protein.rds")
 saveRDS(cases_90_df, "..data/harmonized/cases_90_protein_df.rds")
 ```
 
-
-
-
 METABOLITES
-
 
 ```{r}
 
@@ -280,9 +276,6 @@ saveRDS(error_log, "..data/harmonized, error_log_cases90_metabolites.rds")
 saveRDS(cases_90, "..data/harmonized/cases_90_metabolites.rds")
 saveRDS(cases_90_df, "..data/harmonized/cases_90_metabolites_df.rds")
 ```
-
-
-
 
 
 GENES
@@ -1520,13 +1513,13 @@ test proteins for deleen cases 99
 
 
 ```{r}
-error_log <- data.frame()
-
-exp_unique <- exposures_proteins[!duplicated(exposures_proteins$exposure),] %>% pull(exposure)
 
 
+exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(exposure)
 
-c1 <- makeCluster(8)
+
+
+c1 <- makeCluster(6)
 registerDoParallel(c1)
 
 # to make things run faster, the outcome and harmonizing steps will be split
@@ -1537,9 +1530,9 @@ registerDoParallel(c1)
 
 
 
-cases_99 <- foreach(i = 1:2, .packages = c("tidyverse", "TwoSampleMR")) %dopar% {
+cases_99p <- foreach(i = 44001:46000, .packages = c("tidyverse", "TwoSampleMR")) %dopar% {
  
-  exp <- exposures_proteins %>%
+  exp <- exposures_genes %>%
     filter(exposure == exp_unique[i])
  
   outcome <- tryCatch( 
@@ -1602,14 +1595,14 @@ cases_99 <- foreach(i = 1:2, .packages = c("tidyverse", "TwoSampleMR")) %dopar% 
 }
 
 stopCluster(c1) 
+cases_99_genes <- c(cases_99_genes, cases_99p)
 
-cases_99_df <- bind_rows(cases_90)
+cases_99_df <- bind_rows(cases_99_genes)
  
-saveRDS(error_log, "..data/harmonized/error_log_cases_99_protein.rds")
 
 
-saveRDS(cases_99, "..data/harmonized/cases_99_protein.rds")
-saveRDS(cases_99_df, "..data/harmonized/cases_99_protein_df.rds")
+saveRDS(cases_99_genes, "../data/harmonized/cases_99_genes.rds")
+saveRDS(cases_99_df, "../data/harmonized/cases_99_genes_df.rds")
 
   
 
