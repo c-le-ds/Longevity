@@ -8,7 +8,7 @@ output: html_document
 ## I. Basic WorkFlow
 ```{r}
 library(TwoSampleMR)
-
+```
 # List available GWASs
 ao <- available_outcomes()
 
