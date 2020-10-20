@@ -1530,7 +1530,7 @@ registerDoParallel(c1)
 
 
 
-cases_99p <- foreach(i = 44001:46000, .packages = c("tidyverse", "TwoSampleMR")) %dopar% {
+cases_99p <- foreach(i = 72001:72005, .packages = c("tidyverse", "TwoSampleMR")) %dopar% {
  
   exp <- exposures_genes %>%
     filter(exposure == exp_unique[i])
@@ -1609,12 +1609,86 @@ saveRDS(cases_99_df, "../data/harmonized/cases_99_genes_df.rds")
 ```
 
 
+try it as a function
+```{r}
+ 
+harmonize <- function(i, exp_unique){
+  
+cases_99p<- vector(mode = "list", length = length(exp_unique))
+
+exp <- exposures_genes %>%
+    filter(exposure == exp_unique[i])
+ 
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "C:/Users/Me/Desktop/Longevity/data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N"),
+    error=function(e) e)
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      cases_99 <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize",
+               location_i = exp_unique[i],
+               message = harmonize$message)
+      # error <-tibble(error = harmonize$message, 
+      #          location_i = i,
+      #          exposure = exp_unique[i],
+      #          message = "harmonizing error")
+      # 
+      # error_log <- rbind(error_log, error)
+
+      }else {
+        cases_99 <- harmonize %>%
+          mutate(error = "FALSE",
+                 location_i = exp_unique[i],
+                 message = "no error")
+  
+
+      }
+    
+
+  }else{
+    cases_99<- tibble(error = "no matching rsids in outcome",
+                      location_i = exp_unique[i],
+                      message = outcome$message)
+    # error <- tibble(error = outcome$message,
+    #                 location_i = i,
+    #                 exposure = exp_unique[i],
+    #                 message = "no matching rsids in outcome")
+    # error_log <- rbind(error_log, error)
+  }
+  return(cases_99)
+    
+  # print(paste0("Harmonized exposure ", exp_unique[i], 
+  #              " which is iterator ", i)) 
+}
+
+cases_99 <- lapply(72001:82000,harmonize, exp_unique )
+```
+
+
+
 ```{r}
 library(doParallel)
 library(foreach)
 x <- rnorm(100)
 
-squareandroot <- function(root = NULL, square = NULL, half = NULL, double = NULL)
+ squareandroot <- function(root = NULL, square = NULL, half = NULL, double = NULL)
 {
   dat <- list(
     root = root,
