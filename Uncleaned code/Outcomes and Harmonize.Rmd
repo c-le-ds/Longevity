@@ -1509,7 +1509,7 @@ saveRDS(timmers_df, "../data/harmonized/timmers_genes_df.rds")
 
 ## Test doParallel for larger exposures
 
-test proteins for deleen cases 99
+genes for deleen cases 99
 
 
 ```{r}
@@ -1611,7 +1611,7 @@ saveRDS(cases_99_df, "../data/harmonized/cases_99_genes_df.rds")
 
 try it as a function
 ```{r}
- 
+ exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(exposure)
 harmonize <- function(i, exp_unique){
   
 cases_99p<- vector(mode = "list", length = length(exp_unique))
@@ -1643,7 +1643,7 @@ exp <- exposures_genes %>%
     if(inherits(harmonize, "error") == TRUE){
       cases_99 <- merge(exp, outcome, by = "SNP") %>%
         mutate(error = "Harmonize",
-               location_i = exp_unique[i],
+               location_i = i,
                message = harmonize$message)
       # error <-tibble(error = harmonize$message, 
       #          location_i = i,
@@ -1655,7 +1655,7 @@ exp <- exposures_genes %>%
       }else {
         cases_99 <- harmonize %>%
           mutate(error = "FALSE",
-                 location_i = exp_unique[i],
+                 location_i = i,
                  message = "no error")
   
 
@@ -1664,7 +1664,7 @@ exp <- exposures_genes %>%
 
   }else{
     cases_99<- tibble(error = "no matching rsids in outcome",
-                      location_i = exp_unique[i],
+                      location_i = i,
                       message = outcome$message)
     # error <- tibble(error = outcome$message,
     #                 location_i = i,
@@ -1674,11 +1674,22 @@ exp <- exposures_genes %>%
   }
   return(cases_99)
     
-  # print(paste0("Harmonized exposure ", exp_unique[i], 
-  #              " which is iterator ", i)) 
+   print(paste0("Harmonized exposure ", exp_unique[i], 
+                " which is iterator ", i)) 
 }
+```
 
-cases_99 <- lapply(72001:82000,harmonize, exp_unique )
+run it
+```{r}
+cases_99 <- lapply(80001:85000,harmonize, exp_unique )
+cases_99_genes <- c(cases_99_genes,cases_99)
+
+cases_99_df <- bind_rows(cases_99_genes)
+ 
+
+
+saveRDS(cases_99_genes, "../data/harmonized/cases_99_genes.rds")
+saveRDS(cases_99_df, "../data/harmonized/cases_99_genes_df.rds")
 ```
 
 
