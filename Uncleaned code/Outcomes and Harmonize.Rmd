@@ -16,9 +16,10 @@ library(tidyverse) #so we can use purrr::map, and no, not just because I got cat
 library(knitr)
 library(ieugwasr)
 library(arsenal)
-library(tidyverse)
+
 library(doParallel)
 library(foreach)
+
 ```
 
 
@@ -26,7 +27,8 @@ Load Exposures
 
 ```{r}
 
-#set working directory
+
+
 
 #GWAS
 load("../data/exposures/exposures_gwas.Rdata")
@@ -44,7 +46,6 @@ exposures_metabolites <- readRDS("../data/exposures/exposures_metabolites.rds")
 
 
 ```
-
 
 
 
