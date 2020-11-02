@@ -1,35 +1,54 @@
 ---
-title: "Two Sample Mendelian Randomization"
+title: "Two Sample Mendelian Randomization on Longevity GWAS"
 author: "Christine Le"
-date:  "`r format(Sys.time(), '%d %B, %Y')`"
-output: 
-  slidy_presentation:
-    theme: cosmo
-
-    
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  rmdformats::material
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-library(tidyverse)
-library(reactable)
 library(VennDiagram)
+library(reactable)
+library(tidyverse)
+
+#data
+
+
+
+Pilling_dat <- readRDS("data/MR/Pilling_multtest_F.rds")
+Timmers_dat <- readRDS("data/MR/Timmers_multtest_F.rds")
+Cases90_dat <- readRDS("data/MR/Cases90_multtest_F.rds")
+Cases99_dat <- readRDS("data/MR/Cases99_multtest_F.rds")
+
+
 
 ```
 
 
-## Background
+# Background
 
-```{r agingfig, out.width= "50%"}
+```{r agingfig}
 knitr::include_graphics("images/An_Aging_Nation.png")
 ```
 
-## Motivation
-```{r dag, out.width= "80%"}
+# Motivation
+
+```{r twomr, out.width= "50%"}
 knitr::include_graphics("images/General_DAG.png")
 ```
 
-## Methods
+**Longevity is complex**
+  
+  - Confounding makes finding true associations difficult
+  
+**Solution** : Two Sample Mendelian Randomization
+
+ - use two datasets from similar populations
+ 
+ - provide strong evidence of the true relationship between longevity and certain exposures
+
+# Methods
 
 ```{r twomrfig, out.width= "50%"}
 knitr::include_graphics("images/2MR.png")
@@ -49,101 +68,108 @@ knitr::include_graphics("images/2MR.png")
   
   - cost-efficient
 
-**Estimate Method - Inverse Variance Weighted**
 
-- simplest method to calculate the MR estimate
-- requires all assumptions of the model to be med
+# Assumptions 
 
-## Assumption 1
+```{r assumptions, out.width= "50%"}
+knitr::include_graphics("images/2MR.png")
+```
+
+**Assumption 1** : The first assumption is that SNPs are truly associated with Exposure
+
+**Assumption 2** : No Horizontal Pleiotropy
+
+**Assumption 3** : SNPs not associated with E-O confounders
+
+# Assumption # 1 
+
+**Assumption 1**
+
 ```{r assumption1, out.width= "50%"}
 knitr::include_graphics("images/2MR.png")
 ```
-SNPs are truly associated with Exposure, as seen from independent studies
+
+**Assumption 1** : The first assumption is that SNPs are truly associated with Exposure, as seen from independent studies
+
+- limit exposures which are significantly associated with SNPs from other GWAS studies
 
 
-**Violations**
+# Assumption # 2  
 
-- low power
+**Assumption 2**
 
-  - limit SNP-exposure associations to only those that have been validated in multiple studies
-  
-- weak gIV
-
-  - solution: 
-  
-- introduce horizontal pleiotropy
-
-- LD
-  - clump SNPs that are close to each other
-
-**Solutions**
-- Weighted Median approach
-      - allows up to 50% of SNPs to be weak or invalid instruments
-- limit gIV associated with exposure with high significance in studies from GWAS, and other databases
-      
-## Assumption 2 
-```{r asssumption2, out.width= "50%"}
+```{r assumption2, out.width= "50%"}
 knitr::include_graphics("images/2MR.png")
 ```
-SNPs are associated with outcome through Exposure only
 
-**Violations**
-- Horizontal Pleiotropy
+**Assumption 2** : No Horizontal Pleiotropy
 
-  - when a SNP is related to multiple traits independent of the exposure
-  
-  - we can use different methods to try and detect the prescence of horizontal pleiotropy
-  
-  - requires adjusted methods to estimate our association of interest even when present 
-  
-    - MR Egger : ubiased estimate even in the prescence of horizontal pleiotropy
-      
+- SNPs are associated with outcome through Exposure only
 
-## Assumption 3
+# Assumption # 3  
+
+**Assumption 3**
+
 ```{r assumption3, out.width= "50%"}
 knitr::include_graphics("images/2MR.png")
 ```
-SNPs not associated with E-O confounders
 
-- difficult to prove positively to due complex biological pathways and unknown confounders
-
-- can be tested with known confounders of the Exposure-Outcome relationship
+**Assumption 3** : SNPs not associated with E-O confounders
 
 
-## Other Limitations
+ - the lack of confounders is partly what allows us assume that the randomness of allele inheritance is equivalent to random assignment in an RCT
 
-- developmenal compensation /canalization
-   - solution: careful interpretation of results, realizing that both environmental and genetic factors influence an outcome.
-   - bias towards null
-- collider bias
-  - be careful in how we interpret the results of our analysis. Based on current knowledge, could the relationship we see in our study be due to other biases like loss to follow up.
-- heterogeneity of effect
-   - estimates are not consistent across independent instruments
-   - use Cochran's Q statistic(IVW) or Rucker's Q statistic(Egger) to test for this
 
-## Methods for Determining Estimates
-Independence of SNPs
 
-- LD clumping : ensuring independence
+# Violations of Assumptions
 
-- Inverse Variance Weighted
-  - requires all three assumptions are met
-  - simple
-  - weights: inverse variance of outcome effects
-- Egger
-  - InSIDE(Instrument Strength Independent of Direct Effect)
-   assumes no correlation between SNP-exposure association and direct efect of SNP-outcome
-        
+**Weak Instruments** : when the SNP is not strongly associated with the exposure
+
+  - low power
+  - bias association towards the null
+  
+**Horizontal Pleiotropy** : refers to the effects of the SNPs on the outcome not mediated by the exposure
+
+  - when a SNP is related to multiple traits independent of the exposure  
+  
+    - requires adjusted methods to estimate our association of interest even when present 
+
+
+
+# Methods for Determining Estimates Overview
+
+```{r}
+knitr::include_graphics("images/LD.png")
+```
+
+**LD Clumping**
+
+  - clump SNPs that are close to each other
+
+
+
+**Inverse Variance Weighted**
+
+- simplest method to calculate the MR estimate
+
+- requires all assumptions of the model to be med
+
+**Egger**
+
+- estimates are unbiased in the presence of horizontal pleiotropy
+   
     - suffers from low power
     
     - weak instruments can influence the regression and therefore the estimate
-- Median/ Weighted Median
-  - allows for up to 50 percent of instruments to be invalid
-  - valid instruments : meet all assumptions
-  - weighted option: allows for stronger SNPs to contribute more to the estimate. Weights are calculated in the same was as in IVW method.
 
 
-## TWoSampleMR Package
+**Median Weighted**
+
+- estimates are unbiased for up to 50% weak or invalid instruments
+
+
+
+# TWoSampleMR Package
 
 **Software- TwoSampleMR Package**
 
@@ -152,45 +178,70 @@ Allows researchers to more easily perform 2-sample Mendelian Randomization on GW
 
 source: Gibran Hemani, Jie Zheng, Kaitlin H Wade, Charles Laurin, Benjamin Elsworth, Stephen Burgess, Jack Bowden, Ryan Langdon, Vanessa Tan, James Yarmolinsky, Hashem A. $ The MR-Base platform supports systematic causal inference across the human phenome. eLife 2018. doi: https://doi.org/10.7554/eLife.34408 
 
+# Detecting Violations
 
-## Ways to Assess Violations
+**Heterogeneity** : estimates are not consistent across independent instruments
 
-**Statistical Tests**
-Test for Heterogeneity
+- suggests that an assumption is being violated
 
- - mr_heterogeneity() function
- 
-  - will perform a test of heterogeneity on harmonized data
+  - difficult to detect
   
-  - if significant and there is the presence of horizontal pleiotropy MR
-  Egger method would result in a better estimate than IVW. 
+  - possible causes : horizontal pleiotopy, non-homogenous underlying populations in the study, weak instruments
   
-  - if there is no or negligible horizontal pleiotropy, IVW method 
+- TwoSampleMR package: use mr_heterogeneity() function
 
-**Graphically**
+  - Q statistic :
+    - review definition
+    - will perform a test of heterogeneity on harmonized data
+  
+    
+Horizontal Pleiotropy
 
-Scatter plot 
+**Horizontal Pleiotropy** : refers to the effects of the SNPs on the outcome not mediated by the exposure
+
+- TwoSampleMR: use mr_pleiotropy_test()
+   - if significant,  there is the presence of horizontal pleiotropy 
+
+      
+
+**SNPs associated with E-O confounders**  
+
+- difficult to prove positively to due complex biological pathways and unknown confounded
+
+- can be tested with known confounded of the Exposure-Outcome relationship
+
+**Scatter plot** 
 
   - can evaluate whether there are outliers in the IV estimates
+
+# Solutions
+
+**Weak Instruments**
+
+- Use Median Weighted Estimation Method
+  - only have of the SNPs need to meet the assumptions above
   
-Funnel Plot
+**horizontal pleiotropy**
 
-**Steps**
+- Use Egger Estimation Method
+  - MR Egger method would result in a better estimate than IVW
 
-1. Find top SNPs associated with each phenotype/exposure, use ld_clump() function  from the ieugwasr package to ensure instruments/SNPs for an exposure are independent.
-Note: can use the clump_data() function for non-local clumping. 
 
-2. For each exposure with associated SNPs, find those SNPs in the outcome data, harmonize the merged data to ensure that the SNP association we are seeing is occurring on the same allele and located on the forward strand. (Aligned to human genome build 37)
 
-3. Perform MR
+# Other Limitations
 
-4. Analyze results for violations of assumptions, correct for multiple testing errors
+**developmenal compensation /canalization**
 
-5. Perform other MR methods to account for any violations found in 4
+   - solution: careful interpretation of results, realizing that both environmental and genetic factors influence an outcome.
+   
+   - bias towards null
+   
+**collider bias**
 
-Code : https://github.com/c-le-ds/Longevity/blob/master/Longevity.Rmd
+  - be careful in how we interpret the results of our analysis. Based on current knowledge could the relationship we see in our study be due to other biases like loss to follow up.
 
-## Data Description - Exposures
+
+# Data Description - Exposures
 Data obtained using IEU GWAS database
 
 **GWAS **
@@ -214,7 +265,7 @@ Signficant associations of tissue-specific gene expression  GWASs from the GTEX 
 Significant hits from GWASs on DNA methylation levels performed on mothers and children, with five timepoints during the lifecourse (e.g. child - birth, child - childhood, child - adolescence, mother - pregnancy, mother - middle age).
 
 
-## Data Description - Outcomes
+# Data Description - Outcomes
 
 **Pilling**
 Results from GWAS study of parental longevity (combined monther's and father's age) on UK Biobank participants. Participants whose parental longevity was in the top 10 percent were compared with all other UK Biobank participants who met the inclusion criteria. 
@@ -225,18 +276,21 @@ GWAS results from 1 million parental lifespans of 500,000 particpants with data 
 **Deleen**
 
 
-## Results - Pilling
+# Results - Pilling
 Table 1. Significant Results (adjusted p-value $\leq$ 0.05) for Longevity as Defined by Pilling
 ```{r}
+table1_Groups <- c("Cardiovascular Drug", "Cardiovascular Outcome", "Cardiovascular Drug", "Parental Longevity", "Cardiovascular Outcome",  "Cardiovascular Risk Factors",  "Cardiovascular Risk Factors" , "Smoking", "Neurological",  "Cardiovascular Risk Factors", "Neurological",  "Cardiovascular Risk Factors",  "Cardiovascular Outcome", "Cardiovascular Risk Factors" ,   "Cardiovascular Risk Factors"  , "Neurological",  "Cardiovascular Risk Factors" , "Smoking", "Other",   "Cardiovascular Drug" ,  "Cardiovascular Risk Factors" ,  "Cardiovascular Risk Factors" ,"Neurological","Cardiovascular Risk Factors",  "Cardiovascular Risk Factors" ,  "Cardiovascular Outcome" ,  "Cardiovascular Risk Factors",  "Cardiovascular Outcome", "Cardiovascular Drug", "Other",  "Cardiovascular Outcome" )
 table1 <- readRDS("data/MR/Pilling_multtest_F.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
-  select(-id.exposure, -id.outcome, -outcome, -method)
+  select(-id.exposure, -id.outcome, -outcome, -method) %>%
+  mutate(Groups = table1_Groups)
+  
 
 #create groups
 
 
 ##make a table
-reactable(table1,bordered = TRUE, columns = list(
+reactable(table1,bordered = TRUE, groupBy = "Groups", columns = list(
     exposure = colDef(name = "Exposure", filterable = TRUE),
     exposure_dat = colDef(name = "Exposure Dataset"),
     pval_BH = colDef(name = "BH Adjusted p-value", format = colFormat(digits = 5)),
@@ -249,15 +303,197 @@ reactable(table1,bordered = TRUE, columns = list(
 
 
 
-## Results - Timmers
+# Results - Timmers
 
 Table 2. Significant Results (adjusted p-value $\leq$ 0.05) for Longevity as Defined by Timmers
+
 ```{r, out.width= "50%"}
+table2_Group <- c(
+"Cardiovascular Drug", 
+"Cardiovascular Risk Factors", 
+"Cardiovascular Drug" , 
+"Other",   
+"Cardiovascular Risk Factors", 
+"Cancer",
+"Neurological", 
+"Cardiovascular Risk Factors" ,
+"Neurological" ,  
+"Cardiovascular Outcome" , 
+"Other", 
+"Cardiovascular Risk Factors",  
+"Cardiovascular Drug", 
+"Cardiovascular Risk Factors" ,
+"Cardiovascular Risk Factors" , 
+"Cancer" ,
+"Smoking" ,
+"Cardiovascular Risk Factors",  
+"Cardiovascular Risk Factors", 
+"Parental Longevity" , 
+"Neurological" , 
+"Cardiovascular Risk Factors" , 
+"Neurological" , 
+"Smoking" , 
+"Other" , 
+"Cardiovascular Outcome", 
+"Cardiovascular Risk Factors"  ,
+"Smoking", 
+"Smoking", 
+"Cardiovascular Risk Factors" ,  
+"Cardiovascular Risk Factors" , 
+"Neurological",
+"Cancer", 
+"Cardiovascular Drug" ,  
+"Cardiovascular Risk Factors" , 
+"Cardiovascular Risk Factors" , 
+"Other", 
+"Neurological",
+"Cardiovascular Risk Factors" , 
+"Cardiovascular Risk Factors"   , 
+"Cardiovascular Risk Factors"   ,
+"Smoking" , 
+"Lipids" , 
+"Neurological" , 
+"Cardiovascular Risk Factors"  ,
+"Parental Longevity" ,
+"Parental Longevity",
+"Neurological" , 
+"Cardiovascular Risk Factors"  ,
+"Cardiovascular Risk Factors"  ,
+"Neurological",
+"Neurological",
+"Neurological",
+"Cardiovascular Risk Factors" ,
+"Smoking", 
+"Cardiovascular Risk Factors"   ,
+"Cardiovascular Risk Factors"  ,
+"Neurological" ,
+"Cardiovascular Risk Factors"  ,
+"Parental Longevity" ,
+"Lipids" ,
+"Other", 
+"Other" ,
+"Cardiovascular Risk Factors"  ,   
+"Cardiovascular Risk Factors"   ,
+"Smoking" ,
+"Other" ,
+"Smoking",
+"Cardiovascular Risk Factors" ,
+"Cardiovascular Drug" ,
+"Neurological"  ,
+"Cardiovascular Risk Factors"  ,
+"Cardiovascular Risk Factors"  ,
+"Cardiovascular Risk Factors"  ,
+"Neurological"  , 
+"Cardiovascular Risk Factors"  , 
+"Other",
+"Cardiovascular Outcome"  ,
+"Cardiovascular Risk Factors"  ,
+"Cardiovascular Risk Factors"  ,
+"Cancer" ,   
+"Neurological"   ,
+"Cardiovascular Risk Factors"  ,
+"Cardiovascular Risk Factors" ,
+"Cardiovascular Risk Factors"   ,
+"Lipids" ,
+"Smoking", 
+"Cardiovascular Risk Factors" ,
+"Cardiovascular Risk Factors" , 
+"Cardiovascular  Outcome" ,
+"Cardiovascular Risk Factors" ,
+"Neurological" , 
+"Cardiovascular Risk Factors" ,
+"Cancer" ,                    
+"Cardiovascular Risk Factors" ,
+"Cardiovascular Risk Factors"  ,
+"Cardiovascular Risk Factors"  ,
+"Other"  ,
+"Neurological" ,
+"Neurological",
+"Cardiovascular Risk Factors"   , 
+"Other",
+"Other" ,
+"Smoking",
+ "Cardiovascular Risk Factors" , 
+ "Cardiovascular Risk Factors" ,
+ "Cardiovascular Risk Factors"   ,
+ "Cardiovascular Outcome" ,
+"Neurological" ,
+ "Neurological"    ,
+"Cardiovascular Risk Factors" ,
+"Neurological",
+"Cardiovascular Risk Factors" ,    
+"Parental Longevity",
+"Cardiovascular Risk Factors", 
+"Cardiovascular Risk Factors",
+"Cardiovascular Risk Factors"  , 
+"Smoking",
+ "Other",
+"Cardiovascular Drug" ,
+ "Other",
+"Other",
+ "Cancer" ,
+ "Neurological" ,
+"Other",
+"Other",
+"Cardiovascular Risk Factors" ,
+"Cardiovascular Risk Factors" ,
+"Neurological" ,
+"Neurological" ,
+"Parental Longevity",
+"Parental Longevity",
+"Cardiovascular Drug",
+"Smoking" ,
+"Cardiovascular Risk Factors",
+"Cardiovascular Risk Factors",    
+"Other" ,
+"Neurological",
+"Neurological",
+"Other" ,
+"Cardiovascular Risk Factors",
+"Cardiovascular Risk Factors",
+"Parental Longevity" ,
+"Cardiovascular Risk Factors",
+"Smoking",
+"Other" ,
+"Cardiovascular Outcome",
+"Neurological",
+"Cardiovascular Risk Factors",
+"Neurological",
+"Cardiovascular Risk Factors" ,
+"Cardiovascular Outcome",
+"Cardiovascular Risk Factors",
+"Cardiovascular Risk Factors"  ,
+"Cardiovascular Risk Factors" ,
+"Age at first sexual intercourse",
+"Cardiovascular Drug",
+"Other" ,
+"Smoking",
+"Cardiovascular Risk Factors"  ,
+"Smoking",
+"Cardiovascular Risk Factors" ,
+"Cardiovascular Risk Factors",
+"Neurological" ,
+"Cardiovascular Drug" ,
+"Cardiovascular Drug" ,
+"Neurological",
+"Cardiovascular Risk Factors",
+"Cardiovascular Risk Factors",
+"Cardiovascular Drug",
+"Neurological" ,
+"Cardiovascular Risk Factors",
+"Neurological",
+"Cardiovascular Risk Factors" ,
+"Smoking",
+"Cardiovascular Outcome" , 
+ "Neurological",
+"Cardiovascular Risk Factors" ) 
+
 table2 <- readRDS("data/MR/Timmers_multtest_F.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
-  select(-id.exposure, -id.outcome, -outcome, -method)
+  select(-id.exposure, -id.outcome, -outcome, -method) %>%
+  mutate(Groups = table2_Group)
 
-reactable(table2, bordered = TRUE, columns = list(
+reactable(table2, bordered = TRUE, groupBy = "Groups", columns = list(
     exposure = colDef(name = "Exposure", filterable = TRUE),
     exposure_dat = colDef(name = "Exposure Dataset"),
     pval_BH = colDef(name = "BH Adjusted p-value", format = colFormat(digits = 5)),
@@ -270,15 +506,114 @@ reactable(table2, bordered = TRUE, columns = list(
 
 
 
-## Results - Deleen Cases 90
+# Results - Deleen Cases 90
 
 Table 3. Significant Results (adjusted p-value $\leq$ 0.05) for Longevity as Defined by Deleen 90th Percentile
+
+
 ```{r}
+
+table3_Group <- c(
+"Cardiovascular Drug",                                                                                                                                
+ "Longevity",                                                                                                                                           
+"Cardiovascular Drug",                                                                                                             
+"Cardiovascular Risk Factors",                                                                                                                                 
+"Cardiovascular Outcome",                                                                                                                                 
+"Thyroid peroxidase antibody levels"  ,                                                                                                                                      
+"Cardiovascular Drug",                                                                                                            
+"Cardiovascular Risk Factors",                                                                                                                                        
+"Cardiovascular Risk Factors",                                                                                   
+"Parental Longevity",                                                                                 
+"Cardiovascular Risk Factors",                                                                                                                                
+"Cardiovascular Outcome",                                                                                                                                  
+"Cardiovascular Risk Factors",                                                                                                                                  
+"Cardiovascular Drug",                                                                                                                    
+"Cardiovascular Risk Factors",                                                                                                                                  
+ "Neurological",                                                                                                                               
+"Cardiovascular Risk Factors",                                                                                                                                
+"Smoking",                                                                                                                       
+"Cardiovascular Risk Factors",                                                                                                                                         
+"Cardiovascular Risk Factors",                                                                                                                                                            
+"Smoking",                                                                                                                         
+"Cardiovascular Risk Factors",                                                                                                                                
+"Cardiovascular Risk Factors",                                                                                                                                         
+ "Parental Longevity"  ,                                                                                                            
+"Cardiovascular Risk Factors",                                                                                 
+"Cardiovascular Risk Factors",                                                                                                                                            
+"Cardiovascular Risk Factors",                                                                                                                                      
+"Cardiovascular Risk Factors",                                                                                                                                   
+ "Neurological"  ,                                                                                                             
+ "Neurological"   ,                                                                                      
+"Smoking",                                                                                                 
+"Cardiovascular Outcome",
+"Cardiovascular Risk Factors",                                                                                                                                      
+"Cardiovascular Risk Factors",                                                                                                                                               
+"Cardiovascular Risk Factors",                                                                                                               
+"Cardiovascular Risk Factors",                                                                                                                     
+"Cardiovascular Risk Factors",                                                                                                                                                      
+"Cardiovascular Drug",                                                                                         
+"Other"  ,                                                                                                         
+"Neurological"  ,                                                                                           
+ "Neurological"   ,                                                                                                                 
+"Cardiovascular Risk Factors",                                                                                                                                            
+"Cardiovascular Drug",                                                                                                                    
+"Neurological"   ,                                                                                      
+"Cardiovascular Risk Factors",                                                                                                                                     
+"Cardiovascular Risk Factors",                                                                                                                                   
+"Cardiovascular Risk Factors",                                                                                                                             
+ "Cardiovascular Drug" ,                                                                                                                   
+"Cardiovascular Risk Factors",                                                                                                                                  
+"Cardiovascular Risk Factors",                                                                                                                                          
+"Cardiovascular Risk Factors",                                                                                                                                 
+"Cardiovascular Drug",                                                                                                                                
+"Cardiovascular Risk Factors",                                                                                                                                  
+"Cardiovascular Drug",                                                                                                                 
+"Cardiovascular Drug",                                                                                                               
+"Neurological"   ,                                                                                                                      
+"Cardiovascular Risk Factors",                                                                                                                                  
+"Cardiovascular Drug",                                                                                            
+ "Neurological"   ,                                                                                                            
+"Cardiovascular Risk Factors",                                                                                                                                 
+"Cardiovascular Outcome",                                                                                                                                              
+"Cardiovascular Risk Factors",                                                                                                                                           
+ "Lipids"   ,                                                                                                                                                                  
+"Lipids"     ,                                                                                                                                                           
+ "Lipids "    ,                                                                                                                                                               
+ "Lipids"     ,                                                                                                                                                            
+ "Lipids "     ,                                                                                                                                                             
+ "Lipids "     ,                                                                                                                                              
+"Lipids " ,                                                                                                                                                                 
+"Lipids " ,                                                                                                                                                                    
+ "Lipids"  ,                                                                                                                                                                  
+ "Lipids" ,                                                                                                                                                                    
+ "Lipids" ,                                                                                                                                                                
+ "Lipids",                                                                                                                                                                   
+ "Lipids",                                                                                                                                                                   
+"Lipids "  ,                                                                                                                                                                  
+ "Lipids",                                                                                                                                                                   
+ "Lipids"  ,                                                                                                                                                                   
+"Lipids" ,                                                                                                                                                                     
+"Lipids"  ,                                                                                                                                                                 
+"Lipidsl" ,                                                                                                                                                                   
+ "Lipids " ,                                                                                                                                                                  
+"Lipids" ,                                                                                                                                                                  
+"Lipids" ,                                                                                                                                                                 
+"Lipids"  ,                                                                                                                                                                   
+"Lipids" ,                                                                                                                                                                 
+"Lipids"  ,                                                                                                                                                                    
+"Lipids"  ,                                                                                                                                                                 
+ "Lipids"  ,                                                                                                                                                                 
+"Lipids" ,                                                                                                                                                                 
+"Lipids"    ,                                                                                                                   
+
+"Lipids"      
+)
 table3 <- readRDS("data/MR/Cases90_multtest_F.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
-  select(-id.exposure, -id.outcome, -outcome, -method)
+  select(-id.exposure, -id.outcome, -outcome, -method) %>%
+  mutate(Groups = table3_Group)
 
-reactable(table3, bordered = TRUE,columns = list(
+reactable(table3, bordered = TRUE, groupBy = "Groups" ,columns = list(
     exposure = colDef(name = "Exposure", filterable = TRUE),
     exposure_dat = colDef(name = "Exposure Dataset"),
     pval_BH = colDef(name = "BH Adjusted p-value", format = colFormat(digits = 5)),
@@ -289,15 +624,74 @@ reactable(table3, bordered = TRUE,columns = list(
   
 ```
 
-## Results - Deleen Cases 99
+# Results - Deleen Cases 99
 
 Table 4. Significant Results (adjusted p-value $\leq$ 0.05) for Longevity as Defined by Deleen: 99th Percentile
+
+
 ```{r}
+table4_Groups <- c(
+"Cardiovascular Drug",                                                                                                                             
+"Longevity"  ,                                                                                                                                          
+"Cardiovascular Drug",                                                                                                           
+"Cardiovascular Outcome",                                                                                                                                  
+"Cardiovascular Drug",                                                                                                           
+"Cardiovascular Risk Factors",                                                                                                                                 
+"Cardiovascular Outcome",                                                                                                                                 
+"Smoking"    ,                                                                                                                
+"Cardiovascular Risk Factors",                                                                                                                                       
+"Cardiovascular Risk Factors",                                                                                                                                             
+"Cardiovascular Risk Factors",                                                                                                                                                             
+"Smoking"    ,                                                                                                                          
+"Parental Longevity"     ,                                                                                                         
+"Cardiovascular Risk Factors",                                                                                                                                         
+"Cardiovascular Outcome",                                                                                                                                        
+"Cardiovascular Risk Factors",    
+"Cardiovascular Risk Factors", 
+"Cardiovascular Drug",                                                                                           
+ "Neurological"  ,                                                                                                                                               
+ "Neurological"  ,                                                                                           
+"Cardiovascular Drug",                                                                                                                  
+ "Neurological"  ,                                                                                      
+"Cardiovascular Risk Factors",                                                                                                                                     
+"Cardiovascular Risk Factors",                                                                                                                                              
+"Cardiovascular Drug",                                                                                                                               
+"Cardiovascular Drug",                                                                                                                
+"Neurological"       ,                                                                                                                  
+"Cardiovascular Drug",                                                                                          
+"Neurological"    ,                                                                                                           
+ "Lipids"   ,                                                                                                                                                                  
+ "Lipids"   ,                                                                                                                                                             
+"Lipids"  ,                                                                                                                                                                 
+"Lipids" ,                                                                                                                                                                
+ "Lipids"  ,                                                                                                                                                                
+"Lipids"   ,                                                                                                                                                                
+"Lipids"  ,                                                                                                                                                                
+"Lipids" ,                                                                                                                                                                    
+ "Lipids"    ,                                                                                                                                                                
+"Lipids"       ,                                                                                                                                                              
+ "Lipids"    ,                                                                                                                                                               
+ "Lipids",                                                                                                                                                                   
+ "Lipids"  ,                                                                                                                                                                 
+ "Lipids" ,                                                                                                                                                                    
+ "Lipids" ,                                                                                                                                                                     
+"Lipids"   ,                                                                                                                                                                 
+ "Lipids" ,                                                                                                                                                                   
+ "Lipids"  ,                                                                                                                                                                 
+"Lipids" ,                                                                                                                                                                  
+ "Lipids" ,                                                                                                                                                                 
+ "Lipids",                                                                                                                                                                     
+"Lipids" ,                                                                                                                                                                 
+"Lipids" ,                                                                                                                                                                  
+"Lipids",                                                                                                                                                                   
+ "Lipids" ,                                                                                                                                                                 
+ "Lipids"  )
 table4 <- readRDS("data/MR/Cases99_multtest_F.rds")%>%
   filter(method == "Inverse variance weighted", pval_BH < 0.05) %>%
-  select(-id.exposure, -id.outcome, -outcome, -method)
+  select(-id.exposure, -id.outcome, -outcome, -method)%>%
+  mutate(Groups = table4_Groups)
 
-reactable(table4, bordered = TRUE,columns = list(
+reactable(table4, bordered = TRUE,groupBy = "Groups", columns = list(
     exposure = colDef(name = "Exposure", filterable = TRUE),
     exposure_dat = colDef(name = "Exposure Dataset"),
     pval_BH = colDef(name = "BH Adjusted p-value", format = colFormat(digits = 5)),
@@ -310,92 +704,31 @@ reactable(table4, bordered = TRUE,columns = list(
 
 
 
-## Common and Unique Exposures in Each Study - Venn Diagram
-
-
-```{r, echo=FALSE, results='hide',message=FALSE}
-
-
-Pilling_dat <- readRDS("data/MR/Pilling_multtest_F.rds")
-Timmers_dat <- readRDS("data/MR/Timmers_multtest_F.rds")
-Cases90_dat <- readRDS("data/MR/Cases90_multtest_F.rds")
-Cases99_dat <- readRDS("data/MR/Cases99_multtest_F.rds")
-
-
-```
-
-
-```{r, eval=FALSE}
-venn.diagram(
-  x = list(
-    Pilling_dat %>% 
-      filter(method == "Inverse variance weighted", pval_BH <= 0.05, exposure_dat != "methylation") %>% 
-      select(exposure) %>% unlist(),
-    Timmers_dat %>% 
-      filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>% 
-      select(exposure) %>% unlist(),
-    Cases90_dat %>% 
-      filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>% 
-      select(exposure) %>% unlist(),
-    Cases99_dat %>% 
-      filter(method == "Inverse variance weighted", pval_BH <= 0.05) %>% 
-      select(exposure) %>% unlist()
-  ),
-  category.names = c("Pilling", "Timmers", "Deleen 90th", "Deleen 99th"),
-  filename = "images/FourOutcomesVenn.png",
-  output = TRUE,
-          imagetype="png" ,
-          height = 900 , 
-          width = 1200 , 
-          resolution = 300,
-          compression = "lzw",
-          lwd = 1,
-          col=c("#440154ff", '#21908dff', '#fde725ff', '#ff3374'),
-          fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#fde725ff',0.3), alpha('#ff3374', 0.3))
-
-  
-)
-```
-```{r, out.width = "50%"}
-knitr::include_graphics("images/FourOutcomesVenn.png")
-```
-
-
-For exposures with adjusted p-values less than or equal to 0.05
-
-- no common exposures among Pilling, cases90 & cases 99 
-
-- no common exposures among pilling & cases 99
-
-- no common exposures among pilling , timmers and cases 99
-
-## Results - Table
-
-
+# Common and Unique Exposures in Each Study - Venn Diagram
 ```{r, out.width="50%"}
 
-#Create a table containing adjusted p-values and informationon exposure dataset, and outcome dataset sources
+#Create a table containing adjusted p-values and information on exposure dataset, and outcome dataset sources
 PillingA <- Pilling_dat %>% 
   filter(method == "Inverse variance weighted", exposure_dat != "methylation") %>%
-  mutate(Pilling = "Yes") %>%
+  mutate(Pilling = "YES") %>%
   rename(Exposure.Dataset.Pilling = exposure_dat, Adjusted.p.Pilling = pval_BH, 
          b.pilling = b, se.pilling = se, nsnp.pilling = nsnp, pval.pilling = pval ) %>% 
   select(-id.exposure, -id.outcome, -outcome, -method) 
 TimmersA <- Timmers_dat %>% 
   filter(method == "Inverse variance weighted") %>%
-  mutate(Timmers = "Yes") %>%
+  mutate(Timmers = "YES") %>%
   rename(Exposure.Dataset.Timmers = exposure_dat, Adjusted.p.Timmers = pval_BH, 
          b.timmers = b, se.timmers = se, nsnp.timmers = nsnp, pval.timmers = pval) %>% 
   select(-id.exposure, -id.outcome, -outcome, -method) 
 Cases90A <- Cases90_dat %>%
   filter(method == "Inverse variance weighted") %>%
-  mutate(Cases90 = "Yes") %>%
+  mutate(Cases90 = "YES") %>%
   rename(Exposure.Dataset.Cases90 = exposure_dat, Adjusted.p.Cases90 = pval_BH, 
          b.90 = b, se.90 = se, nsnp.90 = nsnp, pval.90 = pval) %>% 
   select(-id.exposure, -id.outcome, -outcome, -method)
 Cases99A <- Cases99_dat %>%
   filter(method == "Inverse variance weighted") %>%
-  mutate(Cases99 = "Yes") %>%
+  mutate(Cases99 = "YES") %>%
   rename(Exposure.Dataset.Cases99 = exposure_dat, Adjusted.p.Cases99 = pval_BH,
          b.99 = b, se.99 = se, nsnp.99 = nsnp, pval.99 = pval) %>% 
   select(-id.exposure, -id.outcome, -outcome, -method)
@@ -407,10 +740,10 @@ dat_all <- merge(dat_all, Cases99A, by = "exposure", all = TRUE)
 
 #replace NAs in Dataset columns with "NO"
 
-dat_all$Pilling <- ifelse(is.na(dat_all$Pilling), "NO", "YES")
-dat_all$Timmers <- ifelse(is.na(dat_all$Timmers), "NO", "YES")
-dat_all$Cases90 <- ifelse(is.na(dat_all$Cases90), "NO", "YES")
-dat_all$Cases99 <- ifelse(is.na(dat_all$Cases99), "NO", "YES")
+dat_all$Pilling <- ifelse(is.na(dat_all$Pilling), "NO", dat_all$Pilling)
+dat_all$Timmers <- ifelse(is.na(dat_all$Timmers), "NO", dat_all$Timmers)
+dat_all$Cases90 <- ifelse(is.na(dat_all$Cases90), "NO", dat_all$Cases90)
+dat_all$Cases99 <- ifelse(is.na(dat_all$Cases99), "NO", dat_all$Cases99)
 
 
 
@@ -434,16 +767,68 @@ dat <- dat %>%
 saveRDS(dat, "results/results_201908.rds")
 saveRDS(dat_all, "results/full_results_201908.rds")
 ```
-Table 1. All Significant Exposures (adjusted p-value $\leq$ 0.05) among Four Outcomes who are  using the Inverse Variance Weighted Method*
 
-*empty cells represent missing data
 
-```{r, out.width="50%"}
 
+
+```{r, eval=FALSE}
+venn.diagram(
+  x = list(
+    dat_all %>% 
+      filter(Pilling == "YES" & Adjusted.p.Pilling <= 0.05 ) %>% 
+      select(exposure) %>% unlist(),
+    dat_all %>% 
+      filter(Timmers == "YES" & Adjusted.p.Timmers <= 0.05) %>% 
+      select(exposure) %>% unlist(),
+    dat_all %>% 
+      filter(Cases90 == "YES" & Adjusted.p.Cases90 <= 0.05) %>% 
+      select(exposure) %>% unlist(),
+    dat_all %>% 
+      filter(Cases99 == "YES" & Adjusted.p.Cases99 <= 0.05) %>% 
+      select(exposure) %>% unlist()
+  ),
+  category.names = c("Pilling", "Timmers", "Deleen 90th", "Deleen 99th"),
+  filename = "images/FourOutcomesVenn1.png",
+  output = TRUE,
+          imagetype="png" ,
+          height = 900 , 
+          width = 1200 , 
+          resolution = 300,
+          compression = "lzw",
+          lwd = 1,
+          col=c("#440154ff", '#21908dff', '#fde725ff', '#ff3374'),
+          fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#fde725ff',0.3), alpha('#ff3374', 0.3))
+
+  
+)
+```
+```{r, out.width = "50%"}
+knitr::include_graphics("images/FourOutcomesVenn1.png")
+```
+
+
+For exposures with adjusted p-values less than or equal to 0.05
+
+- no common exposures among Pilling, cases90 & cases 99 
+
+- no common exposures among pilling & cases 99
+
+- no common exposures among pilling , timmers and cases 99
+
+
+
+
+
+
+
+```{r, out.width="50%", results='hide'}
+# Table 1. Any Significant Exposures (adjusted p-value $\leq$ 0.05) among any of the four Outcomes  using the Inverse Variance Weighted Method*
+
+#*empty cells represent missing data
 #create a filterable table
-table1 <- filter(dat_all, Adjusted.p.Timmers <= 0.05 | Adjusted.p.Cases90 <= 0.05 | Adjusted.p.Cases99 <= 0.05 | Adjusted.p.Pilling <=0.05) %>%
+tableone <- filter(dat_all, Adjusted.p.Timmers <= 0.05 | Adjusted.p.Cases90 <= 0.05 | Adjusted.p.Cases99 <= 0.05 | Adjusted.p.Pilling <=0.05) %>%
   select(exposure, Pilling, Timmers, Cases90, Cases99, Adjusted.p.Pilling, Adjusted.p.Timmers, Adjusted.p.Cases90, Adjusted.p.Cases99, Exposure.Dataset)
-reactable(table1, filterable = TRUE, paginationType = "jump", showSortable = TRUE, bordered = TRUE,
+reactable(tableone, filterable = TRUE, paginationType = "jump", showSortable = TRUE, bordered = TRUE,
           columns = list( 
             exposure = colDef(name = "Exposure"),
             Adjusted.p.Timmers = colDef(name = "Adjusted p-value (Timmers)", 
@@ -480,11 +865,11 @@ reactable(table1, filterable = TRUE, paginationType = "jump", showSortable = TRU
 
 
 
-## Common Exposures - All four datasets
+# Common Exposures - All four datasets
 
-Table 5 Common Exposures Among All Four Outcomes
-```{r}
 
+```{r, results='hide'}
+# Table 5 Common Exposures Among All Four Outcomes
 table5 <-dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases90 == "YES" & Cases99 == "YES") %>% 
   select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset)
   # select(exposure, nsnp.pilling, b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling, nsnp.timmers, b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, nsnp.90, b.90, se.90, pval.90, Adjusted.p.Cases90, nsnp.99, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset) %>%
@@ -586,15 +971,297 @@ reactable(table5, bordered = TRUE, columns = list(
             ))
 ```
 
-## Shared Exposures Deleen 90th Percentile
+Table 5 Common Exposures Among All Four Outcomes with at least one significant (p-value $\leq$ 0.05) adjusted p-value
+
+
+```{r}
+table5b_groups <- c(
+"Other" ,                                                                                                                                          
+"Smoking",
+
+"Smoking",
+
+"Neurological",
+
+"Cardiovascular Outcome",                                                                                                                                                       
+"Cardiovascular Risk Factors" ,                                                                                                                    
+"Cardiovascular Risk Factors",                                                                                                                    
+"Cardiovascular Risk Factors",                                                                                                                                       
+"Cardiovascular Risk Factors" ,                                                                                                                                          
+"Cardiovascular Risk Factors" ,                                                                                                                                                
+"Cardiovascular Risk Factors" ,                                                                                                                         
+"Cardiovascular Risk Factors" ,                                                                                                                       
+"Cancer",                                                                                                                                                 
+"Cancer",                                                                                                                                             
+"Cardiovascular Risk Factors" ,                                                                                                                                
+"Cardiovascular Risk Factors" ,                                                                                                                                      
+"Cardiovascular Risk Factors" ,                                                                                                                                      
+"Cardiovascular Risk Factors" ,                                                                                                                                       
+ "Smoking"  ,                                                                                                                        
+"Smoking"       ,                                                                                                                   
+"Neurological"    ,                                                                                                                          
+"Neurological"    ,                                                                                                                          
+ "Neurological"    ,                                                                                                                                 
+"Neurological"      ,                                                                                                                               
+"Cardiovascular Outcome",
+ "Cardiovascular Outcome"  ,                                                                                                                                            
+"Cardiovascular Outcome"  ,                                                                                                                                 
+"Cardiovascular Outcome" ,                                                                                                                                  
+"Cardiovascular Outcome" ,                                                                                                                                              
+ "Neurological"    ,                                                                                                                                   
+"Cardiovascular Risk Factors"   ,                                                                                                                              
+"Cardiovascular Risk Factors",                                                                                                                                 
+ "Cardiovascular Risk Factors",                                                                                                                                  
+ "Cardiovascular Risk Factors",                                                                                                                                  
+"Cardiovascular Risk Factors",                                                                                                                                  
+"Neurological" ,                                                                                                                            
+"Neurological" ,                                                                                                                            
+ "Neurological" ,                                                                                                           
+"Neurological"  ,                                                                                                          
+"Neurological"  ,                                                                                                             
+"Neurological"  ,                                                                                                             
+"Neurological"  ,                                                                                                                            
+"Neurological"  ,                                                                                                                            
+"Other"   ,                                                                                                                                     
+ "Cardiovascular Risk Factors" ,                                                                                                                                       
+"Neurological"  ,                                                                                                                         
+ "Neurological",                                                                                                                           
+ "Neurological"   ,                                                                                                                               
+ "Neurological"  ,                                                                                                                                
+"Cardiovascular Risk Factors" ,                                                                                                                                        
+"Cardiovascular Risk Factors"  ,                                                                                                                                     
+"Cardiovascular Risk Factors"  ,                                                                                                                                            
+"Neurological"   ,                                                                                                                                    
+ "Neurological"  ,                                                                                                                                     
+ "Neurological"  ,                                                                                                                                         
+"Neurological"   ,                                                                                                                                        
+ "Cardiovascular Risk Factors"  ,                                                                                                                                      
+"Cardiovascular Risk Factors"  ,                                                                                                                                        
+"Cardiovascular Risk Factors"  ,                                                                                                                                         
+ "Cardiovascular Risk Factors" ,                                                                                                                                          
+"Cardiovascular Risk Factors"  ,                                                                                                                                         
+"Cardiovascular Risk Factors"  ,                                                                                                                                  
+"Lipids"  ,                                                                                                                                          
+ "Lipids"  ,                                                                                                              
+ "Cancer"  ,                                                                                                                                                             
+ "Cancer"   ,                                                                                                                                            
+"Cardiovascular Risk Factors"  ,                                                                                                                                  
+"Cardiovascular Risk Factors"  ,                                                                                                                                  
+"Cardiovascular Drug" ,                                                                                          
+"Cardiovascular Drug"  ,                                                                                          
+"Cardiovascular Drug" ,                                                                                                                    
+"Cardiovascular Drug" ,                                                                                                                    
+ "Cardiovascular Drug" ,                                                                                                                
+"Cardiovascular Drug" ,                                                                                                                
+"Cardiovascular Drug" ,                                                                                                                               
+"Cardiovascular Drug" ,                                                                                                                               
+ "Cardiovascular Drug",                                                                                                             
+ "Cardiovascular Drug" ,                                                                                                            
+"Cardiovascular Outcome" ,                                                                                                                                                    
+"Cardiovascular Outcome"  ,                                                                                                                                     
+ "Cardiovascular Risk Factors" ,                                                                                                                                                           
+"Cardiovascular Risk Factors"  ,                                                                                                                                           
+"Parental Longevity"     ,                                                                            
+"Cardiovascular Risk Factors",                                                                                                                                            
+ "Cardiovascular Risk Factors",                                                                                                                                            
+ "Cardiovascular Risk Factors",                                                                                                                                            
+"Other"   ,                                                                                                                                              
+ "Neurological",                                                                                                                         
+ "Neurological" ,                                                                                                                        
+"Neurological" ,                                                                                                                               
+ "Smoking" ,                                                                                                            
+ "Smoking" ,                                                                                                                                 
+ "Smoking",                                                                                                                                  
+"Smoking" ,                                                                                                
+ "Smoking",                                                                                                 
+"Smoking"  ,                                                                                                      
+"Smoking"  ,                                                                                                      
+ "Smoking" ,                                                                                                                   
+"Smoking"  ,                                                                                                                  
+"Cancer"   ,                                                                                                                                           
+ "Cardiovascular Risk Factors" ,                                                                                                                                 
+"Cardiovascular Risk Factors"  ,                                                                                                                               
+ "Cardiovascular Risk Factors"  ,                                                                                                                                 
+"Cardiovascular Risk Factors"   ,                                                                                                                               
+"Cardiovascular Risk Factors"   ,                                                                                                                              
+"Cardiovascular Risk Factors" ,                                                                                                                               
+"Other"    ,                                                                                                                                    
+"Cardiovascular Risk Factors"    ,                                                                                                                        
+"Cardiovascular Risk Factors"      ,                                                                                                                        
+"Cardiovascular Risk Factors"  ,                                                                                                                                   
+"Cardiovascular Risk Factors" ,                                                                                                                                          
+"Other"   ,                                                                                                                              
+"Cardiovascular Risk Factors"  ,                                                                                                   
+"Cardiovascular Risk Factors"  ,                                                                                                                                         
+"Cardiovascular Risk Factors" ,                                                                                                                                                 
+"Other"  
+)
+table5b <-dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases90 == "YES" & Cases99 == "YES") %>% 
+  select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset) %>%
+  # select(exposure, nsnp.pilling, b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling, nsnp.timmers, b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, nsnp.90, b.90, se.90, pval.90, Adjusted.p.Cases90, nsnp.99, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset) %>%
+  filter(Adjusted.p.Timmers <= 0.05 | Adjusted.p.Timmers <= 0.05 | Adjusted.p.Cases90 <= 0.05 | Adjusted.p.Cases99 <= 0.05) %>%
+  mutate(Groups = table5b_groups)
+
+
+reactable(table5b, groupBy = "Groups", bordered = TRUE, columns = list(
+    
+            exposure = colDef(name = "Exposure", filterable = TRUE),
+            Adjusted.p.Cases90 = colDef(name = "90th Percentile", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            Exposure.Dataset = colDef(name = "Exposure Dataset",
+                                      filterable = TRUE,
+                                      align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            # nsnp.90 = colDef(name = "90th Percentile", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.90 = colDef(name = "90th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.90 = colDef(name = "90th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             pval.90 = colDef(name = "90th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Adjusted.p.Cases99 = colDef(name = "99th Percentile", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.99 = colDef(name = "99th Percentile", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.99 = colDef(name = "99th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.99 = colDef(name = "99th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             pval.99 = colDef(name = "99th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Adjusted.p.Timmers = colDef(name = "Timmers", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.timmers = colDef(name = "Timmers", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.timmers = colDef(name = "Timmers", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            se.timmers = colDef(name = "Timmers", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             pval.timmers =colDef(name = "Timmers", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            Adjusted.p.Pilling = colDef(name = "Pilling", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.pilling = colDef(name = "Pilling", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.pilling = colDef(name = "Pilling", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             pval.pilling =colDef(name = "Pilling", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            
+            se.pilling = colDef(name = "Pilling", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5))
+  ),
+  
+            
+          
+            columnGroups = list(
+              # colGroup(name = "nsnp", columns = c("nsnp.timmers", "nsnp.pilling", "nsnp.90", "nsnp.99")),
+              colGroup(name = "Beta", columns = c("b.pilling", "b.timmers", "b.90", "b.99")),
+              colGroup(name = "SE", columns = c("se.pilling", "se.timmers", "se.90", "se.99")),
+              colGroup(name = "p-value", columns = c("pval.pilling", "pval.timmers", "pval.90", "pval.99")),
+              colGroup(name = "Adjusted BH p-value", columns = c("Adjusted.p.Pilling", "Adjusted.p.Timmers", "Adjusted.p.Cases90", "Adjusted.p.Cases99"))
+            ))
+```
+
+
+# Shared Exposures Deleen 90th Percentile
 
 Table 6. Significant Exposures (adjusted p-value $\leq$ 0.05) found in Deleen's 90th percentile shared among all four outcomes
-```{r}
 
+
+```{r}
+table6_Group <- c(
+"Smoking", 
+
+"Neurological"   ,                                                                                      
+"Cardiovascular Risk Factors",                                                                                                                                                       
+"Cardiovascular Risk Factors",                                                                                                                                                 
+"Cardiovascular Risk Factors",                                                                                                                                        
+"Cardiovascular Risk Factors",                                                                                                                                        
+"Smoking", 
+
+"Cardiovascular Outcome", 
+"Cardiovascular Outcome",                                                                                                                                 
+"Cardiovascular Outcome",                                                                                                                                 
+"Cardiovascular Outcome",                                                                                                                                               
+"Cardiovascular Risk Factors",                                                                                                                                  
+"Cardiovascular Risk Factors",                                                                                                                                  
+"Cardiovascular Risk Factors",                                                                                                                                  
+"Cardiovascular Risk Factors",                                                                                                                                  
+ "Neurological"  ,                                                                                                             
+"Cardiovascular Risk Factors",                                                                                                                                       
+"Cardiovascular Risk Factors",                                                                                                                                            
+"Cardiovascular Risk Factors",                                                                                                                                            
+"Cardiovascular Risk Factors",                                                                                                                
+"Cardiovascular Risk Factors",                                                                                                                                    
+"Cardiovascular Risk Factors",                                                                                                                                    
+"Cardiovascular Drug",                                                                                              
+"Cardiovascular Drug",                                                                                             
+"Cardiovascular Drug",                                                                                                                       
+"Cardiovascular Drug",                                                                                                                       
+"Cardiovascular Drug",   
+"Cardiovascular Drug",                                                                                                                   
+"Cardiovascular Drug",                                                                                                                                  
+"Cardiovascular Drug",                                                                                                                                  
+"Cardiovascular Drug",                                                                                                                
+"Cardiovascular Drug",                                                                                                               
+"Cardiovascular Risk Factors",                                                                                                                                                             
+ "Parental Longevity"    ,                                                                             
+"Cardiovascular Risk Factors",                                                                                                                                            
+"Smoking", 
+
+"Cardiovascular Risk Factors",                                                                                                                                   
+"Cardiovascular Risk Factors",                                                                                                                                   
+"Cardiovascular Risk Factors",                                                                                                                                   
+"Cardiovascular Risk Factors",                                                                                                                                   
+"Cardiovascular Risk Factors",                                                                                                                                    
+"Cardiovascular Risk Factors",                                                                                                                                   
+"Other"   ,                                                                                                                                     
+"Cardiovascular Risk Factors",                                                                                                                                  
+"Cardiovascular Risk Factors"  )
 table6 <- dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases99 == "YES" & Cases90 ==  "YES") %>%
   filter(Adjusted.p.Cases90 <= 0.05 & !is.na(Adjusted.p.Timmers) & !is.na(Adjusted.p.Cases90)&!is.na(Adjusted.p.Cases99)&!is.na(Adjusted.p.Pilling)) %>%
-  select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset)
-reactable(table6,  bordered = TRUE,
+  select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset) %>%
+  mutate(Groups= table6_Group)
+
+reactable(table6, groupBy = "Groups",  bordered = TRUE,
           columns = list(
             exposure = colDef(name = "Exposure",  filterable = TRUE),
             Adjusted.p.Cases90 = colDef(name = "90th Percentile", 
@@ -715,16 +1382,44 @@ reactable(table6,  bordered = TRUE,
 
 ```
 
-## Common Exposures Among Deleen 99th Percentile Longevity Outcomes
+# Common Exposures Among Deleen 99th Percentile Longevity Outcomes
 
 Table 7. Significant Exposures for 99th Percentile of Longevity (adjusted p-value $\leq$ 0.05) shared among all four outcomes
 
 ```{r}
+table7_Groups <- c(
+
+"Smoking", 
+
+"Neurological" ,                                                                                        
+"Cardiovascular Risk Factors",                                                                                                                                                     
+"Cardiovascular Risk Factors",                                                                                                                                      
+"Cardiovascular Outcome",
+"Cardiovascular Outcome",                                                                                                                                  
+"Cardiovascular Outcome",                                                                                                                                  
+"Cardiovascular Risk Factors",                                                                                                                                 
+"Cardiovascular Risk Factors",                                                                                                                                      
+"Cardiovascular Risk Factors",                                                                                                                                   
+"Cardiovascular Drug",                                                                                          
+"Cardiovascular Drug",                                                                                          
+"Cardiovascular Drug",                                                                                                                   
+"Cardiovascular Drug",                                                                                                            
+"Cardiovascular Drug",                                                                                                                               
+"Cardiovascular Drug",                                                                                                                               
+"Cardiovascular Drug",                                                                                                            
+"Cardiovascular Drug",                                                                                                             
+"Cardiovascular Risk Factors",                                                                                                                                                           
+"Cardiovascular Risk Factors",                                                                                                                                            
+"Smoking",                                                                                                                    
+"Cardiovascular Risk Factors",                                                                                                                                  
+"Cardiovascular Risk Factors"  )
 
 table7 <- dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases99 == "YES" & Cases90 ==  "YES") %>%
   filter(Adjusted.p.Cases99 <= 0.05 & !is.na(Adjusted.p.Timmers) & !is.na(Adjusted.p.Cases90)&!is.na(Adjusted.p.Cases99)&!is.na(Adjusted.p.Pilling)) %>%
-  select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset)
-reactable(table7, bordered = TRUE,
+  select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset) %>%
+  mutate(Groups = table7_Groups)
+
+reactable(table7, bordered = TRUE, groupBy = "Groups",
           columns = list(
             exposure = colDef(name = "Exposure",  filterable = TRUE),
             Adjusted.p.Cases90 = colDef(name = "90th Percentile", 
@@ -845,18 +1540,553 @@ reactable(table7, bordered = TRUE,
 ```
 
 
+# Uniquely Significant Exposures in Pilling
+
+```{r}
+table8 <- dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases99 == "YES" & Cases90 ==  "YES" &  Adjusted.p.Pilling <= 0.05 & Adjusted.p.Timmers >= 0.05 & Adjusted.p.Cases90 >= 0.05  & Adjusted.p.Cases99 >= 0.05 ) %>%
+  select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset)
+
+reactable(table8, bordered = TRUE,
+          columns = list(
+            exposure = colDef(name = "Exposure",  filterable = TRUE),
+            Adjusted.p.Cases90 = colDef(name = "90th Percentile", 
+                                        align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            Exposure.Dataset = colDef(name = "Exposure Dataset",
+                                       filterable = TRUE,
+                                      align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            # nsnp.90 = colDef(name = "90th Percentile", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.90 = colDef(name = "90th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                          format = colFormat(digits = 5)),
+            se.90 = colDef(name = "90th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                           format = colFormat(digits = 5)),
+             pval.90 = colDef(name = "90th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                              format = colFormat(digits = 5)
+                              ),
+            Adjusted.p.Cases99 = colDef(name = "99th Percentile", 
+                                        align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.99 = colDef(name = "99th Percentile", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.99 = colDef(name = "99th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                          format = colFormat(digits = 5)),
+            se.99 = colDef(name = "99th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                           format = colFormat(digits = 5)),
+             pval.99 = colDef(name = "99th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                              format = colFormat(digits = 5)),
+            Adjusted.p.Timmers = colDef(name = "Timmers", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.timmers = colDef(name = "Timmers", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.timmers = colDef(name = "Timmers", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                               format = colFormat(digits = 5)),
+            se.timmers = colDef(name = "Timmers", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                                format = colFormat(digits = 5)),
+             pval.timmers =colDef(name = "Timmers", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                                  format = colFormat(digits = 5)),
+            Adjusted.p.Pilling = colDef(name = "Pilling", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.pilling = colDef(name = "Pilling", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.pilling = colDef(name = "Pilling", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             pval.pilling =colDef(name = "Pilling", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            
+            se.pilling = colDef(name = "Pilling", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5))
+  ),
+  
+            
+          
+            columnGroups = list(
+              # colGroup(name = "nsnp", columns = c("nsnp.timmers", "nsnp.pilling", "nsnp.90", "nsnp.99")),
+              colGroup(name = "Beta", columns = c("b.pilling", "b.timmers", "b.90", "b.99")),
+              colGroup(name = "SE", columns = c("se.pilling", "se.timmers", "se.90", "se.99")),
+              colGroup(name = "p-value", columns = c("pval.pilling", "pval.timmers", "pval.90", "pval.99")),
+              colGroup(name = "Adjusted BH p-value", columns = c("Adjusted.p.Pilling", "Adjusted.p.Timmers", "Adjusted.p.Cases90", "Adjusted.p.Cases99"))
+            ))
+  # rowStyle = function(index) {
+  #   if (table3[index, "Adjusted.p.Timmers"] >= 0.05)
+  #     list(fontWeight = "bold", color = "#e00000")
+  #   else if(table3[index, "Adjusted.p.Pilling"] <= 0.05)
+  #     list(fontWeight = "bold")
+  #   else if(table3[index, "Adjusted.p.Cases90"] <= 0.05)
+  #     list(fontWeight = "bold")
+  # 
+  # }
+  
+```
+
+# Uniquely Significant Exposures in Timmers
+
+```{r}
+table9 <- dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases99 == "YES" & Cases90 ==  "YES" &  Adjusted.p.Timmers <= 0.05 & Adjusted.p.Pilling >= 0.05 & Adjusted.p.Cases90 >= 0.05  & Adjusted.p.Cases99 >= 0.05 ) %>%
+  select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset)
+
+reactable(table9, bordered = TRUE,
+          columns = list(
+            exposure = colDef(name = "Exposure",  filterable = TRUE),
+            Adjusted.p.Cases90 = colDef(name = "90th Percentile", 
+                                        align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            Exposure.Dataset = colDef(name = "Exposure Dataset",
+                                       filterable = TRUE,
+                                      align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            # nsnp.90 = colDef(name = "90th Percentile", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.90 = colDef(name = "90th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                          format = colFormat(digits = 5)),
+            se.90 = colDef(name = "90th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                           format = colFormat(digits = 5)),
+             pval.90 = colDef(name = "90th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                              format = colFormat(digits = 5)
+                              ),
+            Adjusted.p.Cases99 = colDef(name = "99th Percentile", 
+                                        align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.99 = colDef(name = "99th Percentile", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.99 = colDef(name = "99th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                          format = colFormat(digits = 5)),
+            se.99 = colDef(name = "99th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                           format = colFormat(digits = 5)),
+             pval.99 = colDef(name = "99th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                              format = colFormat(digits = 5)),
+            Adjusted.p.Timmers = colDef(name = "Timmers", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.timmers = colDef(name = "Timmers", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.timmers = colDef(name = "Timmers", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                               format = colFormat(digits = 5)),
+            se.timmers = colDef(name = "Timmers", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                                format = colFormat(digits = 5)),
+             pval.timmers =colDef(name = "Timmers", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                                  format = colFormat(digits = 5)),
+            Adjusted.p.Pilling = colDef(name = "Pilling", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.pilling = colDef(name = "Pilling", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.pilling = colDef(name = "Pilling", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             pval.pilling =colDef(name = "Pilling", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            
+            se.pilling = colDef(name = "Pilling", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5))
+  ),
+  
+            
+          
+            columnGroups = list(
+              # colGroup(name = "nsnp", columns = c("nsnp.timmers", "nsnp.pilling", "nsnp.90", "nsnp.99")),
+              colGroup(name = "Beta", columns = c("b.pilling", "b.timmers", "b.90", "b.99")),
+              colGroup(name = "SE", columns = c("se.pilling", "se.timmers", "se.90", "se.99")),
+              colGroup(name = "p-value", columns = c("pval.pilling", "pval.timmers", "pval.90", "pval.99")),
+              colGroup(name = "Adjusted BH p-value", columns = c("Adjusted.p.Pilling", "Adjusted.p.Timmers", "Adjusted.p.Cases90", "Adjusted.p.Cases99"))
+            ))
+  # rowStyle = function(index) {
+  #   if (table3[index, "Adjusted.p.Timmers"] >= 0.05)
+  #     list(fontWeight = "bold", color = "#e00000")
+  #   else if(table3[index, "Adjusted.p.Pilling"] <= 0.05)
+  #     list(fontWeight = "bold")
+  #   else if(table3[index, "Adjusted.p.Cases90"] <= 0.05)
+  #     list(fontWeight = "bold")
+  # 
+  # }
+```
         
-## Conclusion
+# Unique Significant Exposures in Deleen 90th percentile
+```{r}
+table10 <- dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases99 == "YES" & Cases90 ==  "YES" &  Adjusted.p.Cases90 <= 0.05 & Adjusted.p.Timmers >= 0.05 & Adjusted.p.Pilling >= 0.05  & Adjusted.p.Cases99 >= 0.05 ) %>%
+  select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset)
+
+reactable(table10, bordered = TRUE,
+          columns = list(
+            exposure = colDef(name = "Exposure",  filterable = TRUE),
+            Adjusted.p.Cases90 = colDef(name = "90th Percentile", 
+                                        align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            Exposure.Dataset = colDef(name = "Exposure Dataset",
+                                       filterable = TRUE,
+                                      align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            # nsnp.90 = colDef(name = "90th Percentile", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.90 = colDef(name = "90th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                          format = colFormat(digits = 5)),
+            se.90 = colDef(name = "90th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                           format = colFormat(digits = 5)),
+             pval.90 = colDef(name = "90th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                              format = colFormat(digits = 5)
+                              ),
+            Adjusted.p.Cases99 = colDef(name = "99th Percentile", 
+                                        align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.99 = colDef(name = "99th Percentile", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.99 = colDef(name = "99th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                          format = colFormat(digits = 5)),
+            se.99 = colDef(name = "99th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                           format = colFormat(digits = 5)),
+             pval.99 = colDef(name = "99th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                              format = colFormat(digits = 5)),
+            Adjusted.p.Timmers = colDef(name = "Timmers", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.timmers = colDef(name = "Timmers", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.timmers = colDef(name = "Timmers", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                               format = colFormat(digits = 5)),
+            se.timmers = colDef(name = "Timmers", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                                format = colFormat(digits = 5)),
+             pval.timmers =colDef(name = "Timmers", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                                  format = colFormat(digits = 5)),
+            Adjusted.p.Pilling = colDef(name = "Pilling", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.pilling = colDef(name = "Pilling", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.pilling = colDef(name = "Pilling", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             pval.pilling =colDef(name = "Pilling", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            
+            se.pilling = colDef(name = "Pilling", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5))
+  ),
+  
+            
+          
+            columnGroups = list(
+              # colGroup(name = "nsnp", columns = c("nsnp.timmers", "nsnp.pilling", "nsnp.90", "nsnp.99")),
+              colGroup(name = "Beta", columns = c("b.pilling", "b.timmers", "b.90", "b.99")),
+              colGroup(name = "SE", columns = c("se.pilling", "se.timmers", "se.90", "se.99")),
+              colGroup(name = "p-value", columns = c("pval.pilling", "pval.timmers", "pval.90", "pval.99")),
+              colGroup(name = "Adjusted BH p-value", columns = c("Adjusted.p.Pilling", "Adjusted.p.Timmers", "Adjusted.p.Cases90", "Adjusted.p.Cases99"))
+            ))
+  # rowStyle = function(index) {
+  #   if (table3[index, "Adjusted.p.Timmers"] >= 0.05)
+  #     list(fontWeight = "bold", color = "#e00000")
+  #   else if(table3[index, "Adjusted.p.Pilling"] <= 0.05)
+  #     list(fontWeight = "bold")
+  #   else if(table3[index, "Adjusted.p.Cases90"] <= 0.05)
+  #     list(fontWeight = "bold")
+  # 
+  # }
+```
+
+- support for this association in other studies even though not significant
+
+# Uniquely significant exposures in Deleen 99
+
+```{r}
+table11 <- dat_all %>% 
+  filter(Pilling == "YES" & Timmers == "YES" & Cases99 == "YES" & Cases90 ==  "YES" ) %>%
+  filter(Adjusted.p.Cases90 >= 0.05 & Adjusted.p.Timmers >= 0.05 & Adjusted.p.Pilling >= 0.05  & Adjusted.p.Cases99 <= 0.05 ) %>%
+  select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset)
+
+reactable(table11, bordered = TRUE,
+          columns = list(
+            exposure = colDef(name = "Exposure",  filterable = TRUE),
+            Adjusted.p.Cases90 = colDef(name = "90th Percentile", 
+                                        align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            Exposure.Dataset = colDef(name = "Exposure Dataset",
+                                       filterable = TRUE,
+                                      align = "center",
+                                      headerStyle = list(background = "#f7f7f8")),
+            # nsnp.90 = colDef(name = "90th Percentile", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.90 = colDef(name = "90th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                          format = colFormat(digits = 5)),
+            se.90 = colDef(name = "90th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                           format = colFormat(digits = 5)),
+             pval.90 = colDef(name = "90th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                              format = colFormat(digits = 5)
+                              ),
+            Adjusted.p.Cases99 = colDef(name = "99th Percentile", 
+                                        align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.99 = colDef(name = "99th Percentile", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.99 = colDef(name = "99th Percentile", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                          format = colFormat(digits = 5)),
+            se.99 = colDef(name = "99th Percentile", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                           format = colFormat(digits = 5)),
+             pval.99 = colDef(name = "99th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                              format = colFormat(digits = 5)),
+            Adjusted.p.Timmers = colDef(name = "Timmers", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.timmers = colDef(name = "Timmers", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.timmers = colDef(name = "Timmers", align = "center",
+                               headerStyle = list(background = "#f7f7f8"),
+                               format = colFormat(digits = 5)),
+            se.timmers = colDef(name = "Timmers", align = "center",
+                                headerStyle = list(background = "#f7f7f8"),
+                                format = colFormat(digits = 5)),
+             pval.timmers =colDef(name = "Timmers", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"),
+                                  format = colFormat(digits = 5)),
+            Adjusted.p.Pilling = colDef(name = "Pilling", align = "center",
+                                        headerStyle = list(background = "#f7f7f8"), 
+                                        format = colFormat(digits = 5),
+                                        style = function(value) {
+                                          if (value <= 0.05) {
+                                            color <- "#008000"
+                                            } else if (value > 0.05) {
+                                              color <- "#e00000"
+                                              }
+                                          list(color = color, fontWeight = "bold")
+  }),
+            # nsnp.pilling = colDef(name = "Pilling", align = "center",
+            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            b.pilling = colDef(name = "Pilling", align = "center",
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             pval.pilling =colDef(name = "Pilling", align = "center",
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+            
+            se.pilling = colDef(name = "Pilling", align = "center",
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5))
+  ),
+  
+            
+          
+            columnGroups = list(
+              # colGroup(name = "nsnp", columns = c("nsnp.timmers", "nsnp.pilling", "nsnp.90", "nsnp.99")),
+              colGroup(name = "Beta", columns = c("b.pilling", "b.timmers", "b.90", "b.99")),
+              colGroup(name = "SE", columns = c("se.pilling", "se.timmers", "se.90", "se.99")),
+              colGroup(name = "p-value", columns = c("pval.pilling", "pval.timmers", "pval.90", "pval.99")),
+              colGroup(name = "Adjusted BH p-value", columns = c("Adjusted.p.Pilling", "Adjusted.p.Timmers", "Adjusted.p.Cases90", "Adjusted.p.Cases99"))
+            ))
+  # rowStyle = function(index) {
+  #   if (table3[index, "Adjusted.p.Timmers"] >= 0.05)
+  #     list(fontWeight = "bold", color = "#e00000")
+  #   else if(table3[index, "Adjusted.p.Pilling"] <= 0.05)
+  #     list(fontWeight = "bold")
+  #   else if(table3[index, "Adjusted.p.Cases90"] <= 0.05)
+  #     list(fontWeight = "bold")
+  # 
+  # }
+```
+
+# Conclusion
+
+- 90 sample size is much larger than 99 so p -value might be reduced because of small sample size, stronger effect as phenotype becomes more extreme
+
+- lots of significant exposures
+
+- mostly cardiovascular and neurologically related
+
+- Toenail Selenium was significant in Pilling as significant put not in any of the other studies
+
+- Thyroid peroxidase antibody levels was significant in Deleen 90 but not in other studies
+ - follow up with peroxidase, sensisivtity analyses
+ - do leave one out analyses
+ - do MR Egger analyses
 
 
 
-## Limitations and Next Steps
+# Limitations and Next Steps
 
+- low power due to weak instruments
 
-#Citations 
+- the evidence in and of itself does not indicate causation, but provides evidence that could lead to investments for further study
+
+- further examination of significant associations for strong violations of assumptions and need for further analyses 
+
+- consistency of the direction of the beta coefficients across the different outcomes
+
+To do : highlights for each table with "selected" exposures
+RA
+Thyroid peroxidase
+Urinary Albumin
+Smoking - Ever/Never
+
+regroup 
+create behavioral : age at intercourse, smoking, well-being
+metabolites should be on their own
+muscluoskeletal : grip and RA
+
+Have a separate table for metabolites on a separate tab.
+
+# Citations 
+
 Stephen Burgess, Simon G Thompson, CRP CHD Genetics Collaboration, Avoiding bias from weak instruments in Mendelian randomization studies, International Journal of Epidemiology, Volume 40, Issue 3, June 2011, Pages 755–764, https://doi.org/10.1093/ije/dyr036
 
 
 Davies NM, Holmes MV, Davey Smith G. Reading Mendelian randomisation studies: a guide, glossary, and checklist for clinicians. BMJ. 2018;362:k601. Published 2018 Jul 12. doi:10.1136/bmj.k601
 
 Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
+
+are there more exposures that are significant in shared among deleen 90 and pilling than in deleen and timmers
