@@ -1912,7 +1912,7 @@ reactable(table10, bordered = TRUE,
   # }
 ```
 
-
+- support for this association in other studies even though not significant
 
 # Uniquely significant exposures in Deleen 99
 
@@ -2042,13 +2042,18 @@ reactable(table11, bordered = TRUE,
 
 # Conclusion
 
+- 90 sample size is much larger than 99 so p -value might be reduced because of small sample size, stronger effect as phenotype becomes more extreme
+
 - lots of significant exposures
 
 - mostly cardiovascular and neurologically related
 
 - Toenail Selenium was significant in Pilling as significant put not in any of the other studies
 
-- Thyroid peroxidase antibody levels was significant in Deleen but not in other studies
+- Thyroid peroxidase antibody levels was significant in Deleen 90 but not in other studies
+ - follow up with peroxidase, sensitivity analyses
+ - do leave one out analyses
+ - do MR Egger analyses
 
 
 
@@ -2058,8 +2063,22 @@ reactable(table11, bordered = TRUE,
 
 - the evidence in and of itself does not indicate causation, but provides evidence that could lead to investments for further study
 
-- further examination of significant exposures and the direction of the beta coefficients
+- further examination of significant associations for strong violations of assumptions and need for further analyses 
 
+- consistency of the direction of the beta coefficients across the different outcomes
+
+To do : highlights for each table with "selected" exposures
+RA
+Thyroid peroxidase
+Urinary Albumin
+Smoking - Ever/Never
+
+regroup 
+create behavioral : age at intercourse, smoking, well-being
+metabolites should be on their own
+muscluoskeletal : grip and RA
+
+Have a separate table for metabolites on a separate tab.
 
 # Citations 
 
@@ -2069,3 +2088,5 @@ Stephen Burgess, Simon G Thompson, CRP CHD Genetics Collaboration, Avoiding bias
 Davies NM, Holmes MV, Davey Smith G. Reading Mendelian randomisation studies: a guide, glossary, and checklist for clinicians. BMJ. 2018;362:k601. Published 2018 Jul 12. doi:10.1136/bmj.k601
 
 Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
+
+are there more exposures that are significant in shared among deleen 90 and pilling than in deleen and timmers

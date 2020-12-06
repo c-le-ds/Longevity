@@ -164,6 +164,81 @@ effective_N = sample size
 
 Persons whose parental longevity was in the 90th percentile from the UK Biobank
 
+Map cptids to rsids using EasyQC map files
+```{r}
+require(tidyverse)
+outcome <- read_delim("data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv.gz", delim = "\t")
+
+# #filter out rsids already mapped
+# outcome <- outcome %>%
+#   filter(!grepl("^rs.*", variant_id))
+# 
+# #keep thos that have already been mapped
+# out <- outcome %>%
+#   filter(grepl("^rs.*", variant_id))
+
+# remove alleles at tend of variant ID
+
+outcome <- outcome %>%
+  mutate(variant_id = str_replace_all(variant_id, "A", "")) %>%
+  mutate(variant_id = str_replace_all(variant_id, "G", "")) %>%
+  mutate(variant_id = str_replace_all(variant_id, "T", "")) %>%
+  mutate(variant_id = str_replace_all(variant_id, "C", "")) %>%
+  mutate(variant_id = str_replace_all(variant_id, "_", ""))
+  
+#create SNPorder to track dups caused by multiple matches 11516100
+outcome <- outcome %>%
+  mutate(SNPorder = seq_along(variant_id))
+
+mapfile <- read_delim("data/outcomes/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt", delim = "\t")
+
+#rsmid contains rsids
+m <- mapfile %>%
+  filter(grepl("^rs.*", rsmid)) %>%
+  summarize(n())
+
+#join map file by chromosome and position
+outcome <- outcome %>%
+  left_join(mapfile, by = c("chromosome"= "chr", "base_pair_location"= "pos"))
+
+
+
+# All 1:1 merge, 5046 dups induced
+x <- outcome %>%
+  filter(duplicated(SNPorder)) %>%
+  summarize(n())
+
+
+map_int(outcome, function(x) sum(is.na(x))) #1360831 missing rsmids
+#remove missing rsids, mismatching chr and pos, rename vars,
+# remove unneeded vars
+outcome <- outcome %>%
+  filter(!is.na(rsmid)) %>%
+  filter(chromosome == chr) %>%
+  filter(base_pair_location == pos) %>%
+  rename(rsid = rsmid, cptid = variant_id) %>%
+  mutate(chr = NULL) %>%
+  mutate(pos = NULL) %>%
+  mutate(SNPorder = NULL) %>%
+  select(rsid, everything())
+
+
+out <- out %>%
+  mutate(rsid = variant_id)%>%
+  rename(cptid = variant_id)
+
+#599 additional SNPs mapped.
+write_csv(outcome ,"data/outcomes/pilling_mapped_all.csv")
+
+
+#put mapped and already provided rsids together
+pilling_download <- rbind(outcome, out)
+
+write_csv(pilling_download, "data/outcomes/Pilling_90.csv")
+
+```
+
+
 ### IV. Fourth Outcome: UK Biobank Parental Longevity
 
 ### V. Comparisons
@@ -205,7 +280,6 @@ if(!requireNamespace("BiocManager", quietly = TRUE)){
 
 
 is_it_here <- function(package_list){
-
   for( i in seq_along(package_list)){
     if(!require(package_list[i])){
       install.packages(package_list[i])
@@ -226,7 +300,6 @@ library(ieugwasr)
 library(arsenal)
 library(tidyverse)
 library(multtest)
-library(doParallel)
 ```
 
 ###II.  Exposures from each catalog
@@ -1377,13 +1450,13 @@ for(i in 1:5917){
     snps = exp$SNP,
     filename = "data/outcomes/Pilling_90.csv",
     sep = ",",
-    snp_col = "SNP",
-    beta_col = "BETA",
-    se_col = "SE",
-    effect_allele_col = "ALLELE1",
-    other_allele_col = "ALLELE0",
-    eaf_col = "A1FREQ",
-    pval_col = "P_BOLT"),
+    snp_col = "rsid",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value"),
     error=function(e) e)
 
   if(!inherits(outcome, "error") == TRUE){
@@ -1461,13 +1534,13 @@ for(i in 1:47){
     snps = exp$SNP,
     filename = "data/outcomes/Pilling_90.csv",
     sep = ",",
-    snp_col = "SNP",
-    beta_col = "BETA",
-    se_col = "SE",
-    effect_allele_col = "ALLELE1",
-    other_allele_col = "ALLELE0",
-    eaf_col = "A1FREQ",
-    pval_col = "P_BOLT"),
+    snp_col = "rsid",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value"),
     error=function(e) e)
 
   if(!inherits(outcome, "error") == TRUE){
@@ -1540,13 +1613,13 @@ for(i in 1:121){
     snps = exp$SNP,
     filename = "data/outcomes/Pilling_90.csv",
     sep = ",",
-    snp_col = "SNP",
-    beta_col = "BETA",
-    se_col = "SE",
-    effect_allele_col = "ALLELE1",
-    other_allele_col = "ALLELE0",
-    eaf_col = "A1FREQ",
-    pval_col = "P_BOLT"),
+    snp_col = "rsid",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value"),
     error=function(e) e)
 
   if(!inherits(outcome, "error") == TRUE){
@@ -1617,13 +1690,13 @@ for(i in seq_along(exp_unique)){
     snps = exp$SNP,
     filename = "data/outcomes/Pilling_90.csv",
     sep = ",",
-    snp_col = "SNP",
-    beta_col = "BETA",
-    se_col = "SE",
-    effect_allele_col = "ALLELE1",
-    other_allele_col = "ALLELE0",
-    eaf_col = "A1FREQ",
-    pval_col = "P_BOLT"),
+    snp_col = "rsid",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value"),
     error=function(e) e)
 
   if(!inherits(outcome, "error") == TRUE){
@@ -1700,13 +1773,13 @@ for(i in seq_along(exp_unique)){
     snps = exp$SNP,
     filename = "data/outcomes/Pilling_90.csv",
     sep = ",",
-    snp_col = "SNP",
-    beta_col = "BETA",
-    se_col = "SE",
-    effect_allele_col = "ALLELE1",
-    other_allele_col = "ALLELE0",
-    eaf_col = "A1FREQ",
-    pval_col = "P_BOLT"),
+    snp_col = "rsid",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value"),
     error=function(e) e)
 
   if(!inherits(outcome, "error") == TRUE){
@@ -2022,20 +2095,20 @@ mr_metabolite <- metabolite %>%
   mr()  %>%
   mutate(exposure_dat = "metabolite")
 
-methylation <- readRDS("data/harmonized/Pilling/pilling_download_methylation_df.rds")
-mr_methylation <- methylation %>%
-  filter(error =="FALSE") %>%
-  mr()%>%
-  mutate(exposure_dat = "methylation")
+# methylation <- readRDS("data/harmonized/Pilling/pilling_download_methylation_df.rds")
+# mr_methylation <- methylation %>%
+#   filter(error =="FALSE") %>%
+#   mr()%>%
+#   mutate(exposure_dat = "methylation")
 
-genes <- readRDS("data/harmonized/Pilling/pilling_download_genes_df.rds")
-mr_genes <- genes %>%
-  filter(error == "FALSE") %>%
-  mr() %>%
-  mutate(exposure_dat = "genes")
+# genes <- readRDS("data/harmonized/Pilling/pilling_download_genes_df.rds")
+# mr_genes <- genes %>%
+#   filter(error == "FALSE") %>%
+#   mr() %>%
+#   mutate(exposure_dat = "genes")
 
 
-mr <- rbind(mr_gwas, mr_protein, mr_metabolite, mr_methylation, mr_genes)
+mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 
 saveRDS(mr, "data/MR/MR_pilling_filterF.rds")
 ```
