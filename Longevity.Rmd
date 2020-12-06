@@ -162,12 +162,96 @@ effective_N = sample size
 
 ### III. Third Outcome: UK Biobank
 
-Persons whose parental longevity was in the 90th percentile from the UK Biobank
+Persons whose parental longevity for both parents was in the 90th percentile from the UK Biobank
 
-Map cptids to rsids using EasyQC map files
+Map cptids to rsids using EasyQC map files.
+
+**Dan's 2020-12-6 summary** 
+
+Short version, I think we could recover rsIDs for only 484 more variants. The Pilling data already has rsIDs for 99.8% of the variants, probably enough right? We should look into other reasons why there are so fewer exposures for Pilling. For one of the exposures that the other GWASes are recovering but Pilling isn't, harmonize and obtain that exposure and see where things go wrong. Manually look for the exposure variants.  
+
+11,492,682 of the Pilling variants have rs numbers. That's 99.8% of the 11,516,100 variants. Pretty good. Seems like we should be able to get a lot of exposures with these variants. 
+
+Only 23,418 do not have rsIDs. That's only 0.2% of the 11,516,100 variants. 
+
+How many of the variants without rsIDs had significant associations? Only 1279 had a P-value <= 0.05. 1279/23418 = 0.05. Not enriched for significant associations, so that's good. 
+
+I checked to see how many variants I might be able to recover with the EasyQC mapfile. 
+There are 23,403 Pilling variants without rsIDs after I remove duplicates based on chr and position. I created a new variable in chr:position format and merged to the EasyQC mapfile. 
+
+Only 865 merged! Not very many. 47 duplicated. I'd have to sort through these, but I won't right now. 862 have rsIDs from the EasyQC mapfile. 
+
+198 InDels with rsIDs. 292 SNPs with rsIDs. So, I think we might only be able to get rsIDs for 484 more variants. Some of these variants with rsIDs might be duplicated. Would need to sort that out. 
+
+You found 599 variants with potentially updated rsIDs, however, we would need to sort through the duplicates. Not worth it. There's likely another reason for the low number of MR exposures for Pilling. 
+
 ```{r}
 require(tidyverse)
 outcome <- read_delim("data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv.gz", delim = "\t")
+
+#How many variants have rs numbers?
+outcome %>%
+  filter(grepl("^rs.*", variant_id)) %>%
+  summarize(n())
+#11,492,682 have rs numbers. That's 99.8% of the 11,516,100 variants. Pretty good. 
+
+#How many variants do not have rs numbers? 
+outcome %>%
+  filter(!grepl("^rs.*", variant_id)) %>%
+  summarize(n())
+#only 23,418 do not have rsIDs. That's only 0.2% of the 11,516,100 variants. 
+
+#Extract non-rsIDs and characterize
+outNo <- outcome %>%
+  filter(!grepl("^rs.*", variant_id))
+outNo %>%
+  filter(duplicated(variant_id)) %>%
+  summarize(n()) #zero
+outNo %>%
+  mutate(chr_pos = paste(chromosome, base_pair_location, sep = ":")) %>%
+  filter(duplicated(chr_pos)) %>%
+  summarize(n()) #only 15
+outNo %>%
+  filter(p_value <= 0.05) %>%
+  summarize(p05 = n()) #1279/23418 = 0.05. Not enriched for significant associations. 
+
+#Prepare outNo to merge to mapfile
+outNo <- outNo %>%
+  mutate(SNPorder = seq_along(variant_id)) %>%
+  mutate(chr_pos = paste(chromosome, base_pair_location, sep = ":")) %>%
+  filter(!duplicated(chr_pos))
+#23,403 rows
+
+mapfile <- read_delim("data/outcomes/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt", delim = "\t")
+
+mapfile <- mapfile %>%
+  mutate(chr_pos = paste(chr, pos, sep = ":"))
+
+outNo <- outNo %>%
+  inner_join(mapfile, by = "chr_pos")
+#Ouch, only 865 merged!
+outNo %>%
+  filter(duplicated(SNPorder)) %>%
+  summarize(n())
+#47 duplicated. I'd have to sort through these, but I won't right now. 
+outNo %>%
+  filter(grepl("^rs.*", rsmid)) %>%
+  summarize(n())
+#862 have rsIDs
+outNo %>%
+  filter(grepl("^rs.*", rsmid)) %>%
+  filter((nchar(effect_allele) > 1 | nchar(other_allele) > 1) &
+           grepl(":ID$", cptid)) %>%
+  summarize(n())
+#198 InDels with rsIDs
+outNo %>%
+  filter(grepl("^rs.*", rsmid)) %>%
+  filter(nchar(effect_allele) == 1 & nchar(other_allele) == 1 &
+           !grepl(":ID$", cptid)) %>%
+  summarize(n())
+#292 SNPs with rsIDs
+
+#some of these variants with rsIDs might be duplicated. Would need to sort that out. 
 
 # #filter out rsids already mapped
 # outcome <- outcome %>%
@@ -233,6 +317,8 @@ write_csv(outcome ,"data/outcomes/pilling_mapped_all.csv")
 
 #put mapped and already provided rsids together
 pilling_download <- rbind(outcome, out)
+#I suggest this below. It is faster than rbind. 
+#pilling_download <- bind_rows(list(outcome, out))
 
 write_csv(pilling_download, "data/outcomes/Pilling_90.csv")
 
