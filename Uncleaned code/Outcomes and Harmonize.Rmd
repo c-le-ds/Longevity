@@ -16,10 +16,9 @@ library(tidyverse) #so we can use purrr::map, and no, not just because I got cat
 library(knitr)
 library(ieugwasr)
 library(arsenal)
-
+library(tidyverse)
 library(doParallel)
 library(foreach)
-
 ```
 
 
@@ -27,8 +26,7 @@ Load Exposures
 
 ```{r}
 
-
-
+#set working directory
 
 #GWAS
 load("../data/exposures/exposures_gwas.Rdata")
@@ -46,6 +44,7 @@ exposures_metabolites <- readRDS("../data/exposures/exposures_metabolites.rds")
 
 
 ```
+
 
 
 
@@ -754,6 +753,191 @@ saveRDS(cases_99, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/cases_99_genes.r
 saveRDS(cases_99_df, "..data/harmonized/cases_99_genes_df.rds")
 ```
 
+genes for deleen cases 99
+
+
+```{r}
+
+
+exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(exposure)
+
+
+
+c1 <- makeCluster(6)
+registerDoParallel(c1)
+
+# to make things run faster, the outcome and harmonizing steps will be split
+
+
+# For each outcome create a list of databases
+# as a function
+
+
+
+cases_99p <- foreach(i = 72001:72005, .packages = c("tidyverse", "TwoSampleMR")) %dopar% {
+ 
+  exp <- exposures_genes %>%
+    filter(exposure == exp_unique[i])
+ 
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "../data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N"),
+    error=function(e) e)
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      cases_99 <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize",
+               location_i = i,
+               message = harmonize$message)
+      # error <-tibble(error = harmonize$message, 
+      #          location_i = i,
+      #          exposure = exp_unique[i],
+      #          message = "harmonizing error")
+      # 
+      # error_log <- rbind(error_log, error)
+
+      }else {
+        cases_99 <- harmonize %>%
+          mutate(error = "FALSE",
+                 location_i = i,
+                 message = "no error")
+  
+
+      }
+    
+
+  }else{
+    cases_99<- tibble(error = "no matching rsids in outcome",
+                      location_i = i,
+                      message = outcome$message)
+    # error <- tibble(error = outcome$message,
+    #                 location_i = i,
+    #                 exposure = exp_unique[i],
+    #                 message = "no matching rsids in outcome")
+    # error_log <- rbind(error_log, error)
+  }
+  return(cases_99)
+    
+  # print(paste0("Harmonized exposure ", exp_unique[i], 
+  #              " which is iterator ", i)) 
+}
+
+stopCluster(c1) 
+cases_99_genes <- c(cases_99_genes, cases_99p)
+
+cases_99_df <- bind_rows(cases_99_genes)
+ 
+
+
+saveRDS(cases_99_genes, "../data/harmonized/cases_99_genes.rds")
+saveRDS(cases_99_df, "../data/harmonized/cases_99_genes_df.rds")
+
+  
+
+```
+
+
+try it as a function
+```{r}
+ exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(exposure)
+harmonize <- function(i, exp_unique){
+  
+cases_99p<- vector(mode = "list", length = length(exp_unique))
+
+exp <- exposures_genes %>%
+    filter(exposure == exp_unique[i])
+ 
+  outcome <- tryCatch( 
+    read_outcome_data(
+    snps = exp$SNP,
+    filename = "C:/Users/Me/Desktop/Longevity/data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N"),
+    error=function(e) e)
+
+  if(inherits(outcome, "error") == FALSE){
+
+    harmonize <- tryCatch(
+    harmonise_data(exp, outcome),
+    error=function(e) e)
+
+    if(inherits(harmonize, "error") == TRUE){
+      cases_99 <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize",
+               location_i = i,
+               message = harmonize$message)
+      # error <-tibble(error = harmonize$message, 
+      #          location_i = i,
+      #          exposure = exp_unique[i],
+      #          message = "harmonizing error")
+      # 
+      # error_log <- rbind(error_log, error)
+
+      }else {
+        cases_99 <- harmonize %>%
+          mutate(error = "FALSE",
+                 location_i = i,
+                 message = "no error")
+  
+
+      }
+    
+
+  }else{
+    cases_99<- tibble(error = "no matching rsids in outcome",
+                      location_i = i,
+                      message = outcome$message)
+    # error <- tibble(error = outcome$message,
+    #                 location_i = i,
+    #                 exposure = exp_unique[i],
+    #                 message = "no matching rsids in outcome")
+    # error_log <- rbind(error_log, error)
+  }
+  return(cases_99)
+    
+   print(paste0("Harmonized exposure ", exp_unique[i], 
+                " which is iterator ", i)) 
+}
+```
+
+run it
+```{r}
+cases_99 <- lapply(165001:185000,harmonize, exp_unique )
+cases_99_genes <- c(cases_99_genes,cases_99)
+
+cases_99_df <- bind_rows(cases_99_genes)
+ 
+
+
+
+saveRDS(cases_99_genes, "../data/harmonized/cases_99_genes.rds")
+saveRDS(cases_99_df, "../data/harmonized/cases_99_genes_df.rds")
+```
+
+
 METHYLATION
 ```{r}
 error_log <- data.frame()
@@ -846,13 +1030,14 @@ GWAS EXPOSURES
 
 
 pilling_download <- data.frame()
+
 error_log <- data.frame()
 
 exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exposure)
 
 
 
-for(i in 1:5917){ 
+for(i in 1:5){ 
   
   exp <- exposures_gwas %>%
     filter(exposure == exp_unique[13])
@@ -862,8 +1047,8 @@ for(i in 1:5917){
     snps = exp$SNP,
     filename = "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/Pilling_90.csv",
     sep = ",",
-    snp_col = "SNP",
-    beta_col = "BETA",
+    snp_col = "rsid",
+    beta_col ="beta",
     se_col = "SE",
     effect_allele_col = "ALLELE1",
     other_allele_col = "ALLELE0",
@@ -1104,13 +1289,13 @@ for(i in 112403:120000){#finished
     snps = exp$SNP,
     filename = "../data/outcomes/Pilling_90.csv",
     sep = ",",
-    snp_col = "SNP",
-    beta_col = "BETA",
-    se_col = "SE",
-    effect_allele_col = "ALLELE1",
-    other_allele_col = "ALLELE0",
-    eaf_col = "A1FREQ",
-    pval_col = "P_BOLT"),
+    snp_col = "rsid",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value"),
     error=function(e) e)
 
   if(!inherits(outcome, "error") == TRUE){
@@ -1157,7 +1342,7 @@ for(i in 112403:120000){#finished
 
 pilling_download_DF <- bind_rows(pilling_download)
  
-saveRDS(error_log, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/error_log_pilling_genes.rds")
+saveRDS(error_log, "data/harmonized/error_log_pilling_genes.rds")
 
 
 saveRDS(pilling_download, "C:/Users/me/Desktop/MPH/Internship/CPMC/Data/pilling_download_genes.rds")
@@ -1179,6 +1364,13 @@ pilling <- harmonise_data(
  )
 
 ```
+
+
+
+Harmonize and combine mapped Pilling data
+
+
+GWAS
 
 #### e. UK Parental
 
@@ -1510,189 +1702,6 @@ saveRDS(timmers_df, "../data/harmonized/timmers_genes_df.rds")
 
 ## Test doParallel for larger exposures
 
-genes for deleen cases 99
-
-
-```{r}
-
-
-exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(exposure)
-
-
-
-c1 <- makeCluster(6)
-registerDoParallel(c1)
-
-# to make things run faster, the outcome and harmonizing steps will be split
-
-
-# For each outcome create a list of databases
-# as a function
-
-
-
-cases_99p <- foreach(i = 72001:72005, .packages = c("tidyverse", "TwoSampleMR")) %dopar% {
- 
-  exp <- exposures_genes %>%
-    filter(exposure == exp_unique[i])
- 
-  outcome <- tryCatch( 
-    read_outcome_data(
-    snps = exp$SNP,
-    filename = "../data/outcomes/cases99rsid.csv",
-    sep = ",",
-    snp_col = "rsid",
-    beta_col = "Beta",
-    se_col = "SE",
-    effect_allele_col = "EA",
-    other_allele_col = "NEA",
-    eaf_col = "EAF",
-    pval_col = "pval",
-    samplesize_col = "effective_N"),
-    error=function(e) e)
-
-  if(inherits(outcome, "error") == FALSE){
-
-    harmonize <- tryCatch(
-    harmonise_data(exp, outcome),
-    error=function(e) e)
-
-    if(inherits(harmonize, "error") == TRUE){
-      cases_99 <- merge(exp, outcome, by = "SNP") %>%
-        mutate(error = "Harmonize",
-               location_i = i,
-               message = harmonize$message)
-      # error <-tibble(error = harmonize$message, 
-      #          location_i = i,
-      #          exposure = exp_unique[i],
-      #          message = "harmonizing error")
-      # 
-      # error_log <- rbind(error_log, error)
-
-      }else {
-        cases_99 <- harmonize %>%
-          mutate(error = "FALSE",
-                 location_i = i,
-                 message = "no error")
-  
-
-      }
-    
-
-  }else{
-    cases_99<- tibble(error = "no matching rsids in outcome",
-                      location_i = i,
-                      message = outcome$message)
-    # error <- tibble(error = outcome$message,
-    #                 location_i = i,
-    #                 exposure = exp_unique[i],
-    #                 message = "no matching rsids in outcome")
-    # error_log <- rbind(error_log, error)
-  }
-  return(cases_99)
-    
-  # print(paste0("Harmonized exposure ", exp_unique[i], 
-  #              " which is iterator ", i)) 
-}
-
-stopCluster(c1) 
-cases_99_genes <- c(cases_99_genes, cases_99p)
-
-cases_99_df <- bind_rows(cases_99_genes)
- 
-
-
-saveRDS(cases_99_genes, "../data/harmonized/cases_99_genes.rds")
-saveRDS(cases_99_df, "../data/harmonized/cases_99_genes_df.rds")
-
-  
-
-```
-
-
-try it as a function
-```{r}
- exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(exposure)
-harmonize <- function(i, exp_unique){
-  
-cases_99p<- vector(mode = "list", length = length(exp_unique))
-
-exp <- exposures_genes %>%
-    filter(exposure == exp_unique[i])
- 
-  outcome <- tryCatch( 
-    read_outcome_data(
-    snps = exp$SNP,
-    filename = "C:/Users/Me/Desktop/Longevity/data/outcomes/cases99rsid.csv",
-    sep = ",",
-    snp_col = "rsid",
-    beta_col = "Beta",
-    se_col = "SE",
-    effect_allele_col = "EA",
-    other_allele_col = "NEA",
-    eaf_col = "EAF",
-    pval_col = "pval",
-    samplesize_col = "effective_N"),
-    error=function(e) e)
-
-  if(inherits(outcome, "error") == FALSE){
-
-    harmonize <- tryCatch(
-    harmonise_data(exp, outcome),
-    error=function(e) e)
-
-    if(inherits(harmonize, "error") == TRUE){
-      cases_99 <- merge(exp, outcome, by = "SNP") %>%
-        mutate(error = "Harmonize",
-               location_i = i,
-               message = harmonize$message)
-      # error <-tibble(error = harmonize$message, 
-      #          location_i = i,
-      #          exposure = exp_unique[i],
-      #          message = "harmonizing error")
-      # 
-      # error_log <- rbind(error_log, error)
-
-      }else {
-        cases_99 <- harmonize %>%
-          mutate(error = "FALSE",
-                 location_i = i,
-                 message = "no error")
-  
-
-      }
-    
-
-  }else{
-    cases_99<- tibble(error = "no matching rsids in outcome",
-                      location_i = i,
-                      message = outcome$message)
-    # error <- tibble(error = outcome$message,
-    #                 location_i = i,
-    #                 exposure = exp_unique[i],
-    #                 message = "no matching rsids in outcome")
-    # error_log <- rbind(error_log, error)
-  }
-  return(cases_99)
-    
-   print(paste0("Harmonized exposure ", exp_unique[i], 
-                " which is iterator ", i)) 
-}
-```
-
-run it
-```{r}
-cases_99 <- lapply(80001:85000,harmonize, exp_unique )
-cases_99_genes <- c(cases_99_genes,cases_99)
-
-cases_99_df <- bind_rows(cases_99_genes)
- 
-
-
-saveRDS(cases_99_genes, "../data/harmonized/cases_99_genes.rds")
-saveRDS(cases_99_df, "../data/harmonized/cases_99_genes_df.rds")
-```
-
 
 
 ```{r}
@@ -1729,4 +1738,6 @@ y$square
 
 root <- bind_rows(y)
 ```
+
+
 
