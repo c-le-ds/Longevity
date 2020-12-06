@@ -2332,7 +2332,7 @@ protein <- readRDS("data/harmonized/Cases99/cases_99_protein_df.rds")%>%
 
 cases99<- rbind(gwas, metabolite, protein)
 
-dat <- cases99%>%
+
   filter(exposure %in% cases99_exp)
 ```
 
