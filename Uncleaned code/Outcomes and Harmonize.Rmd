@@ -16,9 +16,10 @@ library(tidyverse) #so we can use purrr::map, and no, not just because I got cat
 library(knitr)
 library(ieugwasr)
 library(arsenal)
-library(tidyverse)
+
 library(doParallel)
 library(foreach)
+
 ```
 
 
@@ -26,7 +27,8 @@ Load Exposures
 
 ```{r}
 
-#set working directory
+
+
 
 #GWAS
 load("../data/exposures/exposures_gwas.Rdata")
@@ -44,7 +46,6 @@ exposures_metabolites <- readRDS("../data/exposures/exposures_metabolites.rds")
 
 
 ```
-
 
 
 
@@ -856,7 +857,7 @@ saveRDS(cases_99_df, "../data/harmonized/cases_99_genes_df.rds")
 try it as a function
 ```{r}
  exp_unique <- exposures_genes[!duplicated(exposures_genes$exposure),] %>% pull(exposure)
-harmonize <- function(i, exp_unique){
+harmonize <- function(i, exp_unique, file){
   
 cases_99p<- vector(mode = "list", length = length(exp_unique))
 
@@ -866,7 +867,7 @@ exp <- exposures_genes %>%
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "C:/Users/Me/Desktop/Longevity/data/outcomes/cases99rsid.csv",
+    filename = file,
     sep = ",",
     snp_col = "rsid",
     beta_col = "Beta",
@@ -925,7 +926,7 @@ exp <- exposures_genes %>%
 
 run it
 ```{r}
-cases_99 <- lapply(165001:185000,harmonize, exp_unique )
+cases_99 <- lapply(215001:225000,harmonize, exp_unique, file = "C:/Users/Me/Desktop/Longevity/data/outcomes/cases99rsid.csv" )
 cases_99_genes <- c(cases_99_genes,cases_99)
 
 cases_99_df <- bind_rows(cases_99_genes)
