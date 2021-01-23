@@ -162,96 +162,12 @@ effective_N = sample size
 
 ### III. Third Outcome: UK Biobank
 
-Persons whose parental longevity for both parents was in the 90th percentile from the UK Biobank
+Persons whose parental longevity was in the 90th percentile from the UK Biobank
 
-Map cptids to rsids using EasyQC map files.
-
-**Dan's 2020-12-6 summary** 
-
-Short version, I think we could recover rsIDs for only 484 more variants. The Pilling data already has rsIDs for 99.8% of the variants, probably enough right? We should look into other reasons why there are so fewer exposures for Pilling. For one of the exposures that the other GWASes are recovering but Pilling isn't, harmonize and obtain that exposure and see where things go wrong. Manually look for the exposure variants.  
-
-11,492,682 of the Pilling variants have rs numbers. That's 99.8% of the 11,516,100 variants. Pretty good. Seems like we should be able to get a lot of exposures with these variants. 
-
-Only 23,418 do not have rsIDs. That's only 0.2% of the 11,516,100 variants. 
-
-How many of the variants without rsIDs had significant associations? Only 1279 had a P-value <= 0.05. 1279/23418 = 0.05. Not enriched for significant associations, so that's good. 
-
-I checked to see how many variants I might be able to recover with the EasyQC mapfile. 
-There are 23,403 Pilling variants without rsIDs after I remove duplicates based on chr and position. I created a new variable in chr:position format and merged to the EasyQC mapfile. 
-
-Only 865 merged! Not very many. 47 duplicated. I'd have to sort through these, but I won't right now. 862 have rsIDs from the EasyQC mapfile. 
-
-198 InDels with rsIDs. 292 SNPs with rsIDs. So, I think we might only be able to get rsIDs for 484 more variants. Some of these variants with rsIDs might be duplicated. Would need to sort that out. 
-
-You found 599 variants with potentially updated rsIDs, however, we would need to sort through the duplicates. Not worth it. There's likely another reason for the low number of MR exposures for Pilling. 
-
+Map cptids to rsids using EasyQC map files
 ```{r}
 require(tidyverse)
 outcome <- read_delim("data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv.gz", delim = "\t")
-
-#How many variants have rs numbers?
-outcome %>%
-  filter(grepl("^rs.*", variant_id)) %>%
-  summarize(n())
-#11,492,682 have rs numbers. That's 99.8% of the 11,516,100 variants. Pretty good. 
-
-#How many variants do not have rs numbers? 
-outcome %>%
-  filter(!grepl("^rs.*", variant_id)) %>%
-  summarize(n())
-#only 23,418 do not have rsIDs. That's only 0.2% of the 11,516,100 variants. 
-
-#Extract non-rsIDs and characterize
-outNo <- outcome %>%
-  filter(!grepl("^rs.*", variant_id))
-outNo %>%
-  filter(duplicated(variant_id)) %>%
-  summarize(n()) #zero
-outNo %>%
-  mutate(chr_pos = paste(chromosome, base_pair_location, sep = ":")) %>%
-  filter(duplicated(chr_pos)) %>%
-  summarize(n()) #only 15
-outNo %>%
-  filter(p_value <= 0.05) %>%
-  summarize(p05 = n()) #1279/23418 = 0.05. Not enriched for significant associations. 
-
-#Prepare outNo to merge to mapfile
-outNo <- outNo %>%
-  mutate(SNPorder = seq_along(variant_id)) %>%
-  mutate(chr_pos = paste(chromosome, base_pair_location, sep = ":")) %>%
-  filter(!duplicated(chr_pos))
-#23,403 rows
-
-mapfile <- read_delim("data/outcomes/rsmid_map.1000G_ALL_p1v3.merged_mach_impute.v3.mergeindels.txt", delim = "\t")
-
-mapfile <- mapfile %>%
-  mutate(chr_pos = paste(chr, pos, sep = ":"))
-
-outNo <- outNo %>%
-  inner_join(mapfile, by = "chr_pos")
-#Ouch, only 865 merged!
-outNo %>%
-  filter(duplicated(SNPorder)) %>%
-  summarize(n())
-#47 duplicated. I'd have to sort through these, but I won't right now. 
-outNo %>%
-  filter(grepl("^rs.*", rsmid)) %>%
-  summarize(n())
-#862 have rsIDs
-outNo %>%
-  filter(grepl("^rs.*", rsmid)) %>%
-  filter((nchar(effect_allele) > 1 | nchar(other_allele) > 1) &
-           grepl(":ID$", cptid)) %>%
-  summarize(n())
-#198 InDels with rsIDs
-outNo %>%
-  filter(grepl("^rs.*", rsmid)) %>%
-  filter(nchar(effect_allele) == 1 & nchar(other_allele) == 1 &
-           !grepl(":ID$", cptid)) %>%
-  summarize(n())
-#292 SNPs with rsIDs
-
-#some of these variants with rsIDs might be duplicated. Would need to sort that out. 
 
 # #filter out rsids already mapped
 # outcome <- outcome %>%
@@ -317,8 +233,6 @@ write_csv(outcome ,"data/outcomes/pilling_mapped_all.csv")
 
 #put mapped and already provided rsids together
 pilling_download <- rbind(outcome, out)
-#I suggest this below. It is faster than rbind. 
-#pilling_download <- bind_rows(list(outcome, out))
 
 write_csv(pilling_download, "data/outcomes/Pilling_90.csv")
 
@@ -334,46 +248,46 @@ Compare significant Exposures-Outcome relationships found via Two Sample Mendeli
 
 ### I. Load Libraries
 
-
+Run this code chunk the first time you use this code to check that you have all the packages needed.
 ```{r,eval=FALSE}
-# Run this code chunk the first time you use this code to check that you have all the packages needed.
-# if(!require(TwoSampleMR)){
-#   install.packages("devtools")
-#   devtools::install_github("MRCIEU/TwoSampleMR")
-# }
-#   
-# if(!require(ieugwasr)){
-#   #if devtools not installed yet, use line below
-#   #install.packages("devtools")
-#   devtools::install_github("mrcieu/ieugwasr")
-# }
-# 
-# if(!require(genetics.binaRies)){
-#   #if devtools not installed yet, use line below
-#   #install.packages("devtools")
-#   devtools::install_github("explodecomputer/genetics.binaRies")
-# }
-# 
-# 
-# 
-# if(!requireNamespace("BiocManager", quietly = TRUE)){
-#  install.packages("BiocManager") 
-#  BiocManager::install("multtest")
-# }
-#     
-# 
-# 
-# 
-# 
-# is_it_here <- function(package_list){
-#   for( i in seq_along(package_list)){
-#     if(!require(package_list[i])){
-#       install.packages(package_list[i])
-#     }
-#   }
-# }
-# packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table", "doParallel")
-# is_it_here(packages_CRAN)
+
+if(!require(TwoSampleMR)){
+  install.packages("devtools")
+  devtools::install_github("MRCIEU/TwoSampleMR")
+}
+  
+if(!require(ieugwasr)){
+  #if devtools not installed yet, use line below
+  #install.packages("devtools")
+  devtools::install_github("mrcieu/ieugwasr")
+}
+
+if(!require(genetics.binaRies)){
+  #if devtools not installed yet, use line below
+  #install.packages("devtools")
+  devtools::install_github("explodecomputer/genetics.binaRies")
+}
+
+
+
+if(!requireNamespace("BiocManager", quietly = TRUE)){
+ install.packages("BiocManager") 
+ BiocManager::install("multtest")
+}
+    
+
+
+
+
+is_it_here <- function(package_list){
+  for( i in seq_along(package_list)){
+    if(!require(package_list[i])){
+      install.packages(package_list[i])
+    }
+  }
+}
+packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table", "doParallel")
+is_it_here(packages_CRAN)
 ```
 
 Load the libraries you need for the subsequent code chunks
@@ -386,6 +300,7 @@ library(ieugwasr)
 library(arsenal)
 library(tidyverse)
 library(multtest)
+library(doParallel)
 ```
 
 ###II.  Exposures from each catalog
@@ -401,6 +316,7 @@ Make sure to set eval = **TRUE** if you want to run that chunk of code.
 Set variables for local clumping of data
 ```{r,eval=FALSE}
 
+
 # plink library
 plink <- genetics.binaRies::get_plink_binary()
 
@@ -415,55 +331,35 @@ bfile <- "data/LD/LD_reference/EUR"
 
 #cache = True will create a folder that saves objects, and if objects and code aren't updated, this code chunk will not re-run. This is good for long-running code sections.
 #import gwas catalog into R
-gwas <- available_outcomes()
 
+gwas_catalog <- available_outcomes()
 
 #create a vector of unique gwas phenotypes
 gwas_unique <- gwas_catalog %>%
-  filter(!duplicated(MAPPED_TRAIT_EFO)) %>%
-  pull(MAPPED_TRAIT_EFO)
-# 34513 
+  pull(id)
+# 34513 unique id in catalog
 
-#make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
-#Initialize a list to save results. The problem with creating an empty dataframe with data.frame() is that it doesn't preallocate memory for 3590 rows. Instead, it creates an empty DF with zero rows.
+  exposures_gwas <- extract_instruments(outcomes = gwas_unique ) 
 
-exposures_gwas <- vector(mode = "list", length = length(gwas_unique))
-# for(i in seq_along(gwas_unique)){
-  #you can test with for(i in 1:5)
- for(i in 1504 : 3018) {
-  #format exposure data and clump by LD r2 <0.001 to reduce covariance
-  #combined both steps together. Send output to each element of list
-  exposures_gwas[[i]] <- gwas_catalog %>%
-    filter(MAPPED_TRAIT_EFO == gwas_unique[i]) %>%
-    format_data %>%
-    mutate(exposure.mapped = gwas_unique[i])%>%
-    rename(rsid = SNP,
-           pval = pval.exposure)%>%
-    ld_clump(plink_bin = plink, bfile = bfile, 
-           clump_kb = 10000, clump_r2 = .001, 
-           clump_p = 1) %>%
-    rename(SNP = rsid,
-           pval.exposure = pval)
-  
-  print(paste0("Last successful run was ", gwas_unique[i], 
-               " which is iterator ", i))
-}
-#957 -hearing loss -cannot clump.
-# 1503 - asparaginase-induced acute pancreatitis, acute lymphoblastic leukemia- cannot clump
 #rbind list elements into DF
 #old way of doing things
 #exposures_gwas_DF <- do.call(rbind, exposures_gwas)
 #faster way of doing things with dplyr
-exposures_gwas_DF <- bind_rows(exposures_gwas)
+# exposures_gwas_DF <- bind_rows(exposures_gwas)
 
-#check that 'phenotypes' is the same as the last entry in gwas_unique
-# gwas_unique[3590]
-# gwas_phenotypes$Phenotype
+#check that there are still 34513 unique ids
+#23282 unique ids left. 
+x$id <-unique(exposures_gwas$id.exposure)
 
+# 11231 ids that were not kept , test if ids results in empty vector (no rsids)
+null <- anti_join(gwas_catalog, x, by = c("id"))
+
+null_id <- null %>% pull(id)
+
+null_exp <- extract_instruments(outcomes = null_id)
+# results in empty vector
 # 
-# save(exposures_gwas, file = "data/exposures/exposures_gwas.Rdata")
-
-save(exposures_gwas, file = "data/exposures/exposures_gwas_mapped.Rdata")
+save(exposures_gwas, file = "data/exposures/exposures_gwas_ieu.Rdata")
 ```
 
 #### b. Gene Expression QTLs
@@ -636,19 +532,16 @@ saveRDS(exposures_methylation, file = "data/exposures/exposures_methylation.rds"
 
 #### f. Other Methods for obtaining exposures
 
-Ex. GWAS Catalog
+Ex. Genes Catalog
 
 Utilizing the clump_data function in TwoSampleMR
 
 ```{r}
 #Retrieve the catalog
-data(gwas_catalog)
-gwas_catalog
+data(gtex_eqtl)
+gtex_eqtl
 
-# then create a vector of unique gwas phenotypes
-gwas_unique <- gwas_catalog %>%
-  filter(!duplicated(Phenotype)) %>%
-  pull(Phenotype)
+# then create a vector of unique genes
 
 genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
 
@@ -668,16 +561,15 @@ saveRDS(exposures_genes, file = "data/exposures/exposures_genes.rds")
 As a function for a list of genes 
 ```{r}
 #As before retrieve the catalog
-data(gwas_catalog)
-gwas_catalog
+data(gtex_eqtl)
+gtex_eqtl
 
-# then create a vector of unique gwas phenotypes
-gwas_unique <- gwas_catalog %>%
-  filter(!duplicated(Phenotype)) %>%
-  pull(Phenotype)
+# then create a vector of unique genes
+
+genes_table <- gtex_eqtl[!duplicated(gtex_eqtl$gene_name),]
 
 # Define a function
-gwas_clump <- function(genes){
+gene_clump <- function(genes){
   gene <- subset(gtex_eqtl, gene_name == genes) %>% format_gtex_eqtl() %>% clump_data()
 }
 
@@ -692,7 +584,7 @@ Here we will use the TwoMRSample package to merge the exposure and outcome datas
 
 ```{r}
 #GWAS
-load("data/exposures/exposures_gwas.Rdata")
+load("data/exposures/exposures_gwas_ieu.Rdata")
 
 #Proteins
 exposures_proteins <- readRDS("data/exposures/exposures_proteins.rds")
@@ -716,13 +608,13 @@ GWAS
 ```{r}
 error_log <- data.frame()
 
-exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exposure)
+exp_unique <- exposures_gwas[!duplicated(exposures_gwas$id.exposure),] %>% pull(id.exposure)
 cases_90 <- vector(mode = "list", length = length(exp_unique))
 
-# for(i in seq_along(exp_unique)){ 
-for(i in 4501:5917){  
+for(i in seq_along(exp_unique)){
+# for(i in 1:1){
   exp <- exposures_gwas %>%
-    filter(exposure == exp_unique[i])
+    filter(id.exposure == exp_unique[i])
   
   outcome <- tryCatch( 
     read_outcome_data(
@@ -779,15 +671,14 @@ for(i in 4501:5917){
 
 cases_90_df <- bind_rows(cases_90)
 
-saveRDS(error_log, "data/harmonized/error_log_cases_90_gwas.rds")
+saveRDS(error_log, "data/harmonized/error_log_cases_90_gwas_ieu.rds")
 
 
-saveRDS(cases_90, "data/harmonized/cases_90_gwas_ls.rds")
-saveRDS(cases_90_df, "data/harmonized/cases_90_gwas_df.rds")
+saveRDS(cases_90, "data/harmonized/cases_90_gwas_ieu_ls.rds")
+saveRDS(cases_90_df, "data/harmonized/cases_90_gwas_ieu_df.rds")
 ```
 
-1219 harmonizing errors
-173 exposure rsids not in outcome
+789 exposure rsids not in outcome
 
 
 PROTEIN EXPOSURES
@@ -1119,13 +1010,13 @@ GWAS
 ```{r}
 error_log <- data.frame()
 
-exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exposure)
+exp_unique <- exposures_gwas[!duplicated(exposures_gwas$id.exposure),] %>% pull(id.exposure)
 cases_99 <- vector(mode = "list", length = length(exp_unique))
 
 # for(i in seq_along(exp_unique)){ 
-for(i in 4001:5917){  
+# for(i in 1:5){  
   exp <- exposures_gwas %>%
-    filter(exposure == exp_unique[i])
+    filter(id.exposure == exp_unique[i])
   
   outcome <- tryCatch( 
     read_outcome_data(
@@ -1182,11 +1073,11 @@ for(i in 4001:5917){
 
 cases_99_df <- bind_rows(cases_99)
 
-saveRDS(error_log, "data/harmonized/error_log_cases_99_gwas.rds")
+saveRDS(error_log, "data/harmonized/error_log_cases_99_gwas_ieu.rds")
 
 
-saveRDS(cases_99, "data/harmonized/cases_99_gwas_ls.rds")
-saveRDS(cases_99_df, "data/harmonized/cases_99_gwas_df.rds")
+saveRDS(cases_99, "data/harmonized/cases_99_gwas_ieu_ls.rds")
+saveRDS(cases_99_df, "data/harmonized/cases_99_gwas_ieu_df.rds")
 ```
 178 exposures with no matching rsids in outcome
 
@@ -1540,9 +1431,9 @@ for(i in 1:5917){
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv",
-    sep = "\t",
-    snp_col = "variant_id",
+    filename = "data/outcomes/Pilling_90.csv",
+    sep = ",",
+    snp_col = "rsid",
     beta_col = "beta",
     se_col = "standard_error",
     effect_allele_col = "effect_allele",
@@ -2169,23 +2060,23 @@ saveRDS(timmers_df, "data/harmonized/timmers_metabolite_df.rds")
 ### I. UK 90 
 Downloaded Pilling Data
 ```{r}
-gwas <- readRDS("data/harmonized/Pilling/pilling_EFO_0007796-build37_gwas.rds")
+gwas <- readRDS("data/harmonized/Pilling/pilling_download_gwas.rds")
 mr_gwas <- gwas %>% 
   filter(error == "FALSE") %>%
   mr()%>%
   mutate(exposure_dat = "GWAS")
 
-#protein <-readRDS("data/harmonized/Pilling/pilling_download_protein.rds")
-# mr_protein <- protein %>%
-#   filter(error == "FALSE") %>%
-#   mr() %>%
-#   mutate(exposure_dat = "protein")
+protein <-readRDS("data/harmonized/Pilling/pilling_download_protein.rds")
+mr_protein <- protein %>%
+  filter(error == "FALSE") %>%
+  mr() %>%
+  mutate(exposure_dat = "protein")
 
-#metabolite <- readRDS("data/harmonized/Pilling/pilling_download_metabolites.rds")
-# mr_metabolite <- metabolite %>%
-#   filter(error == "FALSE") %>%
-#   mr()  %>%
-#   mutate(exposure_dat = "metabolite")
+metabolite <- readRDS("data/harmonized/Pilling/pilling_download_metabolites.rds")
+mr_metabolite <- metabolite %>%
+  filter(error == "FALSE") %>%
+  mr()  %>%
+  mutate(exposure_dat = "metabolite")
 
 # methylation <- readRDS("data/harmonized/Pilling/pilling_download_methylation_df.rds")
 # mr_methylation <- methylation %>%
@@ -2200,9 +2091,8 @@ mr_gwas <- gwas %>%
 #   mutate(exposure_dat = "genes")
 
 
-#mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
+mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 
-mr <- mr_gwas
 saveRDS(mr, "data/MR/MR_pilling_filterF.rds")
 ```
 
@@ -2517,45 +2407,4 @@ result <-readRDS("data/MR/MR_cases_99_F.rds")
 
 p1 <- mr_scatter_plot(result, dat)
 p1[5]
-```
-
-## E. Additional Biomarkers
-Analysis of additional biomarkers outside of the 2MR GWAS catalog
-
-### I. list of available exposures
-
-```{r}
-ao <- available_outcomes()
-
-```
-
-### II. insulin-like growth factor-binding protein 1
-
-```{r}
-
-#exposures
-
-igf_exp_dat <- extract_instruments(outcomes = c('prot-c-2952_75_2', 'ukb-d-30770_raw', 'prot-a-1443', 'prot-a-1444', 'prot-c-2952_75_2', 'ukb-d-30770_irnt'))
-
-#outcomes
-
-cases90_out <-  read_outcome_data(
-    snps = igf_exp_dat$SNP,
-    filename = "data/outcomes/cases90rsid.csv",
-    sep = ",",
-    snp_col = "rsid",
-    beta_col = "Beta",
-    se_col = "SE",
-    effect_allele_col = "EA",
-    other_allele_col = "NEA",
-    eaf_col = "EAF",
-    pval_col = "pval",
-    samplesize_col = "effective_N")
-
-#harmonize
-igf_harm_dat <- harmonise_data(igf_exp_dat, cases90_out, action = 3)
-
-#mr analyses
-
-igf_results <- mr(igf_harm_dat)
 ```
