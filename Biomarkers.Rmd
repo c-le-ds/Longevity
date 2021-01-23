@@ -1,0 +1,736 @@
+---
+title: "Additional Biomarkers"
+author: "Christine Le"
+date: "1/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Preparation
+
+## Load Libraries
+
+```{r}
+library(TwoSampleMR)
+library(MRInstruments)
+library(tidyverse) #so we can use purrr::map, and no, not just because I got cats
+library(knitr)
+library(ieugwasr)
+library(arsenal)
+library(tidyverse)
+library(multtest)
+```
+
+## Data
+```{r}
+data("gwas_catalog")
+plink <- genetics.binaRies::get_plink_binary()
+
+# bfile is the filepath were your reference datasets are located
+#no need to include extensions for population (e.g EUR.bin)
+bfile <- "data/LD/LD_reference/EUR"
+
+```
+
+# Telomere Length
+found in gwas catalog
+
+# Insulin-like growth factor 1/IGF-1
+
+
+## obtain exposure data
+
+```{r}
+#list of exposures
+igf1_exp<- gwas_catalog %>% 
+  filter(MAPPED_TRAIT_EFO == "IGF-1 measurement") %>% 
+  format_data() %>%  
+  rename(rsid = SNP)%>%
+  clump_data()
+
+
+```
+
+## Cases 90
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = igf1_exp$SNP,
+    filename = "data/outcomes/cases90rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_igf1_cases90 <- harmonise_data(igf1_exp, outcome)
+mr_igf1_cases90<- mr(harm_igf1_cases90)
+
+```
+## Cases 99
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = igf1_exp$SNP,
+    filename = "data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_igf1_cases99 <- harmonise_data(igf1_exp, outcome)
+mr_igf1_cases99<- mr(harm_igf1_cases99)
+
+```
+
+## Pilling
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = igf1_exp$SNP,
+    filename = "data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv",
+    sep = "\t",
+    snp_col = "variant_id",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value")
+
+#harmonize
+
+harm_igf1_pilling <- harmonise_data(igf1_exp, outcome)
+
+mr_igf1_pilling<- mr(harm_igf1_pilling)
+```
+
+
+## Timmers
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = igf1_exp$SNP,
+    filename = "data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p")
+
+#harmonize
+
+harm_igf1_timmers <- harmonise_data(igf1_exp, outcome)
+mr_igf1_timmers<- mr(harm_igf1_timmers)
+
+```
+
+# IGFBP3 (insulin-like growth factor binding protein 3)
+ 
+## obtain exposure data
+
+```{r}
+#list of exposures
+igfbp3_exp_ls <- c("IGFBP-3", "Insulin-like growth factor-binding protein 3")
+
+igfbp3_gwas <- available_gwas %>%
+  filter(trait %in% igfbp3_exp_ls)%>% 
+  pull(id)
+
+#extract exposure data
+
+igfbp3_exp <- extract_instruments(igfbp3_gwas )
+
+
+```
+
+## Cases 90
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = igfbp3_exp$SNP,
+    filename = "data/outcomes/cases90rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_igfbp3_cases90 <- harmonise_data(igfbp3_exp, outcome)
+mr_igfbp3_cases90<- mr(harm_igfbp3_cases90)
+
+```
+## Cases 99
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = igfbp3_exp$SNP,
+    filename = "data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_igfbp3_cases99 <- harmonise_data(igfbp3_exp, outcome)
+mr_igfbp3_cases99 <- mr(harm_igfbp3_cases99)
+
+```
+
+## Pilling
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = igfbp3_exp$SNP,
+    filename = "data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv",
+    sep = "\t",
+    snp_col = "variant_id",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value")
+
+#harmonize
+
+harm_igfbp3_pilling <- harmonise_data(igfbp3_exp, outcome)
+mr_igfbp3_pilling <- mr(harm_igfbp3_pilling)
+
+```
+
+
+## Timmers
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = igfbp3_exp$SNP,
+    filename = "data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p")
+
+#harmonize
+
+harm_igfbp3_timmers <- harmonise_data(igfbp3_exp, outcome)
+
+mr_igfbp3_timmers <- mr(harm_igfbp3_timmers)
+```
+
+# IL-6
+found in gwas catalog
+
+# CRP
+ 
+## obtain exposure data
+
+```{r}
+#list of exposures
+crp_exp_ls <- c("CRP", "C-reactive protein", "C-Reactive protein level", "C-reactive protein levels")
+
+crp_gwas <- available_gwas %>%
+  filter(trait %in% crp_exp_ls)%>% 
+  pull(id)
+
+#extract exposure data
+
+crp_exp <- extract_instruments(crp_gwas)
+
+
+```
+
+## Cases 90
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = crp_exp$SNP,
+    filename = "data/outcomes/cases90rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_crp_cases90 <- harmonise_data(crp_exp, outcome)
+
+mr_crp_cases90 <- mr(harm_crp_cases90)
+```
+## Cases 99
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = crp_exp$SNP,
+    filename = "data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_crp_cases99 <- harmonise_data(crp_exp, outcome)
+mr_crp_cases99 <- mr(harm_crp_cases99)
+
+```
+
+## Pilling
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = crp_exp$SNP,
+    filename = "data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv",
+    sep = "\t",
+    snp_col = "variant_id",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value")
+
+#harmonize
+
+harm_crp_pilling <- harmonise_data(crp_exp, outcome)
+
+mr_crp_pilling <- mr(harm_crp_pilling)
+```
+
+
+## Timmers
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = crp_exp$SNP,
+    filename = "data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p")
+
+#harmonize
+
+harm_crp_timmers <- harmonise_data(crp_exp, outcome)
+mr_crp_timmers <- mr(harm_crp_timmers)
+
+```
+
+
+# TNF-a
+found in gwas catalog under obesity traits
+
+# Cystatin C
+
+found in gwas catalog
+
+## obtain exposure data
+
+```{r}
+#list of exposures
+crp_exp_ls <- c("CRP", "C-reactive protein", "C-Reactive protein level", "C-reactive protein levels")
+
+crp_gwas <- available_gwas %>%
+  filter(trait %in% crp_exp_ls)%>% 
+  pull(id)
+
+#extract exposure data
+
+crp_exp <- extract_instruments(crp_gwas)
+
+
+```
+
+## Cases 90
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = crp_exp$SNP,
+    filename = "data/outcomes/cases90rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_crp_cases90 <- harmonise_data(crp_exp, outcome)
+
+
+```
+## Cases 99
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = crp_exp$SNP,
+    filename = "data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_crp_cases99 <- harmonise_data(crp_exp, outcome)
+
+
+```
+
+## Pilling
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = crp_exp$SNP,
+    filename = "data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv",
+    sep = "\t",
+    snp_col = "variant_id",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value")
+
+#harmonize
+
+harm_crp_pilling <- harmonise_data(crp_exp, outcome)
+
+
+```
+
+
+## Timmers
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = crp_exp$SNP,
+    filename = "data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p")
+
+#harmonize
+
+harm_crp_timmers <- harmonise_data(crp_exp, outcome)
+
+
+```
+
+# NT-proBNP
+not found
+# Insulin
+## obtain exposure data
+
+```{r}
+#list of exposures
+insulin_exp_ls <- c("Insulin")
+
+insulin_gwas <- available_gwas %>%
+  filter(trait %in% insulin_exp_ls)%>% 
+  pull(id)
+
+#extract exposure data
+
+insulin_exp <- extract_instruments(insulin_gwas )%>% clump_data()
+
+
+
+
+```
+
+## Cases 90
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = insulin_exp$SNP,
+    filename = "data/outcomes/cases90rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_insulin_cases90 <- harmonise_data(insulin_exp, outcome)
+
+mr_insulin_cases90 <- mr(harm_insulin_cases90)
+```
+## Cases 99
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = insulin_exp$SNP,
+    filename = "data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_insulin_cases99 <- harmonise_data(insulin_exp, outcome)
+
+mr_insulin_cases99 <- mr(harm_insulin_cases99)
+```
+
+## Pilling
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = insulin_exp$SNP,
+    filename = "data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv",
+    sep = "\t",
+    snp_col = "variant_id",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value")
+
+#harmonize
+
+harm_insulin_pilling <- harmonise_data(insulin_exp, outcome)
+
+mr_insulin_pilling <- mr(harm_insulin_pilling)
+```
+
+
+## Timmers
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = insulin_exp$SNP,
+    filename = "data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p")
+
+#harmonize
+
+harm_insulin_timmers <- harmonise_data(insulin_exp, outcome)
+mr_insulin_timmers <- mr(harm_insulin_timmers)
+
+```
+
+# GDF15
+
+## obtain exposure data
+
+```{r}
+gdf15_exp_ls <- c("growth differentiation factor 15")
+
+gdf15_gwas <- available_gwas %>%
+  filter(trait %in% gdf15_exp_ls)%>% 
+  pull(id)
+
+#extract exposure data
+
+gdf15_exp <- extract_instruments(gdf15_gwas )
+
+
+
+
+```
+
+## Cases 90
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = gdf15_exp$SNP,
+    filename = "data/outcomes/cases90rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_gdf15_cases90 <- harmonise_data(gdf15_exp, outcome)
+
+mr_gdf15_cases90 <- mr(harm_gdf15_cases90)
+```
+## Cases 99
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = gdf15_exp$SNP,
+    filename = "data/outcomes/cases99rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+
+harm_gdf15_cases99 <- harmonise_data(gdf15_exp, outcome)
+
+mr_gdf15_cases99 <- mr(harm_gdf15_cases99)
+```
+
+## Pilling
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = igf1_exp$SNP,
+    filename = "data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv",
+    sep = "\t",
+    snp_col = "variant_id",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value")
+
+#harmonize
+
+harm_gdf15_pilling <- harmonise_data(gdf15_exp, outcome)
+
+mr_gdf15_pilling <- mr(harm_gdf15_pilling)
+```
+
+
+## Timmers
+
+```{r}
+# obtain outcome data
+outcome <- read_outcome_data(
+    snps = igf1_exp$SNP,
+    filename = "data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p")
+
+#harmonize
+
+harm_gdf15_timmers <- harmonise_data(gdf15_exp, outcome)
+
+mr_gdf15_timmers <- mr(harm_gdf15_timmers)
+```
+
+# IGFBPs
+in gwas catalog
+
+
+# Supplementary table 2 with IEU ids
+
+
+# table of MR results

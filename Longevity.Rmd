@@ -334,46 +334,46 @@ Compare significant Exposures-Outcome relationships found via Two Sample Mendeli
 
 ### I. Load Libraries
 
-Run this code chunk the first time you use this code to check that you have all the packages needed.
+
 ```{r,eval=FALSE}
-
-if(!require(TwoSampleMR)){
-  install.packages("devtools")
-  devtools::install_github("MRCIEU/TwoSampleMR")
-}
-  
-if(!require(ieugwasr)){
-  #if devtools not installed yet, use line below
-  #install.packages("devtools")
-  devtools::install_github("mrcieu/ieugwasr")
-}
-
-if(!require(genetics.binaRies)){
-  #if devtools not installed yet, use line below
-  #install.packages("devtools")
-  devtools::install_github("explodecomputer/genetics.binaRies")
-}
-
-
-
-if(!requireNamespace("BiocManager", quietly = TRUE)){
- install.packages("BiocManager") 
- BiocManager::install("multtest")
-}
-    
-
-
-
-
-is_it_here <- function(package_list){
-  for( i in seq_along(package_list)){
-    if(!require(package_list[i])){
-      install.packages(package_list[i])
-    }
-  }
-}
-packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table", "doParallel")
-is_it_here(packages_CRAN)
+# Run this code chunk the first time you use this code to check that you have all the packages needed.
+# if(!require(TwoSampleMR)){
+#   install.packages("devtools")
+#   devtools::install_github("MRCIEU/TwoSampleMR")
+# }
+#   
+# if(!require(ieugwasr)){
+#   #if devtools not installed yet, use line below
+#   #install.packages("devtools")
+#   devtools::install_github("mrcieu/ieugwasr")
+# }
+# 
+# if(!require(genetics.binaRies)){
+#   #if devtools not installed yet, use line below
+#   #install.packages("devtools")
+#   devtools::install_github("explodecomputer/genetics.binaRies")
+# }
+# 
+# 
+# 
+# if(!requireNamespace("BiocManager", quietly = TRUE)){
+#  install.packages("BiocManager") 
+#  BiocManager::install("multtest")
+# }
+#     
+# 
+# 
+# 
+# 
+# is_it_here <- function(package_list){
+#   for( i in seq_along(package_list)){
+#     if(!require(package_list[i])){
+#       install.packages(package_list[i])
+#     }
+#   }
+# }
+# packages_CRAN <- c("dplyr", "knitr", "arsenal","tidyverse", "data.table", "doParallel")
+# is_it_here(packages_CRAN)
 ```
 
 Load the libraries you need for the subsequent code chunks
@@ -400,15 +400,13 @@ Make sure to set eval = **TRUE** if you want to run that chunk of code.
 
 Set variables for local clumping of data
 ```{r,eval=FALSE}
-#set working directory
-setwd("path/to/file")
 
 # plink library
 plink <- genetics.binaRies::get_plink_binary()
 
 # bfile is the filepath were your reference datasets are located
 #no need to include extensions for population (e.g EUR.bin)
-bfile <- "../data/LD/LD_reference/EUR"
+bfile <- "data/LD/LD_reference/EUR"
 ```
 
 #### a. GWAS Catalog
@@ -417,35 +415,41 @@ bfile <- "../data/LD/LD_reference/EUR"
 
 #cache = True will create a folder that saves objects, and if objects and code aren't updated, this code chunk will not re-run. This is good for long-running code sections.
 #import gwas catalog into R
-data(gwas_catalog)
-gwas_catalog
+gwas <- available_outcomes()
+
 
 #create a vector of unique gwas phenotypes
 gwas_unique <- gwas_catalog %>%
-  filter(!duplicated(Phenotype)) %>%
-  pull(Phenotype)
-# 3590 unique phenotypes in catalog
+  filter(!duplicated(MAPPED_TRAIT_EFO)) %>%
+  pull(MAPPED_TRAIT_EFO)
+# 34513 
 
 #make a for loop to create a database of exposure SNPs formatted for exposure data and clumped
 #Initialize a list to save results. The problem with creating an empty dataframe with data.frame() is that it doesn't preallocate memory for 3590 rows. Instead, it creates an empty DF with zero rows.
 
 exposures_gwas <- vector(mode = "list", length = length(gwas_unique))
-for(i in seq_along(gwas_unique)){
+# for(i in seq_along(gwas_unique)){
   #you can test with for(i in 1:5)
-# for(i in 1 : length(gwas_unique)) {
+ for(i in 1504 : 3018) {
   #format exposure data and clump by LD r2 <0.001 to reduce covariance
   #combined both steps together. Send output to each element of list
   exposures_gwas[[i]] <- gwas_catalog %>%
-    filter(Phenotype == gwas_unique[i]) %>%
+    filter(MAPPED_TRAIT_EFO == gwas_unique[i]) %>%
     format_data %>%
+    mutate(exposure.mapped = gwas_unique[i])%>%
+    rename(rsid = SNP,
+           pval = pval.exposure)%>%
     ld_clump(plink_bin = plink, bfile = bfile, 
            clump_kb = 10000, clump_r2 = .001, 
-           clump_p = 1) 
+           clump_p = 1) %>%
+    rename(SNP = rsid,
+           pval.exposure = pval)
   
   print(paste0("Last successful run was ", gwas_unique[i], 
                " which is iterator ", i))
 }
-
+#957 -hearing loss -cannot clump.
+# 1503 - asparaginase-induced acute pancreatitis, acute lymphoblastic leukemia- cannot clump
 #rbind list elements into DF
 #old way of doing things
 #exposures_gwas_DF <- do.call(rbind, exposures_gwas)
@@ -457,7 +461,9 @@ exposures_gwas_DF <- bind_rows(exposures_gwas)
 # gwas_phenotypes$Phenotype
 
 # 
-save(exposures_gwas, file = "data/exposures/exposures_gwas.Rdata")
+# save(exposures_gwas, file = "data/exposures/exposures_gwas.Rdata")
+
+save(exposures_gwas, file = "data/exposures/exposures_gwas_mapped.Rdata")
 ```
 
 #### b. Gene Expression QTLs
@@ -1534,9 +1540,9 @@ for(i in 1:5917){
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "data/outcomes/Pilling_90.csv",
-    sep = ",",
-    snp_col = "rsid",
+    filename = "data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv",
+    sep = "\t",
+    snp_col = "variant_id",
     beta_col = "beta",
     se_col = "standard_error",
     effect_allele_col = "effect_allele",
@@ -2163,23 +2169,23 @@ saveRDS(timmers_df, "data/harmonized/timmers_metabolite_df.rds")
 ### I. UK 90 
 Downloaded Pilling Data
 ```{r}
-gwas <- readRDS("data/harmonized/Pilling/pilling_download_gwas.rds")
+gwas <- readRDS("data/harmonized/Pilling/pilling_EFO_0007796-build37_gwas.rds")
 mr_gwas <- gwas %>% 
   filter(error == "FALSE") %>%
   mr()%>%
   mutate(exposure_dat = "GWAS")
 
-protein <-readRDS("data/harmonized/Pilling/pilling_download_protein.rds")
-mr_protein <- protein %>%
-  filter(error == "FALSE") %>%
-  mr() %>%
-  mutate(exposure_dat = "protein")
+#protein <-readRDS("data/harmonized/Pilling/pilling_download_protein.rds")
+# mr_protein <- protein %>%
+#   filter(error == "FALSE") %>%
+#   mr() %>%
+#   mutate(exposure_dat = "protein")
 
-metabolite <- readRDS("data/harmonized/Pilling/pilling_download_metabolites.rds")
-mr_metabolite <- metabolite %>%
-  filter(error == "FALSE") %>%
-  mr()  %>%
-  mutate(exposure_dat = "metabolite")
+#metabolite <- readRDS("data/harmonized/Pilling/pilling_download_metabolites.rds")
+# mr_metabolite <- metabolite %>%
+#   filter(error == "FALSE") %>%
+#   mr()  %>%
+#   mutate(exposure_dat = "metabolite")
 
 # methylation <- readRDS("data/harmonized/Pilling/pilling_download_methylation_df.rds")
 # mr_methylation <- methylation %>%
@@ -2194,8 +2200,9 @@ mr_metabolite <- metabolite %>%
 #   mutate(exposure_dat = "genes")
 
 
-mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
+#mr <- rbind(mr_gwas, mr_protein, mr_metabolite)
 
+mr <- mr_gwas
 saveRDS(mr, "data/MR/MR_pilling_filterF.rds")
 ```
 
@@ -2510,4 +2517,45 @@ result <-readRDS("data/MR/MR_cases_99_F.rds")
 
 p1 <- mr_scatter_plot(result, dat)
 p1[5]
+```
+
+## E. Additional Biomarkers
+Analysis of additional biomarkers outside of the 2MR GWAS catalog
+
+### I. list of available exposures
+
+```{r}
+ao <- available_outcomes()
+
+```
+
+### II. insulin-like growth factor-binding protein 1
+
+```{r}
+
+#exposures
+
+igf_exp_dat <- extract_instruments(outcomes = c('prot-c-2952_75_2', 'ukb-d-30770_raw', 'prot-a-1443', 'prot-a-1444', 'prot-c-2952_75_2', 'ukb-d-30770_irnt'))
+
+#outcomes
+
+cases90_out <-  read_outcome_data(
+    snps = igf_exp_dat$SNP,
+    filename = "data/outcomes/cases90rsid.csv",
+    sep = ",",
+    snp_col = "rsid",
+    beta_col = "Beta",
+    se_col = "SE",
+    effect_allele_col = "EA",
+    other_allele_col = "NEA",
+    eaf_col = "EAF",
+    pval_col = "pval",
+    samplesize_col = "effective_N")
+
+#harmonize
+igf_harm_dat <- harmonise_data(igf_exp_dat, cases90_out, action = 3)
+
+#mr analyses
+
+igf_results <- mr(igf_harm_dat)
 ```
