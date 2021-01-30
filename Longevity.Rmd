@@ -1044,7 +1044,7 @@ error_log <- data.frame()
 exp_unique <- exposures_gwas[!duplicated(exposures_gwas$id.exposure),] %>% pull(id.exposure)
 cases_99 <- vector(mode = "list", length = length(exp_unique))
 
-# for(i in seq_along(exp_unique)){ 
+for(i in seq_along(exp_unique)){
 # for(i in 1:5){  
   exp <- exposures_gwas %>%
     filter(id.exposure == exp_unique[i])
@@ -1193,7 +1193,6 @@ no errors
 
 
 METABOLITES
-
 
 ```{r}
 
@@ -1444,7 +1443,19 @@ GWAS EXPOSURES
 
 ```{r}
 
+
+#remove eqtl, met-a,b,c and prot-a,b,c
+exposures_gwas <- exposures_gwas %>%
+  filter(!grepl('eqtl-a', id.exposure))%>%
+  filter(!grepl('met-a', id.exposure))%>%
+  filter(!grepl('met-b', id.exposure))%>%
+  filter(!grepl('met-c', id.exposure))%>%
+  filter(!grepl('prot-a', id.exposure))%>%
+  filter(!grepl('prot-b', id.exposure))%>%
+  filter(!grepl('prot-c', id.exposure))
+
 #downloaded data
+
 
 
 
@@ -1495,7 +1506,11 @@ for(i in 1:1){
   
 
       }
+<<<<<<< HEAD
     
+=======
+   
+>>>>>>> b938975e86de24660c262f49bf6f228d3d9e5dff
 
   }else{
     pilling[[i]]<- tibble(error = "no matching rsids in outcome")
@@ -1505,23 +1520,32 @@ for(i in 1:1){
                     message = "no matching rsids in outcome")
     error_log <- rbind(error_log, error)
   }
+<<<<<<< HEAD
   print(paste0("harmonized exposure", exp_unique[i], 
                "which is iterator ", i))  
 }
 
+=======
+   print(paste('harmonized exposure', exp_unique[i], 'which is iterator ', i)) 
+}
+ 
+>>>>>>> b938975e86de24660c262f49bf6f228d3d9e5dff
 pilling_df <- bind_rows(pilling)
 saveRDS(error_log, "data/harmonized/error_log_pilling_gwas_ieu.rds")
 
 
+<<<<<<< HEAD
 saveRDS(pilling, "data/harmonized/pilling_ls_gwas_ieu.rds")
 saveRDS(pilling_df,"data/harmonized/pilling_df_gwas_ieu.rds" )
+=======
+saveRDS(pilling, "data/harmonized/pilling_gwas_ieu_ls.rds")
+saveRDS(pilling_df,"data/harmonized/pilling_gwas_ieu_df.rds" )
+>>>>>>> b938975e86de24660c262f49bf6f228d3d9e5dff
 ```
 
 3612 exposures did not have matching rsids in the pilling data
 
 545 harmonizing errors due to NA values
-
-
 
 
 PROTEIN EXPOSURES
