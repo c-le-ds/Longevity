@@ -1645,6 +1645,7 @@ for(i in 65001:85000){
     se_col = "se",
     effect_allele_col = "a1",
     other_allele_col = "a0",
+    
     eaf_col = "freq1",
     pval_col = "p"),
     error=function(e) e)
