@@ -1013,7 +1013,7 @@ error_log <- data.frame()
 exp_unique <- exposures_gwas[!duplicated(exposures_gwas$id.exposure),] %>% pull(id.exposure)
 cases_99 <- vector(mode = "list", length = length(exp_unique))
 
-# for(i in seq_along(exp_unique)){ 
+for(i in seq_along(exp_unique)){
 # for(i in 1:5){  
   exp <- exposures_gwas %>%
     filter(id.exposure == exp_unique[i])
@@ -1162,7 +1162,6 @@ no errors
 
 
 METABOLITES
-
 
 ```{r}
 
@@ -1413,17 +1412,28 @@ GWAS EXPOSURES
 
 ```{r}
 
+
+#remove eqtl, met-a,b,c and prot-a,b,c
+exposures_gwas <- exposures_gwas %>%
+  filter(!grepl('eqtl-a', id.exposure))%>%
+  filter(!grepl('met-a', id.exposure))%>%
+  filter(!grepl('met-b', id.exposure))%>%
+  filter(!grepl('met-c', id.exposure))%>%
+  filter(!grepl('prot-a', id.exposure))%>%
+  filter(!grepl('prot-b', id.exposure))%>%
+  filter(!grepl('prot-c', id.exposure))
+
 #downloaded data
 
 
-pilling_download <- data.frame()
 error_log <- data.frame()
 
-exp_unique <- exposures_gwas[!duplicated(exposures_gwas$exposure),] %>% pull(exposure)
+exp_unique <- exposures_gwas[!duplicated(exposures_gwas$id.exposure),] %>% pull(id.exposure)
+
+pilling <- vector(mode = "list", length = length(exp_unique))
 
 
-
-for(i in 1:5917){ 
+for(i in 1:1){ 
   
   exp <- exposures_gwas %>%
     filter(exposure == exp_unique[i])
@@ -1431,9 +1441,9 @@ for(i in 1:5917){
   outcome <- tryCatch( 
     read_outcome_data(
     snps = exp$SNP,
-    filename = "data/outcomes/Pilling_90.csv",
-    sep = ",",
-    snp_col = "rsid",
+    filename = "data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv",
+    sep = "\t",
+    snp_col = "variant_id",
     beta_col = "beta",
     se_col = "standard_error",
     effect_allele_col = "effect_allele",
@@ -1442,21 +1452,15 @@ for(i in 1:5917){
     pval_col = "p_value"),
     error=function(e) e)
 
-  if(!inherits(outcome, "error") == TRUE){
+  if(inherits(outcome, "error") == FALSE){
 
     harmonize <- tryCatch(
-    harmonise_data(exp, outcome, action = 3),
+    harmonise_data(exp, outcome),
     error=function(e) e)
 
     if(inherits(harmonize, "error") == TRUE){
-      harmonize_dat <- merge(exp, outcome, by = "SNP") %>%
-        mutate(remove = FALSE,
-               palindromic = FALSE,
-               ambiguous = FALSE,
-               action = 2,
-               mr_keep = FALSE, #can change to true later
-               samplesize.outcome = NA,
-               error = TRUE)
+      pilling[[i]] <- merge(exp, outcome, by = "SNP") %>%
+        mutate(error = "Harmonize")
       error <-tibble(error = harmonize$message, 
                location_i = i,
                exposure = exp_unique[i],
@@ -1465,34 +1469,35 @@ for(i in 1:5917){
       error_log <- rbind(error_log, error)
 
       }else {
-        harmonize_dat <- harmonize %>%
-          mutate(error = FALSE)
+        pilling[[i]] <- harmonize %>%
+          mutate(error = "FALSE")
   
 
       }
-    pilling_download <- rbind(pilling_download, harmonize_dat)
+   
 
   }else{
+    pilling[[i]]<- tibble(error = "no matching rsids in outcome")
     error <- tibble(error = outcome$message,
                     location_i = i,
                     exposure = exp_unique[i],
                     message = "no matching rsids in outcome")
     error_log <- rbind(error_log, error)
   }
-    
+   print(paste('harmonized exposure', exp_unique[i], 'which is iterator ', i)) 
 }
  
-saveRDS(error_log, "data/harmonized/error_log_pilling_gwas.rds")
+pilling_df <- bind_rows(pilling)
+saveRDS(error_log, "data/harmonized/error_log_pilling_gwas_ieu.rds")
 
 
-saveRDS(pilling_download, "data/harmonized/pilling_download_gwas.rds")
+saveRDS(pilling, "data/harmonized/pilling_gwas_ieu_ls.rds")
+saveRDS(pilling_df,"data/harmonized/pilling_gwas_ieu_df.rds" )
 ```
 
 3612 exposures did not have matching rsids in the pilling data
 
 545 harmonizing errors due to NA values
-
-
 
 
 PROTEIN EXPOSURES
