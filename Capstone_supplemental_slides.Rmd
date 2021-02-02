@@ -169,6 +169,27 @@ Horizontal Pleiotropy
 
   - be careful in how we interpret the results of our analysis. Based on current knowledge could the relationship we see in our study be due to other biases like loss to follow up.
 
+# Exposure Database
+```{r}
+knitr::include_graphics("images/IEU-database.png")
+```
+
+
+# Outcomes
+
+Pilling
+- case control design using pre-release data from UKBiobank
+- case - if both parents lived to the top ten percent in age in the study
+
+Timmers
+- cohort design using full data from UKBiobank
+- age(outcome of interest) treated as a continuous variable
+
+Deleen 90 and 99th percentle
+- included cases from different studies, more hetergenous in nature
+- case - if the individual themselves lived to either the 90th or 99th percentile in age
+- used both alive and dead controls
+
 # Common and Unique Exposures in Each Study - Venn Diagram
 ```{r, out.width="50%"}
 
