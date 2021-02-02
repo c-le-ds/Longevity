@@ -1,0 +1,224 @@
+---
+title: "Two Sample Mendelian Randomization on Longevity GWAS"
+author: "Christine Le"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:powerpoint_presentation
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(VennDiagram)
+library(reactable)
+library(tidyverse)
+
+#data
+
+
+
+Pilling_dat <- readRDS("data/MR/Pilling_multtest_gwas_ieu.rds")
+Timmers_dat <- readRDS("data/MR/Timmers_multtest_gwas_ieu.rds")
+Cases90_dat <- readRDS("data/MR/Cases90_multtest_gwas_ieu.rds")
+Cases99_dat <- readRDS("data/MR/Cases99_multtest_gwas_ieu.rds")
+
+
+
+```
+
+
+# Background
+
+```{r agingfig}
+knitr::include_graphics("images/An_Aging_Nation.png")
+```
+
+# Motivation
+
+```{r twomr, out.width= "50%"}
+knitr::include_graphics("images/General_DAG.png")
+```
+
+**Longevity is complex**
+  
+  - Confounding makes finding true associations difficult
+  
+**Solution** : Two Sample Mendelian Randomization
+
+ - use two datasets from similar populations
+ 
+ - provide strong evidence of the true relationship between longevity and certain exposures
+
+# Methods
+
+```{r twomrfig, out.width= "50%"}
+knitr::include_graphics("images/2MR.png")
+```
+
+
+**Two Sample Mendelian Randomization**
+
+- Exposure: SNPs as a proxy for Exposure from one dataset
+- Outcome: outcome from another dataset using SNPs from Exposure to assess the causal relationship between Exposure and Outcome, bypassing confounders that influence the E-O relationship.
+
+**Advantages**
+
+  - readily available data
+  
+  - simple analyses
+  
+  - cost-efficient
+
+
+# Assumptions 
+
+```{r assumptions, out.width= "50%"}
+knitr::include_graphics("images/2MR.png")
+```
+
+**Assumption 1** : The first assumption is that SNPs are truly associated with Exposure
+
+**Assumption 2** : No Horizontal Pleiotropy
+
+**Assumption 3** : SNPs not associated with E-O confounders
+
+
+
+# TWoSampleMR Package
+
+**Software- TwoSampleMR Package**
+
+R package developed to utilize 2-sample Mendelian Randomization on GWAS studies with curated databases. 
+Allows researchers to more easily perform 2-sample Mendelian Randomization on GWASs to discover and eludicate possible causal relationships between phenotypes and evaluate assumptions of this statistical strategy. 
+
+source: Gibran Hemani, Jie Zheng, Kaitlin H Wade, Charles Laurin, Benjamin Elsworth, Stephen Burgess, Jack Bowden, Ryan Langdon, Vanessa Tan, James Yarmolinsky, Hashem A. $ The MR-Base platform supports systematic causal inference across the human phenome. eLife 2018. doi: https://doi.org/10.7554/eLife.34408 
+
+
+
+# Data Description - Exposures
+Data obtained using IEU GWAS database
+
+**GWAS **
+Curated from the NHGRI-EBI GWAS Catalog of significant associations found in different GWAS studies to include only data that has the required information to perform MR analyis. 
+
+
+
+# Data Description - Outcomes
+
+**Pilling**
+Results from GWAS study of parental longevity (combined monther's and father's age) on UK Biobank participants. Participants whose parental longevity was in the top 10 percent were compared with all other UK Biobank participants who met the inclusion criteria. 
+
+**Timmers**
+GWAS results from 1 million parental lifespans of 500,000 particpants with data on mortalilty risk factors. 
+
+**Deleen**
+
+- two defintions of longevity 
+  
+  - 90th percentile : individuals who lived to upper 90th percentile in age 
+  - 99th percentile : individuals who lived to upper 99th percentile in age
+
+
+
+
+
+
+# Flow Chart
+
+
+
+
+
+#  Table 1.Common Exposures  among any of the four Outcomes with at least one significant p-value (adjusted p-value $\leq$ 0.05) using the Inverse Variance Weighted Method*
+
+```{r, out.width="50%", results='hide'}
+# Table 1. Any Significant Exposures (adjusted p-value $\leq$ 0.05) among any of the four Outcomes  using the Inverse Variance Weighted Method*
+
+#*empty cells represent missing data
+#create a filterable table
+tableone <- filter(dat_all, Adjusted.p.Timmers <= 0.05 | Adjusted.p.Cases90 <= 0.05 | Adjusted.p.Cases99 <= 0.05 | Adjusted.p.Pilling <=0.05) %>%
+  select(exposure, Pilling, Timmers, Cases90, Cases99, Adjusted.p.Pilling, Adjusted.p.Timmers, Adjusted.p.Cases90, Adjusted.p.Cases99, Exposure.Dataset)
+reactable(tableone, filterable = TRUE, paginationType = "jump", showSortable = TRUE, bordered = TRUE,
+          columns = list( 
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Timmers = colDef(name = "Adjusted p-value (Timmers)", 
+                                        align = "center", headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE, format = colFormat(digits = 5)),         
+            Adjusted.p.Pilling = colDef(name = "Adjusted p-value (Pilling)", 
+                                        align = "center",headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE, format = colFormat(digits = 5)),
+            Adjusted.p.Cases90 = colDef(name = "Adjusted p-value (Cases90)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5)),
+            Adjusted.p.Cases99 = colDef(name = "Adjusted p-value (Cases99)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5)),
+            Exposure.Dataset = colDef(name = "Exposure Dataset", 
+                                              align = "center",headerStyle = list(background = "#f7f7f8")),
+            Pilling = colDef(name = "Pilling", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Timmers = colDef(cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Cases90 = colDef(name = "90th Percentile", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Cases99 = colDef(name = "99th Percentile", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            })
+          ))
+```
+
+
+
+# One Exposure & Interpretation of Betas
+
+
+
+
+
+# Sensitivity Analysis for violations
+
+
+
+# Conclusion
+
+- 90 sample size is much larger than 99 so p -value might be reduced because of small sample size, stronger effect as phenotype becomes more extreme
+
+- lots of significant exposures
+
+
+
+
+
+# Limitations 
+
+- low power due to weak instruments
+
+- the evidence in and of itself does not indicate causation, but provides evidence that could lead to investments for further study
+
+- further examination of significant associations for strong violations of assumptions and need for further analyses 
+
+- consistency of the direction of the beta coefficients across the different outcomes
+
+- do loo analysis on all significant results and check if one of the non-european SNPs has an outlier effect on estimate especially important for UKBiobank studies
+    - for any exposures examined in the context of the comparison population, make sure SNPs from non-Euro study doesn't have undo influence
+
+- collider bias
+- developmental compensation/canalization
+    
+# Next Steps
+- directionality
+- compare the results within the database, e.g. how were exposures defined, inclusion/exclusion of participants
+- test correlation among four outcome definitions- further adjustment might be needed due to four outcomes
+
+# Citations 
+
+Stephen Burgess, Simon G Thompson, CRP CHD Genetics Collaboration, Avoiding bias from weak instruments in Mendelian randomization studies, International Journal of Epidemiology, Volume 40, Issue 3, June 2011, Pages 755–764, https://doi.org/10.1093/ije/dyr036
+
+
+Davies NM, Holmes MV, Davey Smith G. Reading Mendelian randomisation studies: a guide, glossary, and checklist for clinicians. BMJ. 2018;362:k601. Published 2018 Jul 12. doi:10.1136/bmj.k601
+
+Zheng, J., Baird, D., Borges, M. et al. Recent Developments in Mendelian Randomization Studies. Curr Epidemiol Rep 4, 330–345 (2017). https://doi.org/10.1007/s40471-017-0128-6
+
+are there more exposures that are significant in shared among deleen 90 and pilling than in deleen and timmers
