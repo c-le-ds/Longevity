@@ -27,10 +27,10 @@ library(ggplot2)
 
 
 
-Pilling_dat <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/MR/Pilling_multtest_F.rds")
-Timmers_dat <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/MR/Timmers_multtest_F.rds")
-Cases90_dat <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/MR/Cases90_multtest_F.rds")
-Cases99_dat <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/MR/Cases99_multtest_F.rds")
+Pilling_dat <- readRDS("data/MR/Pilling_multtest_F.rds")
+Timmers_dat <- readRDS("data/MR/Timmers_multtest_F.rds")
+Cases90_dat <- readRDS("data/MR/Cases90_multtest_F.rds")
+Cases99_dat <- readRDS("data/MR/Cases99_multtest_F.rds")
 ```
 
 
