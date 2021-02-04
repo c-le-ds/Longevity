@@ -9,7 +9,13 @@ knitr::opts_chunk$set(echo = FALSE)
 library(VennDiagram)
 library(reactable)
 library(tidyverse)
-
+library(TwoSampleMR)
+library(patchwork)
+library(cowplot)
+library(gridExtra)
+library(MRInstruments)
+library(ggplot2)
+library(kableExtra)
 #data
 
 

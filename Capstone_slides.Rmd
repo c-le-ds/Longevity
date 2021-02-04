@@ -2,8 +2,8 @@
 title: "Two Sample Mendelian Randomization on Longevity GWAS"
 author: "Christine Le"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-output:
-  html_document: default
+output: 
+  default: html_document
 ---
 
 ```{r setup, include=FALSE, message=FALSE}
@@ -12,9 +12,13 @@ library(VennDiagram)
 library(reactable)
 library(tidyverse)
 library(kableExtra)
+library(TwoSampleMR)
+library(patchwork)
+library(cowplot)
+library(gridExtra)
+library(MRInstruments)
+library(ggplot2)
 #data
-
-
 
 Pilling_dat <- readRDS("data/MR/Pilling_multtest_gwas_ieu.rds")
 Timmers_dat <- readRDS("data/MR/Timmers_multtest_gwas_ieu.rds")
@@ -246,33 +250,24 @@ kbl(table,booktabs = T, escape = F, row.names = FALSE, caption = "Table 1. MR Re
 
 
 ```{r, results = 'hide'}
-table2 <-dat_all %>%
-  # select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset)
-  select(exposure,  b.pilling, b.timmers,  b.90, b.99, se.pilling, se.timmers, se.90, se.99, nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99,pval.pilling, pval.timmers,  pval.90,  pval.99, Adjusted.p.Pilling,  Adjusted.p.Timmers,  Adjusted.p.Cases90,  Adjusted.p.Cases99,) %>%
-    filter(grepl("ukb-b-16446", exposure))%>%
-  mutate_if(is.numeric, funs(as.character(signif(.,3))))
-betas <- table2 %>%
-  dplyr::select( b.pilling, b.timmers, b.90, b.99) %>% 
-  unlist()
-se <- table2 %>%
-  dplyr::select(se.pilling, se.timmers, se.90, se.99)%>%
-  unlist()
-nsnp <- table2 %>%
-  dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
-  unlist()
+mr_cases90 <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/MR/MR_cases_90_gwas_ieu.rds") %>% filter(id.exposure == "ukb-b-16446") %>% mutate(Outcome = "Cases 90")
+mr_cases99 <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/MR/MR_cases_99_gwas_ieu.rds")%>% filter(id.exposure == "ukb-b-16446")%>% mutate(Outcome = "Cases 99")
+mr_pilling <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/MR/MR_pilling_gwas_ieu.rds")%>% filter(id.exposure == "ukb-b-16446")%>% mutate(Outcome = "Pilling")
+mr_timmers <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/MR/MR_timmers_gwas_ieu.rds")%>% filter(id.exposure == "ukb-b-16446")%>% mutate(Outcome = "Timmers")
 
-Outcome <- c("Pilling", "Timmers",  "Deleen 90", "Deleen 99")
-exposure <- table2$exposure
-graph.data <- as.data.frame(cbind(Outcome,exposure, betas, se, nsnp))%>%
-  mutate(lower.CI = as.numeric(betas) - (1.96*as.numeric(se)),
-         upper.CI = as.numeric(betas) + (1.96*as.numeric(se)),
-         OR = signif(exp(as.numeric(betas)),3),
+
+table2 <- rbind(mr_cases90, mr_cases99, mr_pilling, mr_timmers)%>%
+  mutate(lower.CI = b - (1.96*se),
+         upper.CI = b + (1.96*se),
+         OR = signif(exp(b),3),
          lower.OR.CI = signif(exp(lower.CI), 3),
          upper.OR.CI = signif(exp(upper.CI),3))
-
-OR_exp <- graph.data %>%
-  mutate(CI.95 = paste("(", lower.OR.CI, ", ", upper.OR.CI, ")"))%>%
-  select(Outcome, exposure, OR, CI.95, nsnp)
+ OR_exp <- table2 %>%
+   mutate(CI.95 = paste("(", lower.OR.CI, ", ", upper.OR.CI, ")"))%>%
+   select(Outcome, method, exposure, OR, CI.95, nsnp) %>% 
+   arrange(method) %>%
+   filter(method %in% c("Inverse variance weighted", "MR Egger", "Weighted median"))
+colnames(OR_exp) <- c("Outcome", "Estimation Method", "Exposure", "OR", "95% CI", "No. of SNPs")
 ```
 
 
