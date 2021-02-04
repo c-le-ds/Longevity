@@ -847,7 +847,7 @@ reactable(table4, bordered = TRUE,#groupBy = "Groups",
   
 ```
 
-# all results among common exposures in all four data sets
+
 
 ```{r, out.width="50%"}
 
@@ -911,13 +911,12 @@ dat <- dat %>%
 # Add groups!
 ```
 
-
-
+# all results 
 ```{r}
 # Table 5 Common Exposures Among All Four Outcomes
 table5 <-dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases90 == "YES" & Cases99 == "YES") %>% 
-  select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset)
-  # select(exposure, nsnp.pilling, b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling, nsnp.timmers, b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, nsnp.90, b.90, se.90, pval.90, Adjusted.p.Cases90, nsnp.99, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset) %>%
+  # select(exposure,  b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling,  b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, b.90, se.90, pval.90, Adjusted.p.Cases90, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset)
+  select(exposure, nsnp.pilling, b.pilling, se.pilling, pval.pilling, Adjusted.p.Pilling, nsnp.timmers, b.timmers, se.timmers, pval.timmers, Adjusted.p.Timmers, nsnp.90, b.90, se.90, pval.90, Adjusted.p.Cases90, nsnp.99, b.99, se.99, pval.99, Adjusted.p.Cases99, Exposure.Dataset) 
   
 reactable(table5, bordered = TRUE, columns = list(
     
@@ -937,12 +936,12 @@ reactable(table5, bordered = TRUE, columns = list(
                                       filterable = TRUE,
                                       align = "center",
                                       headerStyle = list(background = "#f7f7f8")),
-            # nsnp.90 = colDef(name = "90th Percentile", align = "center",
-            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             nsnp.90 = colDef(name = "90th Percentile", align = "center",
+                                  headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 0)),
             b.90 = colDef(name = "90th Percentile", align = "center",
-                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 3)),
             se.90 = colDef(name = "90th Percentile", align = "center",
-                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 3)),
              pval.90 = colDef(name = "90th Percentile", align = "center",
                                   headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
             Adjusted.p.Cases99 = colDef(name = "99th Percentile", align = "center",
@@ -956,12 +955,12 @@ reactable(table5, bordered = TRUE, columns = list(
                                               }
                                           list(color = color, fontWeight = "bold")
   }),
-            # nsnp.99 = colDef(name = "99th Percentile", align = "center",
-            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             nsnp.99 = colDef(name = "99th Percentile", align = "center",
+                                   headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 0)),
             b.99 = colDef(name = "99th Percentile", align = "center",
-                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 3)),
             se.99 = colDef(name = "99th Percentile", align = "center",
-                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 3)),
              pval.99 = colDef(name = "99th Percentile", align = "center",
                                   headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
             Adjusted.p.Timmers = colDef(name = "Timmers", align = "center",
@@ -975,12 +974,12 @@ reactable(table5, bordered = TRUE, columns = list(
                                               }
                                           list(color = color, fontWeight = "bold")
   }),
-            # nsnp.timmers = colDef(name = "Timmers", align = "center",
-            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             nsnp.timmers = colDef(name = "Timmers", align = "center",
+                                   headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 0)),
             b.timmers = colDef(name = "Timmers", align = "center",
-                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 3)),
             se.timmers = colDef(name = "Timmers", align = "center",
-                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+                                headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 3)),
              pval.timmers =colDef(name = "Timmers", align = "center",
                                   headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
             Adjusted.p.Pilling = colDef(name = "Pilling", align = "center",
@@ -994,12 +993,12 @@ reactable(table5, bordered = TRUE, columns = list(
                                               }
                                           list(color = color, fontWeight = "bold")
   }),
-            # nsnp.pilling = colDef(name = "Pilling", align = "center",
-            #                       headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+             nsnp.pilling = colDef(name = "Pilling", align = "center",
+                                   headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 0)),
             b.pilling = colDef(name = "Pilling", align = "center",
-                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+                               headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 3)),
              pval.pilling =colDef(name = "Pilling", align = "center",
-                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5)),
+                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 3)),
             
             se.pilling = colDef(name = "Pilling", align = "center",
                                 headerStyle = list(background = "#f7f7f8"), format = colFormat(digits = 5))
@@ -1008,13 +1007,57 @@ reactable(table5, bordered = TRUE, columns = list(
             
           
             columnGroups = list(
-              # colGroup(name = "nsnp", columns = c("nsnp.timmers", "nsnp.pilling", "nsnp.90", "nsnp.99")),
+               colGroup(name = "nsnp", columns = c("nsnp.timmers", "nsnp.pilling", "nsnp.90", "nsnp.99")),
               colGroup(name = "Beta", columns = c("b.pilling", "b.timmers", "b.90", "b.99")),
               colGroup(name = "SE", columns = c("se.pilling", "se.timmers", "se.90", "se.99")),
               colGroup(name = "p-value", columns = c("pval.pilling", "pval.timmers", "pval.90", "pval.99")),
               colGroup(name = "Adjusted BH p-value", columns = c("Adjusted.p.Pilling", "Adjusted.p.Timmers", "Adjusted.p.Cases90", "Adjusted.p.Cases99"))
             ))
 ```
+
+
+
+# Shared common exposures with at least one significant exposure among four outcomes
+```{r, out.width="50%"}
+# Table 1. Any Significant Exposures (adjusted p-value $\leq$ 0.05) among any of the four Outcomes  using the Inverse Variance Weighted Method*
+
+#*empty cells represent missing data
+#create a filterable table
+tableone <- filter(dat_all, Adjusted.p.Timmers <= 0.05 | Adjusted.p.Cases90 <= 0.05 | Adjusted.p.Cases99 <= 0.05 | Adjusted.p.Pilling <=0.05) %>%
+  filter(Pilling == "YES" & Timmers == "YES" & Cases90 == "YES" & Cases99 == "YES") %>% 
+  select(exposure, Pilling, Timmers, Cases90, Cases99, Adjusted.p.Pilling, Adjusted.p.Timmers, Adjusted.p.Cases90, Adjusted.p.Cases99, Exposure.Dataset)
+reactable(tableone, filterable = TRUE, paginationType = "jump", showSortable = TRUE, bordered = TRUE,
+          columns = list( 
+            exposure = colDef(name = "Exposure"),
+            Adjusted.p.Timmers = colDef(name = "Adjusted p-value (Timmers)", 
+                                        align = "center", headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE, format = colFormat(digits = 5)),         
+            Adjusted.p.Pilling = colDef(name = "Adjusted p-value (Pilling)", 
+                                        align = "center",headerStyle = list(background = "#f7f7f8"),
+                                        filterable = FALSE, format = colFormat(digits = 5)),
+            Adjusted.p.Cases90 = colDef(name = "Adjusted p-value (Cases90)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5)),
+            Adjusted.p.Cases99 = colDef(name = "Adjusted p-value (Cases99)", 
+                                   align = "center",headerStyle = list(background = "#f7f7f8"),
+                                   filterable = FALSE, format = colFormat(digits = 5)),
+            Exposure.Dataset = colDef(name = "Exposure Dataset", 
+                                              align = "center",headerStyle = list(background = "#f7f7f8")),
+            Pilling = colDef(name = "Pilling", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Timmers = colDef(cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Cases90 = colDef(name = "90th Percentile", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            }),
+            Cases99 = colDef(name = "99th Percentile", cell = function(value){
+              if(value == "NO") "\u2718" else "\u2713"
+            })
+          ))
+```
+
 
 # Shared Exposures Deleen 90th Percentile
 
@@ -1779,4 +1822,267 @@ reactable(table11, bordered = TRUE,
   #     list(fontWeight = "bold")
   # 
   # }
+```
+
+
+# Sensivity Analysis for Basal Metabolic Rate
+
+
+```{r, results='hide'}
+## Function for scatter plot of three methods 2x2
+
+### Legend
+
+# Modify mr_scatter_plot function for our purposes
+
+mrscatter_legend <- function(mr_results, dat, title)
+{
+	# dat <- subset(dat, paste(id.outcome, id.exposure) %in% paste(mr_results$id.outcome, mr_results$id.exposure))
+	requireNamespace("ggplot2", quietly=TRUE)
+	requireNamespace("plyr", quietly=TRUE)
+	mrres <- plyr::dlply(dat, c("id.exposure", "id.outcome"), function(d)
+	{
+		d <- plyr::mutate(d)
+		if(nrow(d) < 2 | sum(d$mr_keep) == 0)
+		{
+			return(blank_plot("Insufficient number of SNPs"))
+		}
+		d <- subset(d, mr_keep)
+		index <- d$beta.exposure < 0
+		d$beta.exposure[index] <- d$beta.exposure[index] * -1
+		d$beta.outcome[index] <- d$beta.outcome[index] * -1
+		mrres <- subset(mr_results, id.exposure == d$id.exposure[1] & id.outcome == d$id.outcome[1])
+		mrres$a <- 0
+		if("MR Egger" %in% mrres$method)
+		{
+			temp <- mr_egger_regression(d$beta.exposure, d$beta.outcome, d$se.exposure, d$se.outcome, default_parameters())
+			mrres$a[mrres$method == "MR Egger"] <- temp$b_i
+		}
+
+		if("MR Egger (bootstrap)" %in% mrres$method)
+		{
+			temp <- mr_egger_regression_bootstrap(d$beta.exposure, d$beta.outcome, d$se.exposure, d$se.outcome, default_parameters())
+			mrres$a[mrres$method == "MR Egger (bootstrap)"] <- temp$b_i
+		}
+
+		ggplot2::ggplot(data=d, ggplot2::aes(x=beta.exposure, y=beta.outcome)) +
+			ggplot2::geom_errorbar(ggplot2::aes(ymin=beta.outcome-se.outcome, ymax=beta.outcome+se.outcome), colour="grey", width=0) +
+			ggplot2::geom_errorbarh(ggplot2::aes(xmin=beta.exposure-se.exposure, xmax=beta.exposure+se.exposure), colour="grey", height=0) +
+			ggplot2::geom_point(ggplot2::aes(text=paste("SNP:", SNP))) +
+			ggplot2::geom_abline(data=mrres, ggplot2::aes(intercept=a, slope=b, colour=method), show.legend=TRUE) +
+			ggplot2::scale_colour_manual(values=c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a", "#ffff99", "#b15928")) +
+			ggplot2::labs(colour="MR Test", x = "", y=paste("SNP effect on", d$outcome[1]), title = title) +
+			ggplot2::theme(legend.position= c(-.1,-.3), legend.key = element_rect(fill = alpha("white" , 0.1)), legend.background = element_rect(fill = alpha("white" , 0.1)), legend.title = element_text(size = 4), legend.text = element_text(size =4)) +
+			ggplot2::guides(colour=ggplot2::guide_legend(ncol=3))
+	})
+	mrres
+}
+
+
+blank_plot <- function(message)
+{
+	requireNamespace("ggplot2", quietly=TRUE)
+	ggplot2::ggplot(data.frame(a=0,b=0,n=message)) + ggplot2::geom_text(ggplot2::aes(x=a,y=b,label=n)) + ggplot2::labs(x=NULL,y=NULL) + ggplot2::theme(axis.text=ggplot2::element_blank(), axis.ticks=ggplot2::element_blank())
+}
+
+
+
+
+### No legend
+
+mrscatter_nolegend <- function(mr_results, dat, title)
+{
+	# dat <- subset(dat, paste(id.outcome, id.exposure) %in% paste(mr_results$id.outcome, mr_results$id.exposure))
+	requireNamespace("ggplot2", quietly=TRUE)
+	requireNamespace("plyr", quietly=TRUE)
+	mrres <- plyr::dlply(dat, c("id.exposure", "id.outcome"), function(d)
+	{
+		d <- plyr::mutate(d)
+		if(nrow(d) < 2 | sum(d$mr_keep) == 0)
+		{
+			return(blank_plot("Insufficient number of SNPs"))
+		}
+		d <- subset(d, mr_keep)
+		index <- d$beta.exposure < 0
+		d$beta.exposure[index] <- d$beta.exposure[index] * -1
+		d$beta.outcome[index] <- d$beta.outcome[index] * -1
+		mrres <- subset(mr_results, id.exposure == d$id.exposure[1] & id.outcome == d$id.outcome[1])
+		mrres$a <- 0
+		if("MR Egger" %in% mrres$method)
+		{
+			temp <- mr_egger_regression(d$beta.exposure, d$beta.outcome, d$se.exposure, d$se.outcome, default_parameters())
+			mrres$a[mrres$method == "MR Egger"] <- temp$b_i
+		}
+
+		if("MR Egger (bootstrap)" %in% mrres$method)
+		{
+			temp <- mr_egger_regression_bootstrap(d$beta.exposure, d$beta.outcome, d$se.exposure, d$se.outcome, default_parameters())
+			mrres$a[mrres$method == "MR Egger (bootstrap)"] <- temp$b_i
+		}
+
+		ggplot2::ggplot(data=d, ggplot2::aes(x=beta.exposure, y=beta.outcome)) +
+			ggplot2::geom_errorbar(ggplot2::aes(ymin=beta.outcome-se.outcome, ymax=beta.outcome+se.outcome), colour="grey", width=0) +
+			ggplot2::geom_errorbarh(ggplot2::aes(xmin=beta.exposure-se.exposure, xmax=beta.exposure+se.exposure), colour="grey", height=0) +
+			ggplot2::geom_point(ggplot2::aes(text=paste("SNP:", SNP))) +
+			ggplot2::geom_abline(data=mrres, ggplot2::aes(intercept=a, slope=b, colour=method), show.legend=TRUE) +
+			ggplot2::scale_colour_manual(values=c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a", "#ffff99", "#b15928")) +
+			ggplot2::labs(colour="MR Test", x=paste(""), y=paste("SNP effect on", d$outcome[1]), title = title) +
+			ggplot2::theme(legend.position="none")
+	})
+	mrres
+}
+
+
+blank_plot <- function(message)
+{
+	requireNamespace("ggplot2", quietly=TRUE)
+	ggplot2::ggplot(data.frame(a=0,b=0,n=message)) + ggplot2::geom_text(ggplot2::aes(x=a,y=b,label=n)) + ggplot2::labs(x=NULL,y=NULL) + ggplot2::theme(axis.text=ggplot2::element_blank(), axis.ticks=ggplot2::element_blank())
+}
+
+
+
+Pilling_harm <- readRDS("data/harmonized/pilling_df_gwas_ieu.rds")
+Timmers_harm <- timmers_gwas_df <- readRDS("data/harmonized/timmers_gwas_ieu_df.rds")
+Cases90_harm <-  readRDS("data/harmonized/cases_90_gwas_ieu_df.rds")
+Cases99_harm <- readRDS("data/harmonized/cases_99_gwas_ieu_df.rds")
+
+Pilling_harm_dat <- Pilling_harm %>%
+  filter(id.exposure == "ukb-b-16446")
+
+Timmers_harm_dat <- Timmers_harm %>%
+  filter(id.exposure == "ukb-b-16446")
+
+Cases90_harm_dat <- Cases90_harm %>%
+  filter(id.exposure == "ukb-b-16446")
+
+Cases99_harm_dat <- Cases99_harm %>%
+  filter(id.exposure == "ukb-b-16446")
+
+### Heterogeneity Test
+
+
+het.pilling <- mr_heterogeneity(Pilling_harm_dat)%>%
+  mutate(Outcome.dat = "Pilling")
+het.timmers <- mr_heterogeneity(Timmers_harm_dat)%>%
+  mutate(Outcome.dat = "Timmers")
+het.cases90 <- mr_heterogeneity(Cases90_harm_dat)%>%
+  mutate(Outcome.dat = "Cases90")
+het.cases99 <- mr_heterogeneity(Cases99_harm_dat)%>%
+  mutate(Outcome.dat = "Cases99")
+
+het_test <- rbind(het.pilling,het.timmers,het.cases90,het.cases99) %>%
+  select(-id.exposure, -id.outcome, -outcome) %>%
+  select(Outcome.dat, exposure, method, Q, Q_df, Q_pval) %>%
+  rename(`Longevity Definition` = Outcome.dat)
+
+### Check for Pleiotropy
+plei.pilling <- mr_pleiotropy_test(Pilling_harm_dat)%>%
+  mutate(Outcome.dat = "Pilling")
+plei.timmers <- mr_pleiotropy_test(Timmers_harm_dat)%>%
+  mutate(Outcome.dat = "Timmers")
+plei.cases90 <- mr_pleiotropy_test(Cases90_harm_dat)%>%
+  mutate(Outcome.dat = "Cases90")
+plei.cases99 <- mr_pleiotropy_test(Cases99_harm_dat)%>%
+  mutate(Outcome.dat = "Cases99")
+
+pli_test <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
+  select(-id.exposure, -id.outcome, -outcome) %>%
+  select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
+  rename(`Longevity Definition` = Outcome.dat,
+         `Egger Intercept` = egger_intercept)
+
+## Leave on out Analysis - Check to see if there is one SNP influencing the results
+
+loo.pilling <- mr_leaveoneout(Pilling_harm_dat)%>%
+  mutate(outcome.data = "Pilling")
+loo.timmers <-mr_leaveoneout(Timmers_harm_dat)%>%
+  mutate(outcome.data = "Timmers")
+loo.cases90 <-mr_leaveoneout(Cases90_harm_dat)%>%
+  mutate(outcome.data = "Cases90")
+loo.cases99 <- mr_leaveoneout(Cases99_harm_dat)%>%
+  mutate(outcome.data = "Cases99")
+
+p1 <- mr_leaveoneout_plot(loo.pilling)
+p2 <- mr_leaveoneout_plot(loo.timmers)
+p3 <- mr_leaveoneout_plot(loo.cases90)
+p4 <- mr_leaveoneout_plot(loo.cases99)
+
+p1 <- grid.arrange(grobs = p1)
+p2 <- grid.arrange(grobs = p2)
+p3 <- grid.arrange(grobs = p3)
+p4 <- grid.arrange(grobs = p4)
+
+
+## Scatter plot of Three Methods
+
+mr.pilling <- mr(Pilling_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
+mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
+mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
+mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
+
+sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
+sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
+sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
+sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
+
+
+# Forest plot
+pilling.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+timmers.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+cases90.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+
+
+## Funnel plot of Single SNP analysis compared to the estimates from all SNPs
+pilling.funnel <- grid.arrange(grobs = mr_funnel_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+timmers.funnel <- grid.arrange(grobs = mr_funnel_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+cases90.funnel <- grid.arrange(grobs = mr_funnel_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+cases99.funnel <- grid.arrange(grobs = mr_funnel_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+```
+
+
+```{r}
+
+# Test for heterogeneity
+kbl(het_test, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q-test")%>%
+  kable_classic()%>%
+  kable_styling(bootstrap_options = "striped")
+
+### Check for Pleiotropy
+
+kbl(pli_test, booktabs = T, caption = "Test for Pleiotropy ")%>%
+  kable_classic()%>%
+  kable_styling(bootstrap_options = "striped")
+
+# leave one out plots
+plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
+  hjust = 0, vjust = -1, label_colour = "blue")
+
+plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
+  hjust = 0, vjust = -0.5, label_colour = "blue")
+## Scatter plot of Three Methods
+
+exposure <- Pilling_harm_dat$exposure[1]
+
+scatter <- plot_grid(sc.pilling[[1]],sc.timmers[[1]], sc.cases90[[1]], sc.cases99[[1]], nrow = 2)
+
+scatter1 <- add_sub(scatter, paste("SNP effect on ", exposure), y = 0.2, vjust = 0, size = 8 )
+ggdraw(scatter1)
+# mr_scatter_plot(mr.timmers, Timmers_harm_dat)
+# to check if the graph is the same
+
+# Forest plot
+
+plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
+  hjust = 0, vjust = -0.5, label_colour = "blue")
+plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
+  hjust = 0, vjust = -0.5, label_colour = "blue")
+
+
+## Funnel plot of Single SNP analysis compared to the estimates from all SNPs
+
+plot_grid(pilling.funnel, timmers.funnel,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
+  hjust = 0, vjust = -0.5, label_colour = "blue")
+plot_grid(cases90.funnel, cases99.funnel,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
+  hjust = 0, vjust = -0.5, label_colour = "blue")
 ```

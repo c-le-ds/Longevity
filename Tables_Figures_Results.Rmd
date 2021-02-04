@@ -3,9 +3,9 @@ title: "Tables Figures and Results"
 author: "Christine Le"
 date: "11/4/2020"
 output:
-  word_document: default
-  pdf_document: default
   html_document: default
+  pdf_document: default
+  word_document: default
 always_allow_html: yes
 ---
 
@@ -888,7 +888,7 @@ colnames(table.1) <- c("Groups", "Exposure", "Pilling", "Timmers", "90th Percent
 #create table
 new_tab <- table.1[order(table.1$Groups),]
 
-kbl(new_tab,booktabs = T, escape = F, row.names = FALSE, digits = 5) %>%
+kbl(new_tab,booktabs = T, escape = F, row.names = FALSE, digits = 4) %>%
     add_header_above(c(" " = 2, "Beta"= 4, "SE"= 4,"No. SNPs" =4, "p-value" = 4, "Adjusted p-value"= 4, " " = 1))%>%
   kable_paper("striped", full_width = T)
 
@@ -897,13 +897,13 @@ kbl(new_tab,booktabs = T, escape = F, row.names = FALSE, digits = 5) %>%
 # Table 2.Selected Exposures
 
 ```{r}
-sel_tab <- dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases90 == "YES" & Cases99 == "YES") %>% 
+sel_tab <- dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases90 == "YES" & Cases99 == "YES") %>%
   filter(Adjusted.p.Pilling <= 0.05 | Adjusted.p.Timmers <= 0.05 | Adjusted.p.Cases90 <= 0.05 | Adjusted.p.Cases99 <= 0.05) %>%
   mutate(Groups = table5b_groups)%>%
   select(Groups, exposure,  b.pilling, b.timmers,  b.90, b.99, se.pilling, se.timmers, se.90, se.99, nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99,pval.pilling, pval.timmers,  pval.90,  pval.99, Adjusted.p.Pilling,  Adjusted.p.Timmers,  Adjusted.p.Cases90,  Adjusted.p.Cases99, Exposure.Dataset)%>%
    filter(exposure %in% c( ))
- 
-sel_graph <- sel_tab  
+
+sel_graph <- sel_tab
 sel_tab$Adjusted.p.Pilling <- round(sel_tab$Adjusted.p.Pilling, digits = 5) %>% cell_spec( color = ifelse(sel_tab$Adjusted.p.Pilling > 0.05,"red", "green"))
 
 sel_tab$Adjusted.p.Timmers <- round(sel_tab$Adjusted.p.Timmers, digits = 5) %>%
@@ -911,15 +911,15 @@ sel_tab$Adjusted.p.Timmers <- round(sel_tab$Adjusted.p.Timmers, digits = 5) %>%
 
 sel_tab$Adjusted.p.Cases90<- round(sel_tab$Adjusted.p.Cases90, digits = 5) %>% cell_spec( color = ifelse(sel_tab$Adjusted.p.Cases90 > 0.05,"red", "green"))
 
-sel_tab$Adjusted.p.Cases99 <- round(sel_tab$Adjusted.p.Cases99, digits = 5) %>% cell_spec( color = ifelse(sel_tab$Adjusted.p.Cases99 > 0.05,"red", "green"))  
+sel_tab$Adjusted.p.Cases99 <- round(sel_tab$Adjusted.p.Cases99, digits = 5) %>% cell_spec( color = ifelse(sel_tab$Adjusted.p.Cases99 > 0.05,"red", "green"))
 
 
 colnames(sel_tab) <- c("Groups", "Exposure", "Pilling", "Timmers", "90th Percentile", "99th Percentile","Pilling", "Timmers", "90th Percentile", "99th Percentile","Pilling", "Timmers", "90th Percentile", "99th Percentile", "Pilling", "Timmers", "90th Percentile", "99th Percentile","Pilling", "Timmers", "90th Percentile", "99th Percentile", "Exposure Dataset")
-  
+
 kbl(sel_tab,booktabs = T, escape = F, row.names = FALSE) %>%
   add_header_above(c(" " = 2, "Beta"= 4, "SE"= 4, "No. of SNPS" = 4, "p-value" = 4, "Adjusted p-value"= 4, " " = 1)) %>%
   kable_paper("striped", full_width = T)
-  
+
 
 ```
 
@@ -932,14 +932,14 @@ Modify function from TwoSampleMR Package
 res <-  function(d, x, title) # must use data filtered by outcome
 	{
     d <- dplyr::filter(d, `Longevity Definition` == x)
-		d <- plyr::mutate(d)  
+		d <- plyr::mutate(d)
 		# Need to have at least 3 SNPs because IVW etc methods can't be performed with fewer than 2 SNPs
 		if(sum(!grepl("All", d$SNP)) < 3) {
 			return(
 				ggplot() +
   annotate("text", x = 0, y = 0, label = "Insufficient number of SNPs")+
-  theme(legend.position = "none", 
-		        axis.text.y = element_text(size =6), 
+  theme(legend.position = "none",
+		        axis.text.y = element_text(size =6),
 		        axis.ticks.y = element_line(size =0),
 		        axis.title.x = element_text(size =8),
 		        panel.border = element_blank(),
@@ -947,7 +947,7 @@ res <-  function(d, x, title) # must use data filtered by outcome
 		        panel.grid.minor = element_blank(),
 		        panel.background = element_blank())+
 		  labs(y = "", title = title))
-			
+
 		}
 		else {
 		d$up <- d$Beta + 1.96 * d$SE
@@ -963,17 +963,17 @@ res <-  function(d, x, title) # must use data filtered by outcome
 		d$up[nrow(d)-1] <- NA
 		d$lo[nrow(d)-1] <- NA
 		d$SNP <- factor(d$SNP, levels=c("All" , "", nom))
-		
-		
+
+
 		plot <- ggplot(d, aes(x = Beta, y = SNP)) +
-		  geom_vline(xintercept = 0, linetype = "dotted") + 
-		  geom_errorbarh(aes(xmin = lo, xmax = up, size = as.factor(tot), colour = as.factor(tot)), height = 0, na.rm = TRUE) + 
-		  geom_point(aes(color = as.factor(tot)),  na.rm = TRUE)+ 
+		  geom_vline(xintercept = 0, linetype = "dotted") +
+		  geom_errorbarh(aes(xmin = lo, xmax = up, size = as.factor(tot), colour = as.factor(tot)), height = 0, na.rm = TRUE) +
+		  geom_point(aes(color = as.factor(tot)),  na.rm = TRUE)+
 		  geom_hline(aes(yintercept = which(levels(SNP) %in% "")), color = "grey") +
 		  scale_colour_manual(values = c("black", "red")) +
-		  scale_size_manual(values =  c(0.3,1))+ 
-		  theme(legend.position = "none", 
-		        axis.text.y = element_text(size =6), 
+		  scale_size_manual(values =  c(0.3,1))+
+		  theme(legend.position = "none",
+		        axis.text.y = element_text(size =6),
 		        axis.ticks.y = element_line(size =0),
 		        axis.title.x = element_text(size =8),
 		        panel.border = element_blank(),
@@ -998,7 +998,7 @@ plot2 <- res(loo_test, "Timmers", "(b) Timmers")
 plot3 <- res(loo_test, "Cases90", "(c) Deleen 90th Percentile")
 plot4 <- res(loo_test, "Cases99", "(d) Deleen 90th Percentile")
 
-plot1 + plot2 + plot3 + plot4 + plot_layout(nrow = 2) + 
+plot1 + plot2 + plot3 + plot4 + plot_layout(nrow = 2) +
   plot_annotation(caption = paste0("MR leave-one-out sensitivity analysis for ", exposure, " on ", outcome))
 }
 ```
@@ -1142,13 +1142,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data1 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data1
 ggplot(graph.data1) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -1204,7 +1204,7 @@ kbl(het_test1, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -1223,7 +1223,7 @@ pli_test1 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -1251,7 +1251,7 @@ loo_test1 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -1279,7 +1279,7 @@ kbl(loo_test1, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -1376,7 +1376,7 @@ SNPs from Pilling (n=13). SNPs from Timmers (n= 15), Deleen 90th percentile (n=1
 PubmedID : 30617256
 Ass# GCST007320
 
-PubmedID : 29777097	
+PubmedID : 29777097
 Ass# GCST005922
 
 
@@ -1404,13 +1404,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data2 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data
 ggplot(graph.data2) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -1466,7 +1466,7 @@ kbl(het_test2, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -1485,7 +1485,7 @@ pli_test2 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -1513,7 +1513,7 @@ loo_test2 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -1541,7 +1541,7 @@ kbl(loo_test2, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -1656,7 +1656,7 @@ nsnp <- sel_graph %>%
   filter(exposure == "Rheumatoid arthritis (NA)")%>%
   dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
   unlist()
-  
+
 Outcome <- c( "Pilling", "Timmers", "Deleen 90", "Deleen 99")
 exposure = c("Rheumatoid arthritis (NA)")
 graph.data <- as.data.frame(cbind(Outcome, exposure, betas, se, nsnp))
@@ -1666,13 +1666,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data3 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data
 ggplot(graph.data3) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -1728,7 +1728,7 @@ kbl(het_test3, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Pilling data. 
+Evidence of Heterogeneity in the Pilling data.
 
 ### Check for Pleiotropy
 
@@ -1747,7 +1747,7 @@ pli_test3 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -1775,7 +1775,7 @@ loo_test3 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -1910,7 +1910,7 @@ cases99_exp_data <- gwas_catalog %>%
 
 SNPs from Pilling (n=4) from 3 studies. SNPs from Timmers (n= 42), Deleen 90th percentile (n=42) and Deleen 99th percentile (n=42)
 
-- Disucss with Dan. Issues about population from which exposures come from. 
+- Disucss with Dan. Issues about population from which exposures come from.
 
 # Urinary Albumin 4
 
@@ -1936,13 +1936,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data4 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data4
 ggplot(graph.data4) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -1998,7 +1998,7 @@ kbl(het_test4, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -2017,7 +2017,7 @@ pli_test4 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   dplyr::select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -2045,7 +2045,7 @@ loo_test4 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   dplyr::select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -2073,7 +2073,7 @@ kbl(loo_test4, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -2199,13 +2199,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data5 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data
 ggplot(graph.data5) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -2261,7 +2261,7 @@ kbl(het_test5, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -2280,7 +2280,7 @@ pli_test5 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -2308,7 +2308,7 @@ loo_test5 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -2328,7 +2328,7 @@ kbl(loo_test5, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -2457,13 +2457,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data6 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data6
 ggplot(graph.data6) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -2519,7 +2519,7 @@ kbl(het_test6, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -2538,7 +2538,7 @@ pli_test6 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -2566,7 +2566,7 @@ loo_test6 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -2586,7 +2586,7 @@ kbl(loo_test6, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -2724,13 +2724,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data7 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data7
 ggplot(graph.data7) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -2786,7 +2786,7 @@ kbl(het_test7, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -2805,7 +2805,7 @@ pli_test7 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -2833,7 +2833,7 @@ loo_test7 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -2861,7 +2861,7 @@ kbl(loo_test7, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, all SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, all SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -3242,13 +3242,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data9 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data9
 ggplot(graph.data9) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -3304,7 +3304,7 @@ kbl(het_test9, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -3323,7 +3323,7 @@ pli_test9 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -3351,7 +3351,7 @@ loo_test9 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -3371,7 +3371,7 @@ kbl(loo_test9, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -3502,13 +3502,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data10 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data10
 ggplot(graph.data10) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -3564,7 +3564,7 @@ kbl(het_test10, booktabs = T, caption = "Test for Heterogeneity using Cochran's 
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -3583,7 +3583,7 @@ pli_test10 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -3611,7 +3611,7 @@ loo_test10 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -3632,7 +3632,7 @@ kbl(loo_test10, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -3730,7 +3730,7 @@ cases99_exp_data <- gwas_catalog %>%
 SNPs from Pilling (n=218). SNPs from Timmers (n= 233), Deleen 90th percentile (n=237) and Deleen 99th percentile (n=238) are from the same study.# Depressive Symptoms
 
 Ass# GCST006568
-PubmedID # 30038396	
+PubmedID # 30038396
 
 # Well-being spectrum 11
 ```{r}
@@ -3755,13 +3755,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data11 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data11
 ggplot(graph.data11) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -3817,7 +3817,7 @@ kbl(het_test11, booktabs = T, caption = "Test for Heterogeneity using Cochran's 
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -3836,7 +3836,7 @@ pli_test11 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -3864,7 +3864,7 @@ loo_test11 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -3884,7 +3884,7 @@ kbl(loo_test11, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -4007,13 +4007,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data12 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data12
 ggplot(graph.data12) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -4069,7 +4069,7 @@ kbl(het_test12, booktabs = T, caption = "Test for Heterogeneity using Cochran's 
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -4088,7 +4088,7 @@ pli_test12 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -4116,7 +4116,7 @@ loo_test12 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -4136,7 +4136,7 @@ kbl(loo_test12, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -4266,13 +4266,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data13 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data13
 ggplot(graph.data13) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -4328,7 +4328,7 @@ kbl(het_test13, booktabs = T, caption = "Test for Heterogeneity using Cochran's 
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers and Deleen data. 
+Evidence of Heterogeneity in the Timmers and Deleen data.
 
 ### Check for Pleiotropy
 
@@ -4347,7 +4347,7 @@ pli_test13 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -4375,7 +4375,7 @@ loo_test13 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -4403,7 +4403,7 @@ kbl(loo_test13, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -4500,7 +4500,7 @@ cases99_exp_data <- gwas_catalog %>%
 
 SNPs from Pilling (n=63), Timmers (n= 67), Deleen 90th percentile (n=68) and Deleen 99th percentile (n=68) are from the same study.
 
-Ass# GCST007931	
+Ass# GCST007931
 PubMed ID 31015401
 
 # Parental Longevity 14
@@ -4527,13 +4527,13 @@ graph.data$se <- as.numeric(graph.data$se)
 
 graph.data14 <- graph.data %>%
   mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se), 
+         upper.CI = betas + (1.96*se),
          OR = exp(betas),
          lower.OR.CI = exp(lower.CI),
          upper.OR.CI = exp(upper.CI))
 graph.data14
 ggplot(graph.data14) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) + 
+  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
   xlab("") +
   ylab("") +
   ggtitle("Confidence Intervals for Four Longevity Outcomes")
@@ -4589,7 +4589,7 @@ kbl(het_test14, booktabs = T, caption = "Test for Heterogeneity using Cochran's 
   kable_styling(bootstrap_options = "striped")
 ```
 
-Evidence of Heterogeneity in the Timmers data. 
+Evidence of Heterogeneity in the Timmers data.
 
 ### Check for Pleiotropy
 
@@ -4608,7 +4608,7 @@ pli_test14 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
   rename(`Longevity Definition` = Outcome.dat,
          `Egger Intercept` = egger_intercept)
-  
+
 ```
 
 ```{r}
@@ -4636,7 +4636,7 @@ loo_test14 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
   rename(`Longevity Definition` = outcome.data,
          `Sample Size` = samplesize,
-         Beta = b, 
+         Beta = b,
          SE = se,
          `p-value` = p)
 
@@ -4656,7 +4656,7 @@ kbl(loo_test14, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap. 
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -5260,7 +5260,7 @@ cases99_exp_data <- gwas_catalog %>%
 SNPs from Pilling (n=86), Timmers (n= 98), Deleen 90th percentile (n=100) and Deleen 99th percentile (n=100) are from four studies.
 
 
-Ass # GCST004988	
+Ass # GCST004988
 PubmedID # 29059683
 
 Ass # GCST005077
@@ -5530,9 +5530,9 @@ PubmedID # 30279459
 
 ```{r}
 options(scipen = 999)
-sel_exp <- rbind(graph.data1,graph.data2,graph.data3,graph.data4,graph.data5,graph.data6,graph.data7,graph.data8,graph.data9,graph.data10,graph.data11,graph.data12,graph.data13,graph.data14,graph.data15,graph.data16, graph.data17) 
+sel_exp <- rbind(graph.data1,graph.data2,graph.data3,graph.data4,graph.data5,graph.data6,graph.data7,graph.data8,graph.data9,graph.data10,graph.data11,graph.data12,graph.data13,graph.data14,graph.data15,graph.data16, graph.data17)
 
-# round numeric columns 
+# round numeric columns
 sel_exp$OR <- signif(sel_exp$OR, digits = 4)
 sel_exp$lower.OR.CI <- signif(sel_exp$lower.OR.CI, digits = 4)
 sel_exp$upper.OR.CI <- signif(sel_exp$upper.OR.CI, digits = 4)
@@ -5541,7 +5541,7 @@ sel_exp$upper.OR.CI <- signif(sel_exp$upper.OR.CI, digits = 4)
 sel_exp <- sel_exp %>%
   mutate(CI.95 = paste("(", lower.OR.CI, ", ", upper.OR.CI, ")"))%>%
   select(Outcome, exposure, OR, CI.95, nsnp)
-  
+
 
 kbl(sel_exp, booktabs = T, caption = "Table 2. Selected Exposures for Further Analysis")%>%
   kable_classic()%>%
