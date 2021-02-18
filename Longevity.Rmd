@@ -349,7 +349,7 @@ gwas_unique <- gwas_catalog %>%
 
 #check that there are still 34513 unique ids
 #23282 unique ids left. 
-x$id <-unique(exposures_gwas$id.exposure)
+x<-unique(exposures_gwas$id.exposure)
 
 # 11231 ids that were not kept , test if ids results in empty vector (no rsids)
 null <- anti_join(gwas_catalog, x, by = c("id"))
