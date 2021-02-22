@@ -22,7 +22,7 @@ library(cowplot)
 library(gridExtra)
 library(MRInstruments)
 library(ggplot2)
-
+library(ggpubr)
 #data
 
 
@@ -890,12 +890,12 @@ sel_tab <- dat_all %>% filter(Pilling == "YES" & Timmers == "YES" & Cases90 == "
   mutate(Groups = table5b_groups)%>%
   select(Groups, exposure,  b.pilling, b.timmers,  b.90, b.99, se.pilling, se.timmers, se.90, se.99, nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99,pval.pilling, pval.timmers,  pval.90,  pval.99, Adjusted.p.Pilling,  Adjusted.p.Timmers,  Adjusted.p.Cases90,  Adjusted.p.Cases99, Exposure.Dataset)%>%
   filter(nsnp.pilling > 100& nsnp.timmers >100 & nsnp.90 > 100 & nsnp.99 > 100) %>%
-  filter(exposure %in% c("Basal metabolic rate || id:ukb-b-16446", "Age first had sexual intercourse || id:ukb-b-6591", 
-                         "Overall health rating || id:ukb-b-6306", 
-                         "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057",
-                         "Arm fat mass (left) || id:ukb-a-287", "Glycated haemoglobin || id:ukb-d-30750_irnt",
-                         "Prostate cancer || id:ieu-b-85", "Coronary artery disease || id:ebi-a-GCST005194", 
-                         "Type 2 diabetes || id:ebi-a-GCST006867", "Years of schooling || id:ieu-a-1239"))
+  filter(exposure %in% c("Overall health rating || id:ukb-b-6306",
+                         "Qualifications: College or University degree || id:ukb-b-16489", 
+                         "Triglycerides || id:ukb-d-30870_irnt",
+                         "Type 2 diabetes || id:ebi-a-GCST006867",
+                         "Years of schooling || id:ieu-a-1239", "body mass index || id:ieu-b-40",
+                         "diastolic blood pressure || id:ieu-b-39"))
 
  sel_graph <- sel_tab
 sel_tab$Adjusted.p.Pilling <- round(sel_tab$Adjusted.p.Pilling, digits = 5) %>% cell_spec( color = ifelse(sel_tab$Adjusted.p.Pilling > 0.05,"red", "green"))
@@ -987,10 +987,10 @@ Make a function for all four outcomes!
 
 loo_graphs <- function(loo_test, exposure, outcome){
 library(patchwork)
-plot1 <- res(loo_test, "Pilling", "(a) Pilling")
-plot2 <- res(loo_test, "Timmers", "(b) Timmers")
-plot3 <- res(loo_test, "Cases90", "(c) Deleen 90th Percentile")
-plot4 <- res(loo_test, "Cases99", "(d) Deleen 90th Percentile")
+plot1 <- res(loo_test, "Pilling", "(a) Parental 90")
+plot2 <- res(loo_test, "Timmers", "(b) Parental")
+plot3 <- res(loo_test, "Cases90", "(c) 90th Percentile")
+plot4 <- res(loo_test, "Cases99", "(d) 99th Percentile")
 
 plot1 + plot2 + plot3 + plot4 + plot_layout(nrow = 2) +
   plot_annotation(caption = paste0("MR leave-one-out sensitivity analysis for ", exposure, " on ", outcome))
@@ -1111,24 +1111,24 @@ blank_plot <- function(message)
 
 ```
 
-# Basal Metabolic Rate 1
+# body mass index || id:ieu-b-40 1
 
 ```{r}
 betas <- sel_graph %>%
-  filter(exposure == c("Basal metabolic rate || id:ukb-b-16446"))%>%
+  filter(exposure == c("body mass index || id:ieu-b-40"))%>%
   dplyr::select( b.pilling, b.timmers, b.90, b.99) %>%
   unlist()
 se <- sel_graph %>%
-  filter(exposure == c("Basal metabolic rate || id:ukb-b-16446"))%>%
+  filter(exposure == c("body mass index || id:ieu-b-40"))%>%
   dplyr::select(se.pilling, se.timmers, se.90, se.99)%>%
   unlist()
 nsnp <- sel_graph %>%
-  filter(exposure == c("Basal metabolic rate || id:ukb-b-16446"))%>%
+  filter(exposure == c("body mass index || id:ieu-b-40"))%>%
   dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
   unlist()
 
 Outcome <- c( "Pilling", "Timmers", "Deleen 90", "Deleen 99")
-exposure <- c("Basal metabolic rate || id:ukb-b-16446")
+exposure <- c("body mass index || id:ieu-b-40")
 graph.data <- as.data.frame(cbind(Outcome,exposure, betas, se, nsnp))
 
 graph.data$betas <- as.numeric(graph.data$betas)
@@ -1164,16 +1164,16 @@ Cases99 <- readRDS("C:/Users/me/Desktop/MPH/Internship/CPMC/Longevity/data/harmo
 #filter by Basal Metabolic Rate
 
 Pilling_harm_dat <- Pilling %>%
-  filter(exposure == "Basal metabolic rate || id:ukb-b-16446")
+  filter(exposure == "body mass index || id:ieu-b-40")
 
 Timmers_harm_dat <- Timmers %>%
-  filter(exposure == "Basal metabolic rate || id:ukb-b-16446")
+  filter(exposure == "body mass index || id:ieu-b-40")
 
 Cases90_harm_dat <- Cases90 %>%
-  filter(exposure == "Basal metabolic rate || id:ukb-b-16446")
+  filter(exposure == "body mass index || id:ieu-b-40")
 
 Cases99_harm_dat <- Cases99 %>%
-  filter(exposure == "Basal metabolic rate || id:ukb-b-16446")
+  filter(exposure == "body mass index || id:ieu-b-40")
 ```
 
 ### Heterogeneity Test
@@ -1206,13 +1206,13 @@ Evidence of Heterogeneity in the Timmers data.
 
 ```{r include=FALSE}
 plei.pilling <- mr_pleiotropy_test(Pilling_harm_dat)%>%
-  mutate(Outcome.dat = "Pilling")
+  mutate(Outcome.dat = "Parental 90")
 plei.timmers <- mr_pleiotropy_test(Timmers_harm_dat)%>%
-  mutate(Outcome.dat = "Timmers")
+  mutate(Outcome.dat = "Parental")
 plei.cases90 <- mr_pleiotropy_test(Cases90_harm_dat)%>%
-  mutate(Outcome.dat = "Cases90")
+  mutate(Outcome.dat = "90th Percentile")
 plei.cases99 <- mr_pleiotropy_test(Cases99_harm_dat)%>%
-  mutate(Outcome.dat = "Cases99")
+  mutate(Outcome.dat = "99th Percentile")
 
 pli_test1 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(-id.exposure, -id.outcome, -outcome) %>%
@@ -1234,13 +1234,13 @@ no indication from this test that there is the presence of horizontal pleiotropy
 ## Leave on out Analysis - Check to see if there is one SNP influencing the results
 ```{r include=FALSE}
 loo.pilling <- mr_leaveoneout(Pilling_harm_dat)%>%
-  mutate(outcome.data = "Pilling")
+  mutate(outcome.data = "Parental 90")
 loo.timmers <-mr_leaveoneout(Timmers_harm_dat)%>%
-  mutate(outcome.data = "Timmers")
+  mutate(outcome.data = "Parental")
 loo.cases90 <-mr_leaveoneout(Cases90_harm_dat)%>%
-  mutate(outcome.data = "Cases90")
+  mutate(outcome.data = "90th Percentile")
 loo.cases99 <- mr_leaveoneout(Cases99_harm_dat)%>%
-  mutate(outcome.data = "Cases99")
+  mutate(outcome.data = "99th Percentile")
 
 loo_test1 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(-id.exposure, -id.outcome, -outcome) %>%
@@ -1251,24 +1251,49 @@ loo_test1 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
          SE = se,
          `p-value` = p)
 
+
 p1 <- mr_leaveoneout_plot(loo.pilling)
 p2 <- mr_leaveoneout_plot(loo.timmers)
 p3 <- mr_leaveoneout_plot(loo.cases90)
 p4 <- mr_leaveoneout_plot(loo.cases99)
 
-p1 <- grid.arrange(grobs = p1)
-p2 <- grid.arrange(grobs = p2)
-p3 <- grid.arrange(grobs = p3)
-p4 <- grid.arrange(grobs = p4)
+
+p1$`ieu-b-40.7zKDpS`$theme$legend.direction <- 'none'
+p1$`ieu-b-40.7zKDpS`$theme$legend.position <- 'none'
+p2$`ieu-b-40.A7Ncmg`$theme$legend.direction <- 'none'
+p2$`ieu-b-40.A7Ncmg`$theme$legend.position <- 'none'
+p3$`ieu-b-40.r36Gmf`$theme$legend.direction <- 'none'
+p3$`ieu-b-40.r36Gmf`$theme$legend.position <- 'none'
+p4$`ieu-b-40.XSHTvu`$theme$legend.direction <- 'none'
+p4$`ieu-b-40.XSHTvu`$theme$legend.position <- 'none'
+
+Pilling_harm_dat$exposure[1]
+
+
+
+```
+
+```{r}
+
+
+p1 <- p1$`ieu-b-40.7zKDpS` + 
+  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
+p2 <- p2$`ieu-b-40.A7Ncmg` + 
+  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
+p3 <- p3$`ieu-b-40.r36Gmf` + 
+  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
+p4 <- p4$`ieu-b-40.XSHTvu` + 
+  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+
+annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
+                top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
+
+ggsave("images/bmi_loo.png")
 ```
 
 
 ```{r}
-plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -1, label_colour = "blue")
 
-plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
 
 kbl(loo_test1, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_classic()%>%
@@ -1285,10 +1310,10 @@ mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_iv
 mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 
-sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
-sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
-sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
-sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
+sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Parental 90")
+sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Parental")
+sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) 90th Percentile")
+sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) 99th Percentile")
 
 ```
 
@@ -1301,7 +1326,7 @@ scatter1 <- add_sub(scatter, paste("SNP effect on ", exposure), y = 0.2, vjust =
 ggdraw(scatter1)
 # mr_scatter_plot(mr.timmers, Timmers_harm_dat)
 # to check if the graph is the same
-ggsave("images/Basal_met_rate_scatter.png")
+ggsave("images/bmi_scatter.png")
 ```
 
 ## Forest Plot of Single SNP estimates compared to estimates with all SNPs
@@ -1314,9 +1339,9 @@ cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_
 ```
 
 ```{r}
-plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
+plot_grid(pilling.forest, timmers.forest,labels =  c("Parental 90", "Parental"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
-plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
+plot_grid(cases90.forest, cases99.forest,labels =  c("90th Percentile", "99th Percentile"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
 ```
 
@@ -1330,55 +1355,55 @@ timmers.funnel <-  mr_funnel_plot(mr_singlesnp(Timmers_harm_dat, all_method = c(
 cases90.funnel <- mr_funnel_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 cases99.funnel <- mr_funnel_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 
-pilling.funnel$`ukb-b-16446.3d2fYT`$theme$legend.direction <- 'none'
-pilling.funnel$`ukb-b-16446.3d2fYT`$theme$legend.position <- 'none'
-timmers.funnel$`ukb-b-16446.qdpgbc`$theme$legend.direction <- 'none'
-timmers.funnel$`ukb-b-16446.qdpgbc`$theme$legend.position <- 'none'
-cases90.funnel$`ukb-b-16446.Sr7BYr`$theme$legend.direction <- 'none'
-cases90.funnel$`ukb-b-16446.Sr7BYr`$theme$legend.position <- 'none'
-cases99.funnel$`ukb-b-16446.JdTzPB`$theme$legend.direction <- 'none'
-cases99.funnel$`ukb-b-16446.JdTzPB`$theme$legend.position <- 'none'
+pilling.funnel$`ieu-b-40.7zKDpS`$theme$legend.direction <- 'none'
+pilling.funnel$`ieu-b-40.7zKDpS`$theme$legend.position <- 'none'
+timmers.funnel$`ieu-b-40.A7Ncmg`$theme$legend.direction <- 'none'
+timmers.funnel$`ieu-b-40.A7Ncmg`$theme$legend.position <- 'none'
+cases90.funnel$`ieu-b-40.r36Gmf`$theme$legend.direction <- 'none'
+cases90.funnel$`ieu-b-40.r36Gmf`$theme$legend.position <- 'none'
+cases99.funnel$`ieu-b-40.XSHTvu`$theme$legend.direction <- 'none'
+cases99.funnel$`ieu-b-40.XSHTvu`$theme$legend.position <- 'none'
 
 ```
 
 ```{r}
 
 
-p1 <- pilling.funnel$`ukb-b-16446.3d2fYT` + 
+p1 <- pilling.funnel$`ieu-b-40.7zKDpS` + 
   ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
-p2 <- timmers.funnel$`ukb-b-16446.qdpgbc`+ 
+p2 <- timmers.funnel$`ieu-b-40.A7Ncmg`+ 
   ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
-p3 <- cases90.funnel$`ukb-b-16446.Sr7BYr`+ 
+p3 <- cases90.funnel$`ieu-b-40.r36Gmf`+ 
   ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
-p4 <- cases99.funnel$`ukb-b-16446.JdTzPB` + 
+p4 <- cases99.funnel$`ieu-b-40.XSHTvu` + 
   ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
 
 annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
                 top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
 
-ggsave("images/basal_met_rate_funnel.png")
+ggsave("images/bmi_funnel.png")
 ```
 
 
 
 
-# Age first had sexual intercourse 2
+# diastolic blood pressure || id:ieu-b-39  2
 ```{r}
 betas <- sel_graph %>%
-  filter(exposure %in% c("Age first had sexual intercourse || id:ukb-b-6591"))%>%
+  filter(exposure %in% c("diastolic blood pressure || id:ieu-b-39"))%>%
   select( b.pilling, b.timmers, b.90, b.99) %>%
   unlist()
 se <- sel_graph %>%
-   filter(exposure %in% c("Age first had sexual intercourse || id:ukb-b-6591"))%>%
+   filter(exposure %in% c("diastolic blood pressure || id:ieu-b-39"))%>%
   select(se.pilling, se.timmers, se.90, se.99)%>%
   unlist()
 nsnp <- sel_graph %>%
-  filter(exposure %in% c("Age first had sexual intercourse || id:ukb-b-6591"))%>%
+  filter(exposure %in% c("diastolic blood pressure || id:ieu-b-39"))%>%
   dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
   unlist()
 
 Outcome <- c( "Pilling", "Timmers", "Deleen 90", "Deleen 99")
-exposure <- c("Age first had sexual intercourse || id:ukb-b-6591")
+exposure <- c("diastolic blood pressure || id:ieu-b-39")
 graph.data <- as.data.frame(cbind(Outcome, exposure, betas, se, nsnp))
 
 graph.data$betas <- as.numeric(graph.data$betas)
@@ -1408,29 +1433,29 @@ As expected, the most overlap is between the two Deleen definitions and the Pill
 #filter by Alzheimer
 
 Pilling_harm_dat <- Pilling %>%
-  filter(exposure == "Age first had sexual intercourse || id:ukb-b-6591")
+  filter(exposure == "diastolic blood pressure || id:ieu-b-39")
 
 Timmers_harm_dat <- Timmers %>%
-  filter(exposure == "Age first had sexual intercourse || id:ukb-b-6591")
+  filter(exposure == "diastolic blood pressure || id:ieu-b-39")
 
 Cases90_harm_dat <- Cases90 %>%
-  filter(exposure == "Age first had sexual intercourse || id:ukb-b-6591")
+  filter(exposure == "diastolic blood pressure || id:ieu-b-39")
 
 Cases99_harm_dat <- Cases99 %>%
-  filter(exposure == "Age first had sexual intercourse || id:ukb-b-6591")
+  filter(exposure == "diastolic blood pressure || id:ieu-b-39")
 ```
 
 ### Heterogeneity Test
 
 ```{r include=FALSE}
 het.pilling <- mr_heterogeneity(Pilling_harm_dat)%>%
-  mutate(Outcome.dat = "Pilling")
+  mutate(Outcome.dat = "Parental 90")
 het.timmers <- mr_heterogeneity(Timmers_harm_dat)%>%
-  mutate(Outcome.dat = "Timmers")
+  mutate(Outcome.dat = "Parental")
 het.cases90 <- mr_heterogeneity(Cases90_harm_dat)%>%
-  mutate(Outcome.dat = "Cases90")
+  mutate(Outcome.dat = "90th Percentile")
 het.cases99 <- mr_heterogeneity(Cases99_harm_dat)%>%
-  mutate(Outcome.dat = "Cases99")
+  mutate(Outcome.dat = "99th Percentile")
 
 het_test2 <- rbind(het.pilling,het.timmers,het.cases90,het.cases99) %>%
   select(-id.exposure, -id.outcome, -outcome) %>%
@@ -1450,13 +1475,13 @@ Evidence of Heterogeneity in the Timmers data.
 
 ```{r include=FALSE}
 plei.pilling <- mr_pleiotropy_test(Pilling_harm_dat)%>%
-  mutate(Outcome.dat = "Pilling")
+  mutate(Outcome.dat = "Parental 90")
 plei.timmers <- mr_pleiotropy_test(Timmers_harm_dat)%>%
-  mutate(Outcome.dat = "Timmers")
+  mutate(Outcome.dat = "Parental")
 plei.cases90 <- mr_pleiotropy_test(Cases90_harm_dat)%>%
-  mutate(Outcome.dat = "Cases90")
+  mutate(Outcome.dat = "90th Percentile")
 plei.cases99 <- mr_pleiotropy_test(Cases99_harm_dat)%>%
-  mutate(Outcome.dat = "Cases99")
+  mutate(Outcome.dat = "99th Percentile")
 
 pli_test2 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
   select(-id.exposure, -id.outcome, -outcome) %>%
@@ -1478,13 +1503,13 @@ no indication from this test that there is the presence of horizontal pleiotropy
 ## Leave on out Analysis - Check to see if there is one SNP influencing the results
 ```{r include=FALSE}
 loo.pilling <- mr_leaveoneout(Pilling_harm_dat)%>%
-  mutate(outcome.data = "Pilling")
+  mutate(outcome.data = "Parental 90")
 loo.timmers <-mr_leaveoneout(Timmers_harm_dat)%>%
-  mutate(outcome.data = "Timmers")
+  mutate(outcome.data = "Parental")
 loo.cases90 <-mr_leaveoneout(Cases90_harm_dat)%>%
-  mutate(outcome.data = "Cases90")
+  mutate(outcome.data = "90th Percentile")
 loo.cases99 <- mr_leaveoneout(Cases99_harm_dat)%>%
-  mutate(outcome.data = "Cases99")
+  mutate(outcome.data = "99th Percentile")
 
 loo_test2 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
   select(-id.exposure, -id.outcome, -outcome) %>%
@@ -1500,19 +1525,38 @@ p2 <- mr_leaveoneout_plot(loo.timmers)
 p3 <- mr_leaveoneout_plot(loo.cases90)
 p4 <- mr_leaveoneout_plot(loo.cases99)
 
-p1 <- grid.arrange(grobs = p1)
-p2 <- grid.arrange(grobs = p2)
-p3 <- grid.arrange(grobs = p3)
-p4 <- grid.arrange(grobs = p4)
+
+p1$`ieu-b-39.34vHDn`$theme$legend.direction <- 'none'
+p1$`ieu-b-39.34vHDn`$theme$legend.position <- 'none'
+p2$`ieu-b-39.yRNaNo`$theme$legend.direction <- 'none'
+p2$`ieu-b-39.yRNaNo`$theme$legend.position <- 'none'
+p3$`ieu-b-39.p7K7jK`$theme$legend.direction <- 'none'
+p3$`ieu-b-39.p7K7jK`$theme$legend.position <- 'none'
+p4$`ieu-b-39.N3Wyug`$theme$legend.direction <- 'none'
+p4$`ieu-b-39.N3Wyug`$theme$legend.position <- 'none'
+
+Pilling_harm_dat$exposure[1]
+
+
+
 ```
 
-
 ```{r}
-plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -1, label_colour = "blue")
 
-plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
+
+p1 <- p1$`ieu-b-39.34vHDn` + 
+  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
+p2 <- p2$`ieu-b-39.yRNaNo` + 
+  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
+p3 <- p3$`ieu-b-39.p7K7jK` + 
+  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
+p4 <- p4$`ieu-b-39.N3Wyug` + 
+  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+
+annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
+                top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
+
+ggsave("images/diastolicbp_loo.png")
 
 kbl(loo_test2, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_classic()%>%
@@ -1529,10 +1573,10 @@ mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_iv
 mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 
-sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
-sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
-sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
-sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
+sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Parental 90")
+sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Parental")
+sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) 90th Percentile")
+sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) 99th Percentile")
 
 ```
 
@@ -1547,7 +1591,7 @@ ggdraw(scatter2)
 # to check if the graph is the same
 #mr_scatter_plot(mr.timmers, Timmers_harm_dat)
 
-ggsave("images/first_sex_scatter.png")
+ggsave("images/diastolic_bp_scatter.png")
 ```
 
 
@@ -1561,9 +1605,9 @@ cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_
 ```
 
 ```{r}
-plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
+plot_grid(pilling.forest, timmers.forest,labels =  c("Parental 90", "Parental"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
-plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
+plot_grid(cases90.forest, cases99.forest,labels =  c("90th Percentile", "99th Percentile"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
 ```
 
@@ -1573,18 +1617,18 @@ plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), 
 
 ```{r include=FALSE}
 pilling.funnel <- mr_funnel_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-timmers.funnel <-  mr_funnel_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
+timmers.funnel <- mr_funnel_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 cases90.funnel <- mr_funnel_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 cases99.funnel <- mr_funnel_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 
-pilling.funnel$`ukb-b-6591.CbyrS2`$theme$legend.direction <- 'none'
-pilling.funnel$`ukb-b-6591.CbyrS2`$theme$legend.position <- 'none'
-timmers.funnel$`ukb-b-6591.JS7hw1`$theme$legend.direction <- 'none'
-timmers.funnel$`ukb-b-6591.JS7hw1`$theme$legend.position <- 'none'
-cases90.funnel$`ukb-b-6591.j4BMdl`$theme$legend.direction <- 'none'
-cases90.funnel$`ukb-b-6591.j4BMdl`$theme$legend.position <- 'none'
-cases99.funnel$`ukb-b-6591.CrMByu`$theme$legend.direction <- 'none'
-cases99.funnel$`ukb-b-6591.CrMByu`$theme$legend.position <- 'none'
+pilling.funnel$`ieu-b-39.34vHDn`$theme$legend.direction <- 'none'
+pilling.funnel$`ieu-b-39.34vHDn`$theme$legend.position <- 'none'
+timmers.funnel$`ieu-b-39.yRNaNo`$theme$legend.direction <- 'none'
+timmers.funnel$`ieu-b-39.yRNaNo`$theme$legend.position <- 'none'
+cases90.funnel$`ieu-b-39.p7K7jK`$theme$legend.direction <- 'none'
+cases90.funnel$`ieu-b-39.p7K7jK`$theme$legend.position <- 'none'
+cases99.funnel$`ieu-b-39.N3Wyug`$theme$legend.direction <- 'none'
+cases99.funnel$`ieu-b-39.N3Wyug`$theme$legend.position <- 'none'
 
 Pilling_harm_dat$exposure[1]
 
@@ -1593,19 +1637,19 @@ Pilling_harm_dat$exposure[1]
 ```{r}
 
 
-p1 <- pilling.funnel$`ukb-b-6591.CbyrS2` + 
+p1 <- pilling.funnel$`ieu-b-39.34vHDn` + 
   ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
-p2 <- timmers.funnel$`ukb-b-6591.JS7hw1`+ 
+p2 <- timmers.funnel$`ieu-b-39.yRNaNo`+ 
   ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
-p3 <- cases90.funnel$`ukb-b-6591.j4BMdl`+ 
-  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
-p4 <- cases99.funnel$`ukb-b-6591.CrMByu` + 
-  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+p3 <- cases90.funnel$`ieu-b-39.p7K7jK`+ 
+  ggtitle("90th Percentile" ) + theme(plot.title = element_text(color = "blue"))
+p4 <- cases99.funnel$`ieu-b-39.N3Wyug` + 
+  ggtitle("99th Percentile") + theme(plot.title = element_text(color = "blue"))
 
 annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
                 top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
 
-ggsave("images/first_sex_funnel.png")
+ggsave("images/distolicbp_funnel.png")
 
 
 ```
@@ -1745,24 +1789,44 @@ loo_test3 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
          SE = se,
          `p-value` = p)
 
+
 p1 <- mr_leaveoneout_plot(loo.pilling)
 p2 <- mr_leaveoneout_plot(loo.timmers)
 p3 <- mr_leaveoneout_plot(loo.cases90)
 p4 <- mr_leaveoneout_plot(loo.cases99)
 
-p1 <- grid.arrange(grobs = p1)
-p2 <- grid.arrange(grobs = p2)
-p3 <- grid.arrange(grobs = p3)
-p4 <- grid.arrange(grobs = p4)
+
+p1$`ukb-b-6306.TtpwPi`$theme$legend.direction <- 'none'
+p1$`ukb-b-6306.TtpwPi`$theme$legend.position <- 'none'
+p2$`ukb-b-6306.3xmq7y`$theme$legend.direction <- 'none'
+p2$`ukb-b-6306.3xmq7y`$theme$legend.position <- 'none'
+p3$`ukb-b-6306.L0AiO9`$theme$legend.direction <- 'none'
+p3$`ukb-b-6306.L0AiO9`$theme$legend.position <- 'none'
+p4$`ukb-b-6306.9hTG4T`$theme$legend.direction <- 'none'
+p4$`ukb-b-6306.9hTG4T`$theme$legend.position <- 'none'
+
+Pilling_harm_dat$exposure[1]
+
+
+
 ```
 
-
 ```{r}
-plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -1, label_colour = "blue")
 
-plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
+
+p1 <- p1$`ukb-b-6306.TtpwPi` + 
+  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
+p2 <- p2$`ukb-b-6306.3xmq7y` + 
+  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
+p3 <- p3$`ukb-b-6306.L0AiO9` + 
+  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
+p4 <- p4$`ukb-b-6306.9hTG4T` + 
+  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+
+annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
+                top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
+
+ggsave("images/overallhealth_loo.png")
 
 kbl(loo_test3, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_classic()%>%
@@ -1779,10 +1843,10 @@ mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_iv
 mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 
-sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
-sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
-sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
-sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
+sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Parental 90")
+sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Parental")
+sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) 90th Percentile")
+sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) 99th Percentile")
 
 ```
 
@@ -1810,9 +1874,9 @@ cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_
 ```
 
 ```{r}
-plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
+plot_grid(pilling.forest, timmers.forest,labels =  c("Parental 90", "Parental"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
-plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
+plot_grid(cases90.forest, cases99.forest,labels =  c("90th Percentile", "99th Percentile"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
 ```
 
@@ -1846,9 +1910,9 @@ p1 <- pilling.funnel$`ukb-b-6306.TtpwPi` +
 p2 <- timmers.funnel$`ukb-b-6306.3xmq7y`+ 
   ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
 p3 <- cases90.funnel$`ukb-b-6306.L0AiO9`+ 
-  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
+  ggtitle("90th Percentile" ) + theme(plot.title = element_text(color = "blue"))
 p4 <- cases99.funnel$`ukb-b-6306.9hTG4T` + 
-  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+  ggtitle("99th Percentile") + theme(plot.title = element_text(color = "blue"))
 
 annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
                 top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
@@ -1857,23 +1921,23 @@ ggsave("images/overall_health_funnel.png")
 ```
 
 
-# Hypertension 4
+# Qualifications: College or University degree || id:ukb-b-16489 4
 
 ```{r}
 betas <- sel_graph %>%
-  filter(exposure == "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057")%>%
+  filter(exposure == "Qualifications: College or University degree || id:ukb-b-16489")%>%
   dplyr::select(b.pilling, b.timmers, b.90, b.99) %>%
   unlist()
 se <- sel_graph %>%
-  filter(exposure == "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057")%>%
+  filter(exposure == "Qualifications: College or University degree || id:ukb-b-16489")%>%
   dplyr::select(se.pilling, se.timmers, se.90, se.99)%>%
   unlist()
 nsnp <- sel_graph %>%
-  filter(exposure == "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057")%>%
+  filter(exposure == "Qualifications: College or University degree || id:ukb-b-16489")%>%
   dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
   unlist()
 Outcome <- c( "Pilling", "Timmers", "Deleen 90", "Deleen 99")
-exposure = c("Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057")
+exposure = c("Qualifications: College or University degree || id:ukb-b-16489")
 graph.data <- as.data.frame(cbind(Outcome, exposure,  betas, se, nsnp))
 
 graph.data$betas <- as.numeric(graph.data$betas)
@@ -1903,16 +1967,16 @@ As expected, the most overlap is between the two Deleen definitions and the Pill
 
 
 Pilling_harm_dat <- Pilling %>%
-  filter(exposure == "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057")
+  filter(exposure == "Qualifications: College or University degree || id:ukb-b-16489")
 
 Timmers_harm_dat <- Timmers %>%
-  filter(exposure == "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057")
+  filter(exposure == "Qualifications: College or University degree || id:ukb-b-16489")
 
 Cases90_harm_dat <- Cases90 %>%
-  filter(exposure == "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057")
+  filter(exposure == "Qualifications: College or University degree || id:ukb-b-16489")
 
 Cases99_harm_dat <- Cases99 %>%
-  filter(exposure == "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057")
+  filter(exposure == "Qualifications: College or University degree || id:ukb-b-16489")
 ```
 
 ### Heterogeneity Test
@@ -1995,19 +2059,38 @@ p2 <- mr_leaveoneout_plot(loo.timmers)
 p3 <- mr_leaveoneout_plot(loo.cases90)
 p4 <- mr_leaveoneout_plot(loo.cases99)
 
-p1 <- grid.arrange(grobs = p1)
-p2 <- grid.arrange(grobs = p2)
-p3 <- grid.arrange(grobs = p3)
-p4 <- grid.arrange(grobs = p4)
+
+p1$`ukb-b-16489.tFJFhq`$theme$legend.direction <- 'none'
+p1$`ukb-b-16489.tFJFhq`$theme$legend.position <- 'none'
+p2$`ukb-b-16489.LXROjW`$theme$legend.direction <- 'none'
+p2$`ukb-b-16489.LXROjW`$theme$legend.position <- 'none'
+p3$`ukb-b-16489.wig8C1`$theme$legend.direction <- 'none'
+p3$`ukb-b-16489.wig8C1`$theme$legend.position <- 'none'
+p4$`ukb-b-16489.rmdrwT`$theme$legend.direction <- 'none'
+p4$`ukb-b-16489.rmdrwT`$theme$legend.position <- 'none'
+
+Pilling_harm_dat$exposure[1]
+
+
+
 ```
 
-
 ```{r}
-plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -1, label_colour = "blue")
 
-plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
+
+p1 <- p1$`ukb-b-16489.tFJFhq` + 
+  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
+p2 <- p2$`ukb-b-16489.LXROjW` + 
+  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
+p3 <- p3$`ukb-b-16489.wig8C1` + 
+  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
+p4 <- p4$`ukb-b-16489.rmdrwT`+ 
+  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+
+annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
+                top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
+
+ggsave("images/degree_loo.png")
 
 kbl(loo_test4, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_classic()%>%
@@ -2024,10 +2107,10 @@ mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_iv
 mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 
-sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
-sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
-sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
-sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
+sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Parental 90")
+sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Parental")
+sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) 90th Percentile")
+sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) 99th Percentile")
 
 ```
 
@@ -2042,7 +2125,7 @@ ggdraw(scatter4)
 # to check if the graph is the same
 #mr_scatter_plot(mr.timmers, Timmers_harm_dat)
 
-ggsave("images/hypertension_scatter.png")
+ggsave("images/degree_scatter.png")
 ```
 
 ## Forest Plot of Single SNP estimates compared to estimates with all SNPs
@@ -2055,9 +2138,9 @@ cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_
 ```
 
 ```{r}
-plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
+plot_grid(pilling.forest, timmers.forest,labels =  c("Parental 90", "Parental"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
-plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
+plot_grid(cases90.forest, cases99.forest,labels =  c("90th Percentile", "99th Percentile"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
 ```
 
@@ -2070,14 +2153,14 @@ pilling.funnel <- mr_funnel_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("
 timmers.funnel <- mr_funnel_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 cases90.funnel <- mr_funnel_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 cases99.funnel <- mr_funnel_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-pilling.funnel$`ukb-b-14057.fXnZ1H`$theme$legend.direction <- 'none'
-pilling.funnel$`ukb-b-14057.fXnZ1H`$theme$legend.position <- 'none'
-timmers.funnel$`ukb-b-14057.HE5yJs`$theme$legend.direction <- 'none'
-timmers.funnel$`ukb-b-14057.HE5yJs`$theme$legend.position <- 'none'
-cases90.funnel$`ukb-b-14057.3jqzJU`$theme$legend.direction <- 'none'
-cases90.funnel$`ukb-b-14057.3jqzJU`$theme$legend.position <- 'none'
-cases99.funnel$`ukb-b-14057.hmU1Yx`$theme$legend.direction <- 'none'
-cases99.funnel$`ukb-b-14057.hmU1Yx`$theme$legend.position <- 'none'
+pilling.funnel$`ukb-b-16489.tFJFhq`$theme$legend.direction <- 'none'
+pilling.funnel$`ukb-b-16489.tFJFhq`$theme$legend.position <- 'none'
+timmers.funnel$`ukb-b-16489.LXROjW`$theme$legend.direction <- 'none'
+timmers.funnel$`ukb-b-16489.LXROjW`$theme$legend.position <- 'none'
+cases90.funnel$`ukb-b-16489.wig8C1`$theme$legend.direction <- 'none'
+cases90.funnel$`ukb-b-16489.wig8C1`$theme$legend.position <- 'none'
+cases99.funnel$`ukb-b-16489.rmdrwT`$theme$legend.direction <- 'none'
+cases99.funnel$`ukb-b-16489.rmdrwT`$theme$legend.position <- 'none'
 
 Pilling_harm_dat$exposure[1]
 
@@ -2086,41 +2169,41 @@ Pilling_harm_dat$exposure[1]
 ```{r}
 
 
-p1 <- pilling.funnel$`ukb-b-14057.fXnZ1H` + 
+p1 <- pilling.funnel$`ukb-b-16489.tFJFhq` + 
   ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
-p2 <- timmers.funnel$`ukb-b-14057.HE5yJs`+ 
+p2 <- timmers.funnel$`ukb-b-16489.LXROjW`+ 
   ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
-p3 <- cases90.funnel$`ukb-b-14057.3jqzJU`+ 
+p3 <- cases90.funnel$`ukb-b-16489.wig8C1`+ 
   ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
-p4 <- cases99.funnel$`ukb-b-14057.hmU1Yx` + 
+p4 <- cases99.funnel$`ukb-b-16489.rmdrwT` + 
   ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
 
 annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
-                top = paste0("Single SNP estimates of hypertension || id:ukb-b-14057 on Longevity"))
+                top = paste0("Single SNP estimates of ", exposure, " on Longevity"))
 
-ggsave("images/hypertension_funnel.png")
+ggsave("images/degree_funnel.png")
 ```
 
 
 
-# Arm Fat 5
+# Triglycerides || id:ukb-d-30870_irnt 5
 
 ```{r}
 betas <- sel_graph %>%
-  filter(exposure == "Arm fat mass (left) || id:ukb-a-287" )%>%
+  filter(exposure == "Triglycerides || id:ukb-d-30870_irnt" )%>%
   select( b.pilling, b.timmers, b.90, b.99) %>%
   unlist()
 se <- sel_graph %>%
-  filter(exposure == "Arm fat mass (left) || id:ukb-a-287" )%>%
+  filter(exposure == "Triglycerides || id:ukb-d-30870_irnt" )%>%
   select(se.pilling, se.timmers, se.90, se.99)%>%
   unlist()
 nsnp <- sel_graph %>%
-  filter(exposure == "Arm fat mass (left) || id:ukb-a-287" )%>%
+  filter(exposure == "Triglycerides || id:ukb-d-30870_irnt" )%>%
   dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
   unlist()
 
 Outcome <- c( "Pilling", "Timmers", "Deleen 90", "Deleen 99")
-exposure <- c("Arm fat mass (left) || id:ukb-a-287")
+exposure <- c("Triglycerides || id:ukb-d-30870_irnt")
 graph.data <- as.data.frame(cbind(Outcome,exposure, betas, se, nsnp))
 
 graph.data$betas <- as.numeric(graph.data$betas)
@@ -2151,16 +2234,16 @@ As expected, the most overlap is between the two Deleen definitions and the Pill
 #filter by Alzheimer
 
 Pilling_harm_dat <- Pilling %>%
-  filter(exposure == "Arm fat mass (left) || id:ukb-a-287" )
+  filter(exposure == "Triglycerides || id:ukb-d-30870_irnt" )
 
 Timmers_harm_dat  <- Timmers %>%
-  filter(exposure == "Arm fat mass (left) || id:ukb-a-287" )
+  filter(exposure == "Triglycerides || id:ukb-d-30870_irnt" )
 
 Cases90_harm_dat  <- Cases90 %>%
-  filter(exposure == "Arm fat mass (left) || id:ukb-a-287" )
+  filter(exposure == "Triglycerides || id:ukb-d-30870_irnt" )
 
 Cases99_harm_dat  <- Cases99 %>%
-  filter(exposure == "Arm fat mass (left) || id:ukb-a-287" )
+  filter(exposure == "Triglycerides || id:ukb-d-30870_irnt" )
 ```
 
 ### Heterogeneity Test
@@ -2238,16 +2321,43 @@ loo_test5 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
          SE = se,
          `p-value` = p)
 
+p1 <- mr_leaveoneout_plot(loo.pilling)
+p2 <- mr_leaveoneout_plot(loo.timmers)
+p3 <- mr_leaveoneout_plot(loo.cases90)
+p4 <- mr_leaveoneout_plot(loo.cases99)
+
+
+p1$`ukb-d-30870_irnt.GVh00I`$theme$legend.direction <- 'none'
+p1$`ukb-d-30870_irnt.GVh00I`$theme$legend.position <- 'none'
+p2$`ukb-d-30870_irnt.wcxQYB`$theme$legend.direction <- 'none'
+p2$`ukb-d-30870_irnt.wcxQYB`$theme$legend.position <- 'none'
+p3$`ukb-d-30870_irnt.tJWOlF`$theme$legend.direction <- 'none'
+p3$`ukb-d-30870_irnt.tJWOlF`$theme$legend.position <- 'none'
+p4$`ukb-d-30870_irnt.OhKSWR`$theme$legend.direction <- 'none'
+p4$`ukb-d-30870_irnt.OhKSWR`$theme$legend.position <- 'none'
+
+Pilling_harm_dat$exposure[1]
+
+
 
 ```
 
-
 ```{r}
-plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -1, label_colour = "blue")
 
-plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
+
+p1 <- p1$`ukb-d-30870_irnt.GVh00I` + 
+  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
+p2 <- p2$`ukb-d-30870_irnt.wcxQYB`+ 
+  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
+p3 <- p3$`ukb-d-30870_irnt.tJWOlF` + 
+  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
+p4 <- p4$`ukb-d-30870_irnt.OhKSWR` + 
+  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+
+annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
+                top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
+
+ggsave("images/triglycerides_loo.png")
 
 kbl(loo_test5, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_classic()%>%
@@ -2264,10 +2374,10 @@ mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_iv
 mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 
-sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
-sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
-sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
-sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
+sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Parental 90")
+sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Parental")
+sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) 90th Percentile")
+sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) 99th Percentile")
 
 ```
 
@@ -2282,7 +2392,7 @@ ggdraw(scatter5)
 # to check if the graph is the same
 #mr_scatter_plot(mr.timmers, Timmers_harm_dat)
 
-ggsave("images/arm_fat_scatter.png")
+ggsave("images/triglycerides_scatter.png")
 ```
 
 ## Forest Plot of Single SNP estimates compared to estimates with all SNPs
@@ -2295,9 +2405,9 @@ cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_
 ```
 
 ```{r}
-plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
+plot_grid(pilling.forest, timmers.forest,labels =  c("Parental 90", "Parental"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
-plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
+plot_grid(cases90.forest, cases99.forest,labels =  c("90th Percentile", "99th Percentile"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
 ```
 
@@ -2310,14 +2420,14 @@ pilling.funnel <- mr_funnel_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("
 timmers.funnel <-  mr_funnel_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 cases90.funnel <- mr_funnel_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 cases99.funnel <- mr_funnel_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-pilling.funnel$`ukb-a-287.rBgTxY`$theme$legend.direction <- 'none'
-pilling.funnel$`ukb-a-287.rBgTxY`$theme$legend.position <- 'none'
-timmers.funnel$`ukb-a-287.fyBExD`$theme$legend.direction <- 'none'
-timmers.funnel$`ukb-a-287.fyBExD`$theme$legend.position <- 'none'
-cases90.funnel$`ukb-a-287.4LUVlt`$theme$legend.direction <- 'none'
-cases90.funnel$`ukb-a-287.4LUVlt`$theme$legend.position <- 'none'
-cases99.funnel$`ukb-a-287.dOy4Ro`$theme$legend.direction <- 'none'
-cases99.funnel$`ukb-a-287.dOy4Ro`$theme$legend.position <- 'none'
+pilling.funnel$`ukb-d-30870_irnt.GVh00I`$theme$legend.direction <- 'none'
+pilling.funnel$`ukb-d-30870_irnt.GVh00I`$theme$legend.position <- 'none'
+timmers.funnel$`ukb-d-30870_irnt.wcxQYB`$theme$legend.direction <- 'none'
+timmers.funnel$`ukb-d-30870_irnt.wcxQYB`$theme$legend.position <- 'none'
+cases90.funnel$`ukb-d-30870_irnt.tJWOlF`$theme$legend.direction <- 'none'
+cases90.funnel$`ukb-d-30870_irnt.tJWOlF`$theme$legend.position <- 'none'
+cases99.funnel$`ukb-d-30870_irnt.OhKSWR`$theme$legend.direction <- 'none'
+cases99.funnel$`ukb-d-30870_irnt.OhKSWR`$theme$legend.position <- 'none'
 
 Pilling_harm_dat$exposure[1]
 
@@ -2326,43 +2436,44 @@ Pilling_harm_dat$exposure[1]
 ```{r}
 
 
-p1 <- pilling.funnel$`ukb-a-287.rBgTxY` + 
+p1 <- pilling.funnel$`ukb-d-30870_irnt.GVh00I` + 
   ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
-p2 <- timmers.funnel$`ukb-a-287.fyBExD`+ 
+p2 <- timmers.funnel$`ukb-d-30870_irnt.wcxQYB`+ 
   ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
-p3 <- cases90.funnel$`ukb-a-287.4LUVlt`+ 
+p3 <- cases90.funnel$`ukb-d-30870_irnt.tJWOlF`+ 
   ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
-p4 <- cases99.funnel$`ukb-a-287.dOy4Ro` + 
+p4 <- cases99.funnel$`ukb-d-30870_irnt.OhKSWR` + 
   ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
 
 annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
                 top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
 
-ggsave("images/arm_fat_funnel.png")
+ggsave("images/triglycerides_funnel.png")
 ```
 
 
 
 
 
-# Glycalated hameoglobin HbA1c (unit increase) 6
+# Type 2 Diabetes 6
+
+
 ```{r}
 betas <- sel_graph %>%
-  filter(exposure == c( "Glycated haemoglobin || id:ukb-d-30750_irnt"))%>%
+  filter(exposure == c("Type 2 diabetes || id:ebi-a-GCST006867"))%>%
   dplyr::select( b.pilling, b.timmers, b.90, b.99) %>%
   unlist()
 se <- sel_graph %>%
-  filter(exposure == c( "Glycated haemoglobin || id:ukb-d-30750_irnt"))%>%
+  filter(exposure == c("Type 2 diabetes || id:ebi-a-GCST006867"))%>%
   dplyr::select(se.pilling, se.timmers, se.90, se.99)%>%
   unlist()
 nsnp <- sel_graph %>%
-  filter(exposure == c( "Glycated haemoglobin || id:ukb-d-30750_irnt"))%>%
+  filter(exposure == c("Type 2 diabetes || id:ebi-a-GCST006867"))%>%
   dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
   unlist()
-
-Outcome <- c( "Pilling", "Timmers", "Deleen 90", "Deleen 99")
-exposure <- c( "Glycated haemoglobin || id:ukb-d-30750_irnt")
-graph.data <- as.data.frame(cbind(Outcome,exposure, betas, se, nsnp))
+Outcome <- c("Pilling", "Timmers", "Deleen 90", "Deleen 99")
+exposure <- c("Type 2 diabetes || id:ebi-a-GCST006867")
+graph.data <- as.data.frame(cbind(Outcome,exposure, betas, se,nsnp))
 
 graph.data$betas <- as.numeric(graph.data$betas)
 graph.data$se <- as.numeric(graph.data$se)
@@ -2391,28 +2502,28 @@ ggplot(graph.data6) +
 #filter by Alzheimer
 
 Pilling_harm_dat <- Pilling %>%
-  filter(exposure ==  "Glycated haemoglobin || id:ukb-d-30750_irnt")
+  filter(exposure == "Type 2 diabetes || id:ebi-a-GCST006867")
 
-Timmers_harm_dat <- Timmers %>%
-  filter(exposure ==  "Glycated haemoglobin || id:ukb-d-30750_irnt")
+Timmers_harm_dat  <- Timmers %>%
+  filter(exposure == "Type 2 diabetes || id:ebi-a-GCST006867")
 
-Cases90_harm_dat <- Cases90 %>%
-  filter(exposure ==  "Glycated haemoglobin || id:ukb-d-30750_irnt")
+Cases90_harm_dat  <- Cases90 %>%
+  filter(exposure == "Type 2 diabetes || id:ebi-a-GCST006867")
 
-Cases99_harm_dat <- Cases99 %>%
-  filter(exposure ==  "Glycated haemoglobin || id:ukb-d-30750_irnt")
+Cases99_harm_dat  <- Cases99 %>%
+  filter(exposure == "Type 2 diabetes || id:ebi-a-GCST006867")
 ```
 
 ### Heterogeneity Test
 
 ```{r include=FALSE}
-het.pilling <- mr_heterogeneity(Pilling_harm_dat)%>%
+het.pilling <- mr_heterogeneity(Pilling_harm_dat )%>%
   mutate(Outcome.dat = "Pilling")
-het.timmers <- mr_heterogeneity(Timmers_harm_dat)%>%
+het.timmers <- mr_heterogeneity(Timmers_harm_dat )%>%
   mutate(Outcome.dat = "Timmers")
-het.cases90 <- mr_heterogeneity(Cases90_harm_dat)%>%
+het.cases90 <- mr_heterogeneity(Cases90_harm_dat )%>%
   mutate(Outcome.dat = "Cases90")
-het.cases99 <- mr_heterogeneity(Cases99_harm_dat)%>%
+het.cases99 <- mr_heterogeneity(Cases99_harm_dat )%>%
   mutate(Outcome.dat = "Cases99")
 
 het_test6 <- rbind(het.pilling,het.timmers,het.cases90,het.cases99) %>%
@@ -2432,13 +2543,13 @@ Evidence of Heterogeneity in the Timmers data.
 ### Check for Pleiotropy
 
 ```{r include=FALSE}
-plei.pilling <- mr_pleiotropy_test(Pilling_harm_dat)%>%
+plei.pilling <- mr_pleiotropy_test(Pilling_harm_dat )%>%
   mutate(Outcome.dat = "Pilling")
-plei.timmers <- mr_pleiotropy_test(Timmers_harm_dat)%>%
+plei.timmers <- mr_pleiotropy_test(Timmers_harm_dat )%>%
   mutate(Outcome.dat = "Timmers")
-plei.cases90 <- mr_pleiotropy_test(Cases90_harm_dat)%>%
+plei.cases90 <- mr_pleiotropy_test(Cases90_harm_dat )%>%
   mutate(Outcome.dat = "Cases90")
-plei.cases99 <- mr_pleiotropy_test(Cases99_harm_dat)%>%
+plei.cases99 <- mr_pleiotropy_test(Cases99_harm_dat )%>%
   mutate(Outcome.dat = "Cases99")
 
 pli_test6 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
@@ -2478,23 +2589,50 @@ loo_test6 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
          SE = se,
          `p-value` = p)
 
+p1 <- mr_leaveoneout_plot(loo.pilling)
+p2 <- mr_leaveoneout_plot(loo.timmers)
+p3 <- mr_leaveoneout_plot(loo.cases90)
+p4 <- mr_leaveoneout_plot(loo.cases99)
+
+
+p1$`ebi-a-GCST006867.P3u1a1`$theme$legend.direction <- 'none'
+p1$`ebi-a-GCST006867.P3u1a1`$theme$legend.position <- 'none'
+p2$`ebi-a-GCST006867.FXT4Yt`$theme$legend.direction <- 'none'
+p2$`ebi-a-GCST006867.FXT4Yt`$theme$legend.position <- 'none'
+p3$`ebi-a-GCST006867.LXTpae`$theme$legend.direction <- 'none'
+p3$`ebi-a-GCST006867.LXTpae`$theme$legend.position <- 'none'
+p4$`ebi-a-GCST006867.lDDA6L`$theme$legend.direction <- 'none'
+p4$`ebi-a-GCST006867.lDDA6L`$theme$legend.position <- 'none'
+
+Pilling_harm_dat$exposure[1]
+
+
 
 ```
 
-
 ```{r}
-plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -1, label_colour = "blue")
 
-plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
+
+p1 <- p1$`ebi-a-GCST006867.P3u1a1` + 
+  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
+p2 <- p2$`ebi-a-GCST006867.FXT4Yt`+ 
+  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
+p3 <- p3$`ebi-a-GCST006867.LXTpae` + 
+  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
+p4 <- p4$`ebi-a-GCST006867.lDDA6L` + 
+  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+
+annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
+                top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
+
+ggsave("images/type2diabetes_loo.png")
 
 kbl(loo_test6, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_classic()%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, SNPs overlap.
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -2504,10 +2642,10 @@ mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_iv
 mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 
-sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
-sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
-sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
-sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
+sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Parental 90")
+sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Parental")
+sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) 90th Percentile")
+sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) 99th Percentile")
 
 ```
 
@@ -2522,7 +2660,8 @@ ggdraw(scatter6)
 # to check if the graph is the same
 #mr_scatter_plot(mr.timmers, Timmers_harm_dat)
 
-ggsave("images/HbA1c_scatter.png")
+
+ggsave("images/type2diabetes_scatter.png")
 ```
 
 ## Forest Plot of Single SNP estimates compared to estimates with all SNPs
@@ -2535,9 +2674,9 @@ cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_
 ```
 
 ```{r}
-plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
+plot_grid(pilling.forest, timmers.forest,labels =  c("Parental 90", "Parental"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
-plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
+plot_grid(cases90.forest, cases99.forest,labels =  c("90th Percentile", "99th Percentile"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
 ```
 
@@ -2550,14 +2689,14 @@ pilling.funnel <- mr_funnel_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("
 timmers.funnel <- mr_funnel_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 cases90.funnel <- mr_funnel_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
 cases99.funnel <- mr_funnel_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-pilling.funnel$`ukb-d-30750_irnt.e11jiR`$theme$legend.direction <- 'none'
-pilling.funnel$`ukb-d-30750_irnt.e11jiR`$theme$legend.position <- 'none'
-timmers.funnel$`ukb-d-30750_irnt.IC5Hqz`$theme$legend.direction <- 'none'
-timmers.funnel$`ukb-d-30750_irnt.IC5Hqz`$theme$legend.position <- 'none'
-cases90.funnel$`ukb-d-30750_irnt.S5PUzu`$theme$legend.direction <- 'none'
-cases90.funnel$`ukb-d-30750_irnt.S5PUzu`$theme$legend.position <- 'none'
-cases99.funnel$`ukb-d-30750_irnt.gFljFJ`$theme$legend.direction <- 'none'
-cases99.funnel$`ukb-d-30750_irnt.gFljFJ`$theme$legend.position <- 'none'
+pilling.funnel$`ebi-a-GCST006867.P3u1a1`$theme$legend.direction <- 'none'
+pilling.funnel$`ebi-a-GCST006867.P3u1a1`$theme$legend.position <- 'none'
+timmers.funnel$`ebi-a-GCST006867.FXT4Yt`$theme$legend.direction <- 'none'
+timmers.funnel$`ebi-a-GCST006867.FXT4Yt`$theme$legend.position <- 'none'
+cases90.funnel$`ebi-a-GCST006867.LXTpae`$theme$legend.direction <- 'none'
+cases90.funnel$`ebi-a-GCST006867.LXTpae`$theme$legend.position <- 'none'
+cases99.funnel$`ebi-a-GCST006867.lDDA6L`$theme$legend.direction <- 'none'
+cases99.funnel$`ebi-a-GCST006867.lDDA6L`$theme$legend.position <- 'none'
 
 Pilling_harm_dat$exposure[1]
 
@@ -2566,41 +2705,40 @@ Pilling_harm_dat$exposure[1]
 ```{r}
 
 
-p1 <- pilling.funnel$`ukb-d-30750_irnt.e11jiR` + 
+p1 <- pilling.funnel$`ebi-a-GCST006867.P3u1a1` + 
   ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
-p2 <- timmers.funnel$`ukb-d-30750_irnt.IC5Hqz`+ 
+p2 <- timmers.funnel$`ebi-a-GCST006867.FXT4Yt` + 
   ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
-p3 <- cases90.funnel$`ukb-d-30750_irnt.S5PUzu`+ 
+p3 <- cases90.funnel$`ebi-a-GCST006867.LXTpae`+ 
   ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
-p4 <- cases99.funnel$`ukb-d-30750_irnt.gFljFJ` + 
+p4 <- cases99.funnel$`ebi-a-GCST006867.lDDA6L` + 
   ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
 
 annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
                 top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
 
-ggsave("images/HbA1c_funnel.png")
+ggsave("images/type2diabetes_funnel.png")
+
 ```
 
+# Years of Education 7
 
-
-
-# Prostate Cancer 7
 ```{r}
 betas <- sel_graph %>%
-  filter(exposure == c( "Prostate cancer || id:ieu-b-85"))%>%
+  filter(exposure == c( "Years of schooling || id:ieu-a-1239"))%>%
   dplyr::select( b.pilling, b.timmers, b.90, b.99) %>%
   unlist()
 se <- sel_graph %>%
-  filter(exposure == c( "Prostate cancer || id:ieu-b-85"))%>%
+  filter(exposure == c( "Years of schooling || id:ieu-a-1239"))%>%
   dplyr::select(se.pilling, se.timmers, se.90, se.99)%>%
   unlist()
 nsnp <- sel_graph %>%
-  filter(exposure == c( "Prostate cancer || id:ieu-b-85"))%>%
+  filter(exposure == c( "Years of schooling || id:ieu-a-1239"))%>%
   dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
   unlist()
 
-Outcome <- c( "Pilling", "Timmers", "Deleen 90", "Deleen 99")
-exposure <- c( "Prostate cancer || id:ieu-b-85")
+Outcome <- c("Pilling", "Timmers", "Deleen 90", "Deleen 99")
+exposure <- c( "Years of schooling || id:ieu-a-1239")
 graph.data <- as.data.frame(cbind(Outcome,exposure, betas, se, nsnp))
 
 graph.data$betas <- as.numeric(graph.data$betas)
@@ -2621,25 +2759,25 @@ ggplot(graph.data7) +
 ```
 
 
-
+As expected, the most overlap is between the two Deleen definitions and the Pilling and Timmers datasets (UK Biobank).
 
 ## Sensivity Analysis
 
 ```{r include=FALSE}
 
-
+#filter by Alzheimer
 
 Pilling_harm_dat <- Pilling %>%
-  filter(exposure ==  "Prostate cancer || id:ieu-b-85")
+  filter(exposure ==  "Years of schooling || id:ieu-a-1239")
 
 Timmers_harm_dat <- Timmers %>%
-  filter(exposure ==  "Prostate cancer || id:ieu-b-85")
+  filter(exposure ==  "Years of schooling || id:ieu-a-1239")
 
 Cases90_harm_dat <- Cases90 %>%
-  filter(exposure ==  "Prostate cancer || id:ieu-b-85")
+  filter(exposure ==  "Years of schooling || id:ieu-a-1239")
 
 Cases99_harm_dat <- Cases99 %>%
-  filter(exposure ==  "Prostate cancer || id:ieu-b-85")
+  filter(exposure ==  "Years of schooling || id:ieu-a-1239")
 ```
 
 ### Heterogeneity Test
@@ -2722,26 +2860,45 @@ p2 <- mr_leaveoneout_plot(loo.timmers)
 p3 <- mr_leaveoneout_plot(loo.cases90)
 p4 <- mr_leaveoneout_plot(loo.cases99)
 
-p1 <- grid.arrange(grobs = p1)
-p2 <- grid.arrange(grobs = p2)
-p3 <- grid.arrange(grobs = p3)
-p4 <- grid.arrange(grobs = p4)
+
+p1$`ieu-a-1239.SdFUtY`$theme$legend.direction <- 'none'
+p1$`ieu-a-1239.SdFUtY`$theme$legend.position <- 'none'
+p2$`ieu-a-1239.RI5rdD`$theme$legend.direction <- 'none'
+p2$`ieu-a-1239.RI5rdD`$theme$legend.position <- 'none'
+p3$`ieu-a-1239.j2IkkU`$theme$legend.direction <- 'none'
+p3$`ieu-a-1239.j2IkkU`$theme$legend.position <- 'none'
+p4$`ieu-a-1239.cytrdU`$theme$legend.direction <- 'none'
+p4$`ieu-a-1239.cytrdU`$theme$legend.position <- 'none'
+
+Pilling_harm_dat$exposure[1]
+
+
+
 ```
 
-
 ```{r}
-plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -1, label_colour = "blue")
 
-plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
+
+p1 <- p1$`ieu-a-1239.SdFUtY` + 
+  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
+p2 <- p2$`ieu-a-1239.RI5rdD`+ 
+  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
+p3 <- p3$`ieu-a-1239.j2IkkU` + 
+  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
+p4 <- p4$`ieu-a-1239.cytrdU` + 
+  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+
+annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
+                top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
+
+ggsave("images/education_loo.png")
 
 kbl(loo_test7, booktabs = T, caption = "Leave one out Analysis ")%>%
   kable_classic()%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
-Although there are some SNPs which significantly affect the point estimate, all SNPs overlap.
+Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
 
 
 ## Scatter plot of Three Methods
@@ -2751,10 +2908,10 @@ mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_iv
 mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
 
-sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
-sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
-sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
-sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
+sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Parental 90")
+sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Parental")
+sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) 90th Percentile")
+sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) 99th Percentile")
 
 ```
 
@@ -2765,725 +2922,6 @@ scatter <- plot_grid(sc.pilling[[1]],sc.timmers[[1]], sc.cases90[[1]], sc.cases9
 
 scatter7 <- add_sub(scatter, paste("SNP effect on ", exposure), y = 0.2, vjust = 0, size = 8 )
 ggdraw(scatter7)
-
-# to check if the graph is the same
-#mr_scatter_plot(mr.timmers, Timmers_harm_dat)
-
-ggsave("images/prostatecancer_scatter.png")
-```
-
-## Forest Plot of Single SNP estimates compared to estimates with all SNPs
-
-```{r include=FALSE}
-pilling.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-timmers.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-cases90.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-```
-
-```{r}
-plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
-plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
-```
-
-## Funnel plot of Single SNP analysis compared to the estimates from all SNPs
-
-
-
-```{r include=FALSE}
-pilling.funnel <- mr_funnel_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-timmers.funnel <- mr_funnel_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-cases90.funnel <- mr_funnel_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-cases99.funnel <- mr_funnel_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-pilling.funnel$`ieu-b-85.UgsZxW`$theme$legend.direction <- 'none'
-pilling.funnel$`ieu-b-85.UgsZxW`$theme$legend.position <- 'none'
-timmers.funnel$`ieu-b-85.L7ZNH0`$theme$legend.direction <- 'none'
-timmers.funnel$`ieu-b-85.L7ZNH0`$theme$legend.position <- 'none'
-cases90.funnel$`ieu-b-85.UstNEj`$theme$legend.direction <- 'none'
-cases90.funnel$`ieu-b-85.UstNEj`$theme$legend.position <- 'none'
-cases99.funnel$`ieu-b-85.qEMtZG`$theme$legend.direction <- 'none'
-cases99.funnel$`ieu-b-85.qEMtZG`$theme$legend.position <- 'none'
-
-Pilling_harm_dat$exposure[1]
-
-```
-
-```{r}
-
-
-p1 <- pilling.funnel$`ieu-b-85.UgsZxW` + 
-  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
-p2 <- timmers.funnel$`ieu-b-85.L7ZNH0` + 
-  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
-p3 <- cases90.funnel$`ieu-b-85.UstNEj` + 
-  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
-p4 <- cases99.funnel$`ieu-b-85.qEMtZG` + 
-  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
-
-annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
-                top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
-
-ggsave("images/prostatecancer_funnel.png")
-```
-
-
-
-
-
-# Coronary Artery Disease 8
-
-```{r}
-betas <- sel_graph %>%
-  filter(exposure == c("Coronary artery disease || id:ebi-a-GCST005194"))%>%
-  dplyr::select( b.pilling, b.timmers, b.90, b.99) %>%
-  unlist()
-se <- sel_graph %>%
-  filter(exposure == c("Coronary artery disease || id:ebi-a-GCST005194"))%>%
-  dplyr::select(se.pilling, se.timmers, se.90, se.99)%>%
-  unlist()
-nsnp <- sel_graph %>%
-  filter(exposure == c("Coronary artery disease || id:ebi-a-GCST005194"))%>%
-  dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
-  unlist()
-
-Outcome <- c("Pilling", "Timmers", "Deleen 90", "Deleen 99")
-exposure <- c("Coronary artery disease || id:ebi-a-GCST005194")
-graph.data <- as.data.frame(cbind(Outcome,exposure, betas, se, nsnp))
-
-graph.data$betas <- as.numeric(graph.data$betas)
-graph.data$se <- as.numeric(graph.data$se)
-
-graph.data8 <- graph.data %>%
-  mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se),
-         OR = exp(betas),
-         lower.OR.CI = exp(lower.CI),
-         upper.OR.CI = exp(upper.CI))
-graph.data8
-ggplot(graph.data8) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
-  xlab("") +
-  ylab("") +
-  ggtitle("Confidence Intervals for Four Longevity Outcomes")
-```
-
-
-As expected, the most overlap is between the two Deleen definitions and the Pilling and Timmers datasets (UK Biobank).
-
-## Sensivity Analysis
-
-```{r include=FALSE}
-
-
-
-Pilling_harm_dat <- Pilling %>%
-  filter(exposure == "Coronary artery disease || id:ebi-a-GCST005194")
-
-Timmers_harm_dat<- Timmers %>%
-  filter(exposure == "Coronary artery disease || id:ebi-a-GCST005194")
-
-Cases90_harm_dat <- Cases90 %>%
-  filter(exposure == "Coronary artery disease || id:ebi-a-GCST005194")
-
-Cases99_harm_dat <- Cases99 %>%
-  filter(exposure == "Coronary artery disease || id:ebi-a-GCST005194")
-```
-
-### Heterogeneity Test
-
-```{r include=FALSE}
-het.pilling <- mr_heterogeneity(Pilling_harm_dat)%>%
-  mutate(Outcome.dat = "Pilling")
-het.timmers <- mr_heterogeneity(Timmers_harm_dat)%>%
-  mutate(Outcome.dat = "Timmers")
-het.cases90 <- mr_heterogeneity(Cases90_harm_dat)%>%
-  mutate(Outcome.dat = "Cases90")
-het.cases99 <- mr_heterogeneity(Cases99_harm_dat)%>%
-  mutate(Outcome.dat = "Cases99")
-
-het_test8 <- rbind(het.pilling,het.timmers,het.cases90,het.cases99) %>%
-  select(-id.exposure, -id.outcome, -outcome) %>%
-  select(Outcome.dat, exposure, method, Q, Q_df, Q_pval) %>%
-  rename(`Longevity Definition` = Outcome.dat)
-```
-
-```{r}
-kbl(het_test8, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q-test")%>%
-  kable_classic()%>%
-  kable_styling(bootstrap_options = "striped")
-```
-
-Evidence of Heterogeneity in the Timmers data.
-
-### Check for Pleiotropy
-
-```{r include=FALSE}
-plei.pilling <- mr_pleiotropy_test(Pilling_harm_dat)%>%
-  mutate(Outcome.dat = "Pilling")
-plei.timmers <- mr_pleiotropy_test(Timmers_harm_dat)%>%
-  mutate(Outcome.dat = "Timmers")
-plei.cases90 <- mr_pleiotropy_test(Cases90_harm_dat)%>%
-  mutate(Outcome.dat = "Cases90")
-plei.cases99 <- mr_pleiotropy_test(Cases99_harm_dat)%>%
-  mutate(Outcome.dat = "Cases99")
-
-pli_test8 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
-  select(-id.exposure, -id.outcome, -outcome) %>%
-  select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
-  rename(`Longevity Definition` = Outcome.dat,
-         `Egger Intercept` = egger_intercept)
-
-```
-
-```{r}
-kbl(pli_test8, booktabs = T, caption = "Test for Pleiotropy ")%>%
-  kable_classic()%>%
-  kable_styling(bootstrap_options = "striped")
-```
-
-no indication from this test that there is the presence of horizontal pleiotropy
-
-
-## Leave on out Analysis - Check to see if there is one SNP influencing the results
-```{r include=FALSE}
-loo.pilling <- mr_leaveoneout(Pilling_harm_dat)%>%
-  mutate(outcome.data = "Pilling")
-loo.timmers <-mr_leaveoneout(Timmers_harm_dat)%>%
-  mutate(outcome.data = "Timmers")
-loo.cases90 <-mr_leaveoneout(Cases90_harm_dat)%>%
-  mutate(outcome.data = "Cases90")
-loo.cases99 <- mr_leaveoneout(Cases99_harm_dat)%>%
-  mutate(outcome.data = "Cases99")
-
-loo_test8 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
-  select(-id.exposure, -id.outcome, -outcome) %>%
-  select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
-  rename(`Longevity Definition` = outcome.data,
-         `Sample Size` = samplesize,
-         Beta = b,
-         SE = se,
-         `p-value` = p)
-
-```
-
-
-```{r}
-plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -1, label_colour = "blue")
-
-plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
-
-kbl(loo_test8, booktabs = T, caption = "Leave one out Analysis ")%>%
-  kable_classic()%>%
-  kable_styling(bootstrap_options = "striped")
-```
-
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
-
-
-## Scatter plot of Three Methods
-```{r cache= TRUE, include=FALSE}
-mr.pilling <- mr(Pilling_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-
-sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
-sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
-sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
-sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
-
-```
-
-```{r}
-exposure <- Pilling_harm_dat$exposure[1]
-
-scatter <- plot_grid(sc.pilling[[1]],sc.timmers[[1]], sc.cases90[[1]], sc.cases99[[1]], nrow = 2)
-
-scatter8 <- add_sub(scatter, paste("SNP effect on ", exposure), y = 0.2, vjust = 0, size = 8 )
-ggdraw(scatter8)
-
-# to check if the graph is the same
-#mr_scatter_plot(mr.timmers, Timmers_harm_dat)
-
-ggsave("images/coronarydisease_scatter.png")
-```
-
-## Forest Plot of Single SNP estimates compared to estimates with all SNPs
-
-```{r include=FALSE}
-pilling.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-timmers.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-cases90.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-```
-
-```{r}
-plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
-plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
-```
-
-## Funnel plot of Single SNP analysis compared to the estimates from all SNPs
-
-
-
-```{r include=FALSE}
-pilling.funnel <- mr_funnel_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-timmers.funnel <- mr_funnel_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-cases90.funnel <- mr_funnel_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-cases99.funnel <- mr_funnel_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-pilling.funnel$`ebi-a-GCST005194.8WRRHB`$theme$legend.direction <- 'none'
-pilling.funnel$`ebi-a-GCST005194.8WRRHB`$theme$legend.position <- 'none'
-timmers.funnel$`ebi-a-GCST005194.UeZfVW`$theme$legend.direction <- 'none'
-timmers.funnel$`ebi-a-GCST005194.UeZfVW`$theme$legend.position <- 'none'
-cases90.funnel$`ebi-a-GCST005194.OHpR2s`$theme$legend.direction <- 'none'
-cases90.funnel$`ebi-a-GCST005194.OHpR2s`$theme$legend.position <- 'none'
-cases99.funnel$`ebi-a-GCST005194.hCW1Ye`$theme$legend.direction <- 'none'
-cases99.funnel$`ebi-a-GCST005194.hCW1Ye`$theme$legend.position <- 'none'
-
-Pilling_harm_dat$exposure[1]
-
-```
-
-```{r}
-
-
-p1 <- pilling.funnel$`ebi-a-GCST005194.8WRRHB` + 
-  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
-p2 <- timmers.funnel$`ebi-a-GCST005194.UeZfVW` + 
-  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
-p3 <- cases90.funnel$`ebi-a-GCST005194.OHpR2s`+ 
-  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
-p4 <- cases99.funnel$`ebi-a-GCST005194.hCW1Ye` + 
-  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
-
-annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
-                top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
-
-ggsave("images/coronarydisease_funnel.png")
-
-```
-
-
-# Type 2 Diabetes 9
-
-
-```{r}
-betas <- sel_graph %>%
-  filter(exposure == c("Type 2 diabetes || id:ebi-a-GCST006867"))%>%
-  dplyr::select( b.pilling, b.timmers, b.90, b.99) %>%
-  unlist()
-se <- sel_graph %>%
-  filter(exposure == c("Type 2 diabetes || id:ebi-a-GCST006867"))%>%
-  dplyr::select(se.pilling, se.timmers, se.90, se.99)%>%
-  unlist()
-nsnp <- sel_graph %>%
-  filter(exposure == c("Type 2 diabetes || id:ebi-a-GCST006867"))%>%
-  dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
-  unlist()
-Outcome <- c("Pilling", "Timmers", "Deleen 90", "Deleen 99")
-exposure <- c("Type 2 diabetes || id:ebi-a-GCST006867")
-graph.data <- as.data.frame(cbind(Outcome,exposure, betas, se,nsnp))
-
-graph.data$betas <- as.numeric(graph.data$betas)
-graph.data$se <- as.numeric(graph.data$se)
-
-graph.data9 <- graph.data %>%
-  mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se),
-         OR = exp(betas),
-         lower.OR.CI = exp(lower.CI),
-         upper.OR.CI = exp(upper.CI))
-graph.data9
-ggplot(graph.data9) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
-  xlab("") +
-  ylab("") +
-  ggtitle("Confidence Intervals for Four Longevity Outcomes")
-```
-
-
-
-
-## Sensivity Analysis
-
-```{r include=FALSE}
-
-#filter by Alzheimer
-
-Pilling_harm_dat <- Pilling %>%
-  filter(exposure == "Type 2 diabetes || id:ebi-a-GCST006867")
-
-Timmers_harm_dat  <- Timmers %>%
-  filter(exposure == "Type 2 diabetes || id:ebi-a-GCST006867")
-
-Cases90_harm_dat  <- Cases90 %>%
-  filter(exposure == "Type 2 diabetes || id:ebi-a-GCST006867")
-
-Cases99_harm_dat  <- Cases99 %>%
-  filter(exposure == "Type 2 diabetes || id:ebi-a-GCST006867")
-```
-
-### Heterogeneity Test
-
-```{r include=FALSE}
-het.pilling <- mr_heterogeneity(Pilling_harm_dat )%>%
-  mutate(Outcome.dat = "Pilling")
-het.timmers <- mr_heterogeneity(Timmers_harm_dat )%>%
-  mutate(Outcome.dat = "Timmers")
-het.cases90 <- mr_heterogeneity(Cases90_harm_dat )%>%
-  mutate(Outcome.dat = "Cases90")
-het.cases99 <- mr_heterogeneity(Cases99_harm_dat )%>%
-  mutate(Outcome.dat = "Cases99")
-
-het_test9 <- rbind(het.pilling,het.timmers,het.cases90,het.cases99) %>%
-  select(-id.exposure, -id.outcome, -outcome) %>%
-  select(Outcome.dat, exposure, method, Q, Q_df, Q_pval) %>%
-  rename(`Longevity Definition` = Outcome.dat)
-```
-
-```{r}
-kbl(het_test9, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q-test")%>%
-  kable_classic()%>%
-  kable_styling(bootstrap_options = "striped")
-```
-
-Evidence of Heterogeneity in the Timmers data.
-
-### Check for Pleiotropy
-
-```{r include=FALSE}
-plei.pilling <- mr_pleiotropy_test(Pilling_harm_dat )%>%
-  mutate(Outcome.dat = "Pilling")
-plei.timmers <- mr_pleiotropy_test(Timmers_harm_dat )%>%
-  mutate(Outcome.dat = "Timmers")
-plei.cases90 <- mr_pleiotropy_test(Cases90_harm_dat )%>%
-  mutate(Outcome.dat = "Cases90")
-plei.cases99 <- mr_pleiotropy_test(Cases99_harm_dat )%>%
-  mutate(Outcome.dat = "Cases99")
-
-pli_test9 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
-  select(-id.exposure, -id.outcome, -outcome) %>%
-  select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
-  rename(`Longevity Definition` = Outcome.dat,
-         `Egger Intercept` = egger_intercept)
-
-```
-
-```{r}
-kbl(pli_test9, booktabs = T, caption = "Test for Pleiotropy ")%>%
-  kable_classic()%>%
-  kable_styling(bootstrap_options = "striped")
-```
-
-no indication from this test that there is the presence of horizontal pleiotropy
-
-
-## Leave on out Analysis - Check to see if there is one SNP influencing the results
-```{r include=FALSE}
-loo.pilling <- mr_leaveoneout(Pilling_harm_dat)%>%
-  mutate(outcome.data = "Pilling")
-loo.timmers <-mr_leaveoneout(Timmers_harm_dat)%>%
-  mutate(outcome.data = "Timmers")
-loo.cases90 <-mr_leaveoneout(Cases90_harm_dat)%>%
-  mutate(outcome.data = "Cases90")
-loo.cases99 <- mr_leaveoneout(Cases99_harm_dat)%>%
-  mutate(outcome.data = "Cases99")
-
-loo_test9 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
-  select(-id.exposure, -id.outcome, -outcome) %>%
-  select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
-  rename(`Longevity Definition` = outcome.data,
-         `Sample Size` = samplesize,
-         Beta = b,
-         SE = se,
-         `p-value` = p)
-
-
-```
-
-
-```{r}
-plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -1, label_colour = "blue")
-
-plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
-
-kbl(loo_test9, booktabs = T, caption = "Leave one out Analysis ")%>%
-  kable_classic()%>%
-  kable_styling(bootstrap_options = "striped")
-```
-
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
-
-
-## Scatter plot of Three Methods
-```{r cache= TRUE, include=FALSE}
-mr.pilling <- mr(Pilling_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-
-sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
-sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
-sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
-sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
-
-```
-
-```{r}
-exposure <- Pilling_harm_dat$exposure[1]
-
-scatter <- plot_grid(sc.pilling[[1]],sc.timmers[[1]], sc.cases90[[1]], sc.cases99[[1]], nrow = 2)
-
-scatter9 <- add_sub(scatter, paste("SNP effect on ", exposure), y = 0.2, vjust = 0, size = 8 )
-ggdraw(scatter9)
-
-# to check if the graph is the same
-#mr_scatter_plot(mr.timmers, Timmers_harm_dat)
-
-
-ggsave("images/type2diabetes_scatter.png")
-```
-
-## Forest Plot of Single SNP estimates compared to estimates with all SNPs
-
-```{r include=FALSE}
-pilling.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-timmers.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-cases90.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
-```
-
-```{r}
-plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
-plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
-```
-
-## Funnel plot of Single SNP analysis compared to the estimates from all SNPs
-
-
-
-```{r include=FALSE}
-pilling.funnel <- mr_funnel_plot(mr_singlesnp(Pilling_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-timmers.funnel <- mr_funnel_plot(mr_singlesnp(Timmers_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-cases90.funnel <- mr_funnel_plot(mr_singlesnp(Cases90_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-cases99.funnel <- mr_funnel_plot(mr_singlesnp(Cases99_harm_dat, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
-pilling.funnel$`ebi-a-GCST006867.P3u1a1`$theme$legend.direction <- 'none'
-pilling.funnel$`ebi-a-GCST006867.P3u1a1`$theme$legend.position <- 'none'
-timmers.funnel$`ebi-a-GCST006867.FXT4Yt`$theme$legend.direction <- 'none'
-timmers.funnel$`ebi-a-GCST006867.FXT4Yt`$theme$legend.position <- 'none'
-cases90.funnel$`ebi-a-GCST006867.LXTpae`$theme$legend.direction <- 'none'
-cases90.funnel$`ebi-a-GCST006867.LXTpae`$theme$legend.position <- 'none'
-cases99.funnel$`ebi-a-GCST006867.lDDA6L`$theme$legend.direction <- 'none'
-cases99.funnel$`ebi-a-GCST006867.lDDA6L`$theme$legend.position <- 'none'
-
-Pilling_harm_dat$exposure[1]
-
-```
-
-```{r}
-
-
-p1 <- pilling.funnel$`ebi-a-GCST006867.P3u1a1` + 
-  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
-p2 <- timmers.funnel$`ebi-a-GCST006867.FXT4Yt` + 
-  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
-p3 <- cases90.funnel$`ebi-a-GCST006867.LXTpae`+ 
-  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
-p4 <- cases99.funnel$`ebi-a-GCST006867.lDDA6L` + 
-  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
-
-annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
-                top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
-
-ggsave("images/type2diabetes_funnel.png")
-
-```
-
-# Years of Education 10
-
-```{r}
-betas <- sel_graph %>%
-  filter(exposure == c( "Years of schooling || id:ieu-a-1239"))%>%
-  dplyr::select( b.pilling, b.timmers, b.90, b.99) %>%
-  unlist()
-se <- sel_graph %>%
-  filter(exposure == c( "Years of schooling || id:ieu-a-1239"))%>%
-  dplyr::select(se.pilling, se.timmers, se.90, se.99)%>%
-  unlist()
-nsnp <- sel_graph %>%
-  filter(exposure == c( "Years of schooling || id:ieu-a-1239"))%>%
-  dplyr::select(nsnp.pilling, nsnp.timmers, nsnp.90, nsnp.99)%>%
-  unlist()
-
-Outcome <- c("Pilling", "Timmers", "Deleen 90", "Deleen 99")
-exposure <- c( "Years of schooling || id:ieu-a-1239")
-graph.data <- as.data.frame(cbind(Outcome,exposure, betas, se, nsnp))
-
-graph.data$betas <- as.numeric(graph.data$betas)
-graph.data$se <- as.numeric(graph.data$se)
-
-graph.data10 <- graph.data %>%
-  mutate(lower.CI = betas - (1.96*se),
-         upper.CI = betas + (1.96*se),
-         OR = exp(betas),
-         lower.OR.CI = exp(lower.CI),
-         upper.OR.CI = exp(upper.CI))
-graph.data10
-ggplot(graph.data10) +
-  geom_segment(aes(x = lower.CI, xend = upper.CI, y= 1:4, yend = 1:4, col = Outcome)) +
-  xlab("") +
-  ylab("") +
-  ggtitle("Confidence Intervals for Four Longevity Outcomes")
-```
-
-
-As expected, the most overlap is between the two Deleen definitions and the Pilling and Timmers datasets (UK Biobank).
-
-## Sensivity Analysis
-
-```{r include=FALSE}
-
-#filter by Alzheimer
-
-Pilling_harm_dat <- Pilling %>%
-  filter(exposure ==  "Years of schooling || id:ieu-a-1239")
-
-Timmers_harm_dat <- Timmers %>%
-  filter(exposure ==  "Years of schooling || id:ieu-a-1239")
-
-Cases90_harm_dat <- Cases90 %>%
-  filter(exposure ==  "Years of schooling || id:ieu-a-1239")
-
-Cases99_harm_dat <- Cases99 %>%
-  filter(exposure ==  "Years of schooling || id:ieu-a-1239")
-```
-
-### Heterogeneity Test
-
-```{r include=FALSE}
-het.pilling <- mr_heterogeneity(Pilling_harm_dat)%>%
-  mutate(Outcome.dat = "Pilling")
-het.timmers <- mr_heterogeneity(Timmers_harm_dat)%>%
-  mutate(Outcome.dat = "Timmers")
-het.cases90 <- mr_heterogeneity(Cases90_harm_dat)%>%
-  mutate(Outcome.dat = "Cases90")
-het.cases99 <- mr_heterogeneity(Cases99_harm_dat)%>%
-  mutate(Outcome.dat = "Cases99")
-
-het_test10 <- rbind(het.pilling,het.timmers,het.cases90,het.cases99) %>%
-  select(-id.exposure, -id.outcome, -outcome) %>%
-  select(Outcome.dat, exposure, method, Q, Q_df, Q_pval) %>%
-  rename(`Longevity Definition` = Outcome.dat)
-```
-
-```{r}
-kbl(het_test10, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q-test")%>%
-  kable_classic()%>%
-  kable_styling(bootstrap_options = "striped")
-```
-
-Evidence of Heterogeneity in the Timmers data.
-
-### Check for Pleiotropy
-
-```{r include=FALSE}
-plei.pilling <- mr_pleiotropy_test(Pilling_harm_dat)%>%
-  mutate(Outcome.dat = "Pilling")
-plei.timmers <- mr_pleiotropy_test(Timmers_harm_dat)%>%
-  mutate(Outcome.dat = "Timmers")
-plei.cases90 <- mr_pleiotropy_test(Cases90_harm_dat)%>%
-  mutate(Outcome.dat = "Cases90")
-plei.cases99 <- mr_pleiotropy_test(Cases99_harm_dat)%>%
-  mutate(Outcome.dat = "Cases99")
-
-pli_test10 <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
-  select(-id.exposure, -id.outcome, -outcome) %>%
-  select(Outcome.dat, exposure, egger_intercept, se, pval) %>%
-  rename(`Longevity Definition` = Outcome.dat,
-         `Egger Intercept` = egger_intercept)
-
-```
-
-```{r}
-kbl(pli_test10, booktabs = T, caption = "Test for Pleiotropy ")%>%
-  kable_classic()%>%
-  kable_styling(bootstrap_options = "striped")
-```
-
-no indication from this test that there is the presence of horizontal pleiotropy
-
-
-## Leave on out Analysis - Check to see if there is one SNP influencing the results
-```{r include=FALSE}
-loo.pilling <- mr_leaveoneout(Pilling_harm_dat)%>%
-  mutate(outcome.data = "Pilling")
-loo.timmers <-mr_leaveoneout(Timmers_harm_dat)%>%
-  mutate(outcome.data = "Timmers")
-loo.cases90 <-mr_leaveoneout(Cases90_harm_dat)%>%
-  mutate(outcome.data = "Cases90")
-loo.cases99 <- mr_leaveoneout(Cases99_harm_dat)%>%
-  mutate(outcome.data = "Cases99")
-
-loo_test10 <- rbind(loo.pilling, loo.timmers,loo.cases90,loo.cases99) %>%
-  select(-id.exposure, -id.outcome, -outcome) %>%
-  select(outcome.data, exposure, samplesize, SNP, b,se, p) %>%
-  rename(`Longevity Definition` = outcome.data,
-         `Sample Size` = samplesize,
-         Beta = b,
-         SE = se,
-         `p-value` = p)
-
-
-
-```
-
-
-```{r}
-plot_grid(p1, p2, labels = c("Pilling", "Timmers"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -1, label_colour = "blue")
-
-plot_grid(p3, p4, labels = c("Deleen 90", "Deleen 99"),label_x = 0, label_y = 0.05,
-  hjust = 0, vjust = -0.5, label_colour = "blue")
-
-kbl(loo_test10, booktabs = T, caption = "Leave one out Analysis ")%>%
-  kable_classic()%>%
-  kable_styling(bootstrap_options = "striped")
-```
-
-Although there are some SNPs which significantly affect the point estimate, most SNPs overlap.
-
-
-## Scatter plot of Three Methods
-```{r cache= TRUE, include=FALSE}
-mr.pilling <- mr(Pilling_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-mr.timmers <- mr(Timmers_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-mr.cases90 <- mr(Cases90_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-mr.cases99 <- mr(Cases99_harm_dat, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
-
-sc.pilling <- mrscatter_nolegend(mr.pilling, Pilling_harm_dat, title = "(a) Pilling")
-sc.timmers <- mrscatter_nolegend(mr.timmers, Timmers_harm_dat, title ="(b) Timmers")
-sc.cases90 <- mrscatter_nolegend(mr.cases90, Cases90_harm_dat, title ="(c) Deleen 90th Percentile")
-sc.cases99 <- mrscatter_legend(mr.cases99, Cases99_harm_dat, title ="(d) Deleen 99th Percentile")
-
-```
-
-```{r}
-exposure <- Pilling_harm_dat$exposure[1]
-
-scatter <- plot_grid(sc.pilling[[1]],sc.timmers[[1]], sc.cases90[[1]], sc.cases99[[1]], nrow = 2)
-
-scatter10 <- add_sub(scatter, paste("SNP effect on ", exposure), y = 0.2, vjust = 0, size = 8 )
-ggdraw(scatter10)
 
 # to check if the graph is the same
 #mr_scatter_plot(mr.timmers, Timmers_harm_dat)
@@ -3502,9 +2940,9 @@ cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(Cases99_harm_
 ```
 
 ```{r}
-plot_grid(pilling.forest, timmers.forest,labels =  c("Pilling", "Timmers"), label_x = 0, label_y = 0.05,
+plot_grid(pilling.forest, timmers.forest,labels =  c("Parental 90", "Parental"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
-plot_grid(cases90.forest, cases99.forest,labels =  c("Deleen 90", "Deleen 99"), label_x = 0, label_y = 0.05,
+plot_grid(cases90.forest, cases99.forest,labels =  c("90th Percentile", "99th Percentile"), label_x = 0, label_y = 0.05,
   hjust = 0, vjust = -0.5, label_colour = "blue")
 ```
 
@@ -3538,9 +2976,9 @@ p1 <- pilling.funnel$`ieu-a-1239.SdFUtY` +
 p2 <- timmers.funnel$`ieu-a-1239.RI5rdD` + 
   ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
 p3 <- cases90.funnel$`ieu-a-1239.j2IkkU`+ 
-  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
+  ggtitle("90th Percentile" ) + theme(plot.title = element_text(color = "blue"))
 p4 <- cases99.funnel$`ieu-a-1239.cytrdU` + 
-  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+  ggtitle("99th Percentile") + theme(plot.title = element_text(color = "blue"))
 
 annotate_figure(ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2) ,
                 top = paste0("Single SNP estimates of ", Pilling_harm_dat$exposure[1], " on Longevity"))
@@ -3557,37 +2995,37 @@ ggsave("images/education_funnel.png")
 
 ```{r}
 mr_cases90 <- readRDS("data/MR/MR_cases_90_gwas_ieu.rds") %>% 
-  filter(exposure %in% c("Basal metabolic rate || id:ukb-b-16446", 
-  "Age first had sexual intercourse || id:ukb-b-6591", "Overall health rating || id:ukb-b-6306",  
-  "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057", "Arm fat mass (left) || id:ukb-a-287",
-  "Glycated haemoglobin || id:ukb-d-30750_irnt","Prostate cancer || id:ieu-b-85", 
-  "Coronary artery disease || id:ebi-a-GCST005194", "Type 2 diabetes || id:ebi-a-GCST006867", 
-  "Years of schooling || id:ieu-a-1239"))%>% 
-  mutate(Outcome = "Cases 90")
+  filter(exposure %in% c("Overall health rating || id:ukb-b-6306",
+                         "Qualifications: College or University degree || id:ukb-b-16489", 
+                         "Triglycerides || id:ukb-d-30870_irnt",
+                         "Type 2 diabetes || id:ebi-a-GCST006867",
+                         "Years of schooling || id:ieu-a-1239", "body mass index || id:ieu-b-40",
+                         "diastolic blood pressure || id:ieu-b-39"))%>% 
+  mutate(Outcome = "90th Percentile")
 mr_cases99 <- readRDS("data/MR/MR_cases_99_gwas_ieu.rds")%>% 
-  filter(exposure %in% c("Basal metabolic rate || id:ukb-b-16446", 
-  "Age first had sexual intercourse || id:ukb-b-6591", "Overall health rating || id:ukb-b-6306",  
-  "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057", "Arm fat mass (left) || id:ukb-a-287",
-  "Glycated haemoglobin || id:ukb-d-30750_irnt","Prostate cancer || id:ieu-b-85", 
-  "Coronary artery disease || id:ebi-a-GCST005194", "Type 2 diabetes || id:ebi-a-GCST006867", 
-  "Years of schooling || id:ieu-a-1239"))%>%
-  mutate(Outcome = "Cases 99")
+  filter(exposure %in% c("Overall health rating || id:ukb-b-6306",
+                         "Qualifications: College or University degree || id:ukb-b-16489", 
+                         "Triglycerides || id:ukb-d-30870_irnt",
+                         "Type 2 diabetes || id:ebi-a-GCST006867",
+                         "Years of schooling || id:ieu-a-1239", "body mass index || id:ieu-b-40",
+                         "diastolic blood pressure || id:ieu-b-39"))%>%
+  mutate(Outcome = "99th Percentile")
 mr_pilling <- readRDS("data/MR/MR_pilling_gwas_ieu.rds")%>% 
-  filter(exposure %in% c("Basal metabolic rate || id:ukb-b-16446", 
-  "Age first had sexual intercourse || id:ukb-b-6591", "Overall health rating || id:ukb-b-6306",  
-  "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057", "Arm fat mass (left) || id:ukb-a-287",
-  "Glycated haemoglobin || id:ukb-d-30750_irnt","Prostate cancer || id:ieu-b-85", 
-  "Coronary artery disease || id:ebi-a-GCST005194", "Type 2 diabetes || id:ebi-a-GCST006867", 
-  "Years of schooling || id:ieu-a-1239"))%>%
-  mutate(Outcome = "Pilling")
+  filter(exposure %in% c("Overall health rating || id:ukb-b-6306",
+                         "Qualifications: College or University degree || id:ukb-b-16489", 
+                         "Triglycerides || id:ukb-d-30870_irnt",
+                         "Type 2 diabetes || id:ebi-a-GCST006867",
+                         "Years of schooling || id:ieu-a-1239", "body mass index || id:ieu-b-40",
+                         "diastolic blood pressure || id:ieu-b-39"))%>%
+  mutate(Outcome = "Parental 90")
 mr_timmers <- readRDS("data/MR/MR_timmers_gwas_ieu.rds")%>% 
-  filter(exposure %in% c("Basal metabolic rate || id:ukb-b-16446", 
-  "Age first had sexual intercourse || id:ukb-b-6591", "Overall health rating || id:ukb-b-6306",  
-  "Non-cancer illness code, self-reported: hypertension || id:ukb-b-14057", "Arm fat mass (left) || id:ukb-a-287",
-  "Glycated haemoglobin || id:ukb-d-30750_irnt","Prostate cancer || id:ieu-b-85", 
-  "Coronary artery disease || id:ebi-a-GCST005194", "Type 2 diabetes || id:ebi-a-GCST006867", 
-  "Years of schooling || id:ieu-a-1239"))%>%
-  mutate(Outcome = "Timmers")
+  filter(exposure %in% c("Overall health rating || id:ukb-b-6306",
+                         "Qualifications: College or University degree || id:ukb-b-16489", 
+                         "Triglycerides || id:ukb-d-30870_irnt",
+                         "Type 2 diabetes || id:ebi-a-GCST006867",
+                         "Years of schooling || id:ieu-a-1239", "body mass index || id:ieu-b-40",
+                         "diastolic blood pressure || id:ieu-b-39"))%>%
+  mutate(Outcome = "Parental")
 
 
 table2 <- rbind(mr_cases90, mr_cases99, mr_pilling, mr_timmers)%>%
@@ -3604,7 +3042,7 @@ table2 <- rbind(mr_cases90, mr_cases99, mr_pilling, mr_timmers)%>%
 colnames(OR_exp) <- c("Outcome", "Estimation Method", "Exposure", "OR", "95% CI", "No. of SNPs")
 
 
-kbl(OR_exp, booktabs = T, caption = "Table 2. Selected Exposure for Further Analysis: Basal Metabolic Rate.  ")%>%
+kbl(OR_exp, booktabs = T, caption = "Table 2. Selected Exposure for Further Analysis")%>%
   kable_classic()%>%
   kable_styling(bootstrap_options = "striped")
 ```
@@ -3613,7 +3051,7 @@ kbl(OR_exp, booktabs = T, caption = "Table 2. Selected Exposure for Further Anal
 ## Heterogeneity
 
 ```{r}
-het_test <- rbind(het_test1,het_test2, het_test3, het_test4, het_test5, het_test6, het_test7,het_test8, het_test9, het_test10)
+het_test <- rbind(het_test1,het_test2, het_test3, het_test4, het_test5, het_test6, het_test7)
 
 kbl(het_test, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q-test")%>%
   kable_classic()%>%
@@ -3624,71 +3062,14 @@ kbl(het_test, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q-
 ## Pleiotropy
 
 ```{r}
-pli_test <- rbind(pli_test1, pli_test2, pli_test3, pli_test4, pli_test5, pli_test6, pli_test7,pli_test8,  pli_test9, pli_test10)
+pli_test <- rbind(pli_test1, pli_test2, pli_test3, pli_test4, pli_test5, pli_test6, pli_test7)
 kbl(pli_test, booktabs = T, caption = "Test for Pleiotropy ")%>%
   kable_classic()%>%
   kable_styling(bootstrap_options = "striped")
 ```
 
 
-#leveoneout
-# ```{r}
-# loo_test <- rbind(loo_test1, loo_test2, loo_test3, loo_test4, loo_test5, loo_test6, loo_test7,  loo_test9, loo_test10, loo_test11, loo_test12, loo_test13, loo_test14)
-# kbl(loo_test, booktabs = T, caption = "Leave one out Analysis ")%>%
-#   kable_classic()%>%
-#   kable_styling(bootstrap_options = "striped")
-# ```
 
-# Cleaned up LOO graphs
-
-
-```{r }
-
-#basal metabolic rate
-loo_graphs(loo_test1, exposure = "Basal metabolic rate || id:ukb-b-16446", outcome = "Longevity" )
-ggsave( "images/Basal_met_rate_loo.png")
-
-#Age at first sexual intercourse
-loo_graphs(loo_test2, exposure = "Age first had sexual intercourse || id:ukb-b-6591", outcome = "Longevity" )
-ggsave( "images/first_sex_loo.png")
-
-# Overal health
-loo_graphs(loo_test3, exposure = "Overall health rating || id:ukb-b-6306", outcome = "Longevity" )
-ggsave( "images/overall_health_loo.png")
-
-#hypertension
-loo_graphs(loo_test4, exposure = " hypertension || id:ukb-b-14057", outcome = "Longevity" )
-ggsave( "images/hypertension_loo.png")
-
-#arm fat
-loo_graphs(loo_test5, exposure ="Arm fat mass (left) || id:ukb-a-287", outcome = "Longevity" )
-ggsave( "images/arm_fat_loo.png")
-
-#HbA1c
-loo_graphs(loo_test6, exposure = "Glycated haemoglobin || id:ukb-d-30750_irnt", outcome = "Longevity" )
-ggsave( "images/HbA1c_loo.png")
-
-#Prostate Cancer
-loo_graphs(loo_test7, exposure = "Prostate cancer || id:ieu-b-85", outcome = "Longevity" )
-ggsave( "images/prostatecancer_loo.png")
-
-#Coronary disease
-loo_graphs(loo_test8, exposure = "Coronary artery disease || id:ebi-a-GCST005194", outcome = "Longevity" )
-ggsave( "images/coronarydisease_loo.png")
-
-#Type 2 diabetes
-loo_graphs(loo_test9, exposure = "Type 2 diabetes || id:ebi-a-GCST006867", outcome = "Longevity" )
-ggsave( "images/type2diabetes_loo.png")
-
-#Cognitive scores : highest math class taken
-loo_graphs(loo_test10, exposure = "Years of schooling || id:ieu-a-1239", outcome = "Longevity" )
-ggsave( "images/education.png")
-
-
-
-
-
-```
 
 
 
@@ -3715,7 +3096,7 @@ grViz("digraph flowchart {
       tab11 [label = '@@11']
       tab12 [label = '@@12']
       tab13 [label = '@@13']
-      tab14 [label = '@@14']
+      tab14 [label = '@@14', color = red]
       tab15 [label = '@@15']
       tab16 [label = '@@16']
       tab17 [label = '@@17' , color = red]
@@ -3755,9 +3136,9 @@ grViz("digraph flowchart {
       [12]: '235 significant exposures'
       [13]: '139 significant exposures'
       [14]: ' 685 Common exposures'
-      [15]: '141 exposures meet criteria'
+      [15]: '197 exposures meet criteria'
       [16]: 'Have at least 100 SNPs and significant associations with at least of three of the four longevity definitions'
-      [17]: '10 exposures for sensitivity analyses'
+      [17]: '7 exposures for sensitivity analyses'
       [18]: 'Chose one exposure from each category'
       [19]: '9357 GWAS associated traits'
       [20]: 'Has all information needed to perform 2SMR'
