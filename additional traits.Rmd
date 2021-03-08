@@ -1,0 +1,493 @@
+---
+title: "Additional Traits"
+author: "Christine Le"
+date: "3/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Import Y Chromosome data from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6887549/
+supplemental table 1
+
+
+```{r libraries}
+library(tidyverse)
+library(TwoSampleMR)
+library(kableExtra)
+library(gridExtra)
+library(ggplot2)
+library(ggpubr)
+```
+
+#get betas and SE
+
+```{r data}
+ychrom_traits <- read_excel("ychrom_traits.xlsx")
+```
+
+```{r}
+# get OR
+OR_matrix <-str_split_fixed(ychrom_traits$OR, " ", 2) 
+
+ychrom_traits$OR_num <- OR_matrix[,1] %>% as.numeric()
+
+#get lower CI
+
+ychrom_traits$OR_lowerCI<-str_split_fixed(OR_matrix[,2], "-",2)[,1] %>%
+  str_replace_all("\\[|\\]", "") %>% as.numeric()
+
+ychrom_traits <- ychrom_traits %>%
+  mutate(logOR = log(OR_num),
+         loglowerCI = log(OR_lowerCI),
+         SE = (logOR - loglowerCI)/1.96)
+
+write_csv(ychrom_traits, "data/ychrom_traits_withB.csv")
+```
+
+# Exposure data
+
+```{r}
+#read in csv file
+
+
+
+ychrom_exp_dat <- read_exposure_data(
+  filename = "data/ychrom_traits_withB.csv", 
+  sep = ",",
+  snp_col = "SNP",
+  beta_col = "logOR",
+  se_col = "SE",
+  effect_allele_col = "Risk Allele",
+  other_allele_col = "Other Allele",
+  eaf_col = "Risk_AF",
+  pval_col = "P",
+  gene_col = "Consensus Gene"
+)
+
+ychrom_exp_dat$exposure <- "Y chromosome loss"
+```
+
+# harmonize with outcomes
+
+## Cases 90
+
+```{r}
+error_log <- data.frame()
+cases_90 <- data.frame()
+exp <- ychrom_exp_dat 
+  
+outcome <- tryCatch( 
+  read_outcome_data(
+  snps = exp$SNP,
+  filename = "data/outcomes/cases90rsid.csv",
+  sep = ",",
+  snp_col = "rsid",
+  beta_col = "Beta",
+  se_col = "SE",
+  effect_allele_col = "EA",
+  other_allele_col = "NEA",
+  eaf_col = "EAF",
+  pval_col = "pval",
+  samplesize_col = "effective_N"),
+  error=function(e) e)
+
+if(inherits(outcome, "error") == FALSE){
+
+  harmonize <- tryCatch(
+  harmonise_data(exp, outcome),
+  error=function(e) e)
+
+  if(inherits(harmonize, "error") == TRUE){
+    cases_90 <- merge(exp, outcome, by = "SNP") %>%
+      mutate(error = "Harmonize")
+    error <-tibble(error = harmonize$message, 
+              location_i = i,
+              exposure = exp_unique[i],
+              message = "harmonizing error")
+      
+    error_log <- rbind(error_log, error)
+
+    }else {
+      cases_90 <- harmonize %>%
+        mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    cases_90 <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+
+cases_90$outcome <- "Cases 90"
+
+saveRDS(error_log, "data/harmonized/error_log_cases_90_ychrom.rds")
+
+
+saveRDS(cases_90, "data/harmonized/cases_90_ychrom_df.rds")
+
+```
+
+
+
+## Cases 99
+
+```{r}
+error_log <- data.frame()
+cases_99 <- data.frame()
+exp <- ychrom_exp_dat 
+  
+outcome <- tryCatch( 
+  read_outcome_data(
+  snps = exp$SNP,
+  filename = "data/outcomes/cases99rsid.csv",
+  sep = ",",
+  snp_col = "rsid",
+  beta_col = "Beta",
+  se_col = "SE",
+  effect_allele_col = "EA",
+  other_allele_col = "NEA",
+  eaf_col = "EAF",
+  pval_col = "pval",
+  samplesize_col = "effective_N"),
+  error=function(e) e)
+
+if(inherits(outcome, "error") == FALSE){
+
+  harmonize <- tryCatch(
+  harmonise_data(exp, outcome),
+  error=function(e) e)
+
+  if(inherits(harmonize, "error") == TRUE){
+    cases_99 <- merge(exp, outcome, by = "SNP") %>%
+      mutate(error = "Harmonize")
+    error <-tibble(error = harmonize$message, 
+              location_i = i,
+              exposure = exp_unique[i],
+              message = "harmonizing error")
+      
+    error_log <- rbind(error_log, error)
+
+    }else {
+      cases_99 <- harmonize %>%
+        mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    cases_99 <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+
+cases_99$outcome <- "Cases 99"
+
+saveRDS(error_log, "data/harmonized/error_log_cases_99_ychrom.rds")
+
+
+saveRDS(cases_99, "data/harmonized/cases_99_ychrom_df.rds")
+
+```
+
+## Pilling
+
+```{r}
+error_log <- data.frame()
+pilling <- data.frame()
+exp <- ychrom_exp_dat 
+  
+outcome <- tryCatch( 
+  read_outcome_data(
+    snps = exp$SNP,
+    filename = "data/outcomes/29227965-GCST006698-EFO_0007796-build37.f.tsv",
+    sep = "\t",
+    snp_col = "variant_id",
+    beta_col = "beta",
+    se_col = "standard_error",
+    effect_allele_col = "effect_allele",
+    other_allele_col = "other_allele",
+    eaf_col = "effect_allele_frequency",
+    pval_col = "p_value"),
+  error=function(e) e)
+
+if(inherits(outcome, "error") == FALSE){
+
+  harmonize <- tryCatch(
+  harmonise_data(exp, outcome),
+  error=function(e) e)
+
+  if(inherits(harmonize, "error") == TRUE){
+    pilling <- merge(exp, outcome, by = "SNP") %>%
+      mutate(error = "Harmonize")
+    error <-tibble(error = harmonize$message, 
+              location_i = i,
+              exposure = exp_unique[i],
+              message = "harmonizing error")
+      
+    error_log <- rbind(error_log, error)
+
+    }else {
+      pilling <- harmonize %>%
+        mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    pilling <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+pilling$outcome <- "Pilling"
+
+
+saveRDS(error_log, "data/harmonized/error_log_pilling_ychrom.rds")
+
+
+saveRDS(pilling, "data/harmonized/pilling_ychrom_df.rds")
+
+```
+
+## Timmers
+
+```{r}
+error_log <- data.frame()
+timmers <- data.frame()
+exp <- ychrom_exp_dat 
+  
+outcome <- tryCatch( 
+  read_outcome_data(
+    snps = exp$SNP,
+    filename = "data/outcomes/lifegen_phase2_bothpl_alldr_2017_09_18.tsv",
+    sep = "\t",
+    snp_col = "rsid",
+    beta_col = "beta1",
+    se_col = "se",
+    effect_allele_col = "a1",
+    other_allele_col = "a0",
+    eaf_col = "freq1",
+    pval_col = "p"),
+  error=function(e) e)
+
+if(inherits(outcome, "error") == FALSE){
+
+  harmonize <- tryCatch(
+  harmonise_data(exp, outcome),
+  error=function(e) e)
+
+  if(inherits(harmonize, "error") == TRUE){
+    timmers <- merge(exp, outcome, by = "SNP") %>%
+      mutate(error = "Harmonize")
+    error <-tibble(error = harmonize$message, 
+              location_i = i,
+              exposure = exp_unique[i],
+              message = "harmonizing error")
+      
+    error_log <- rbind(error_log, error)
+
+    }else {
+      timmers <- harmonize %>%
+        mutate(error = "FALSE")
+  
+
+      }
+    
+
+  }else{
+    timmers <- tibble(error = "no matching rsids in outcome")
+    error <- tibble(error = outcome$message,
+                    location_i = i,
+                    exposure = exp_unique[i],
+                    message = "no matching rsids in outcome")
+    error_log <- rbind(error_log, error)
+  }
+    
+
+timmers$outcome <- "Timmers"
+
+saveRDS(error_log, "data/harmonized/error_log_timmers_ychrom.rds")
+
+
+saveRDS(timmers, "data/harmonized/timmers_ychrom_df.rds")
+
+```
+
+# MR
+```{r}
+mr_90 <- cases_90 %>% 
+  filter(error == "FALSE") %>%
+  mr() %>% 
+  mutate(outcome = "Cases 90")
+
+mr_99 <- cases_99 %>% 
+  filter(error == "FALSE") %>%
+  mr() %>% 
+  mutate(outcome = "Cases 99")
+
+mr_pilling <- pilling %>% 
+  filter(error == "FALSE") %>%
+  mr() %>% 
+  mutate(outcome = "Pilling")
+
+mr_timmers <- timmers %>% 
+  filter(error == "FALSE") %>%
+  mr() %>% 
+  mutate(outcome = "Timmers")
+
+
+mr <- rbind(mr_90, mr_99, mr_pilling, mr_timmers)
+```
+
+
+# Assumption Check
+
+## Heterogeneity Test
+
+```{r}
+het.pilling <- mr_heterogeneity(pilling)
+het.timmers <- mr_heterogeneity(timmers)
+het.cases90 <- mr_heterogeneity(cases_90)
+het.cases99 <- mr_heterogeneity(cases_99)
+
+het_test <- rbind(het.pilling,het.timmers,het.cases90,het.cases99) %>%
+  select(-id.exposure, -id.outcome) %>%
+  rename(`Longevity Definition` = outcome)
+
+kbl(het_test, booktabs = T, caption = "Test for Heterogeneity using Cochran's Q-test")%>%
+  kable_classic()%>%
+  kable_styling(bootstrap_options = "striped")
+```
+
+## Pleiotropy test
+
+```{r}
+plei.pilling <- mr_pleiotropy_test(pilling)
+plei.timmers <- mr_pleiotropy_test(timmers)
+plei.cases90 <- mr_pleiotropy_test(cases_90)
+plei.cases99 <- mr_pleiotropy_test(cases_99)
+
+pli_test <- rbind(plei.pilling, plei.timmers,plei.cases90,plei.cases99) %>%
+  select(-id.exposure, -id.outcome) %>%
+   rename(`Longevity Definition` = outcome,
+         `Egger Intercept` = egger_intercept)
+kbl(pli_test, booktabs = T, caption = "Test for Pleiotropy ")%>%
+  kable_classic()%>%
+  kable_styling(bootstrap_options = "striped")
+```
+
+## Leave one out analysis
+```{r}
+loo.pilling <- mr_leaveoneout(pilling)
+loo.timmers <-mr_leaveoneout(timmers)
+loo.cases90 <-mr_leaveoneout(cases_90)
+loo.cases99 <- mr_leaveoneout(cases_99)
+
+p1 <- mr_leaveoneout_plot(loo.pilling)
+p2 <- mr_leaveoneout_plot(loo.timmers)
+p3 <- mr_leaveoneout_plot(loo.cases90)
+p4 <- mr_leaveoneout_plot(loo.cases99)
+
+p1$CsvMCa.yr3rbH$theme$legend.direction <- 'none'
+p1$CsvMCa.yr3rbH$theme$legend.position <- 'none'
+p2$CsvMCa.L8s7y2$theme$legend.direction <- 'none'
+p2$CsvMCa.L8s7y2$theme$legend.position <- 'none'
+p3$CsvMCa.EsxvJZ$theme$legend.direction <- 'none'
+p3$CsvMCa.EsxvJZ$theme$legend.position <- 'none'
+p4$CsvMCa.Ii9gKe$theme$legend.direction <- 'none'
+p4$CsvMCa.Ii9gKe$theme$legend.position <- 'none'
+```
+
+```{r}
+p1 <- p1$CsvMCa.yr3rbH + 
+  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
+p2 <- p2$CsvMCa.L8s7y2+ 
+  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
+p3 <- p3$CsvMCa.EsxvJZ + 
+  ggtitle("90th Percentile" ) + theme(plot.title = element_text(color = "blue"))
+p4 <- p4$CsvMCa.Ii9gKe + 
+  ggtitle("99th Percentile") + theme(plot.title = element_text(color = "blue"))
+
+p1
+p2
+p3
+p4
+```
+
+```{r}
+mr.pilling <- mr(pilling, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
+mr.timmers <- mr(timmers, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
+mr.cases90 <- mr(cases_90, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
+mr.cases99 <- mr(cases_99, method_list = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))
+
+mr_scatter_plot(mr.pilling, pilling)
+mr_scatter_plot(mr.timmers, timmers)
+mr_scatter_plot(mr.cases90, cases_90)
+mr_scatter_plot(mr.cases99, cases_99)
+```
+
+
+## Forest Plot
+
+```{r}
+pilling.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(pilling, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+timmers.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(timmers, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+cases90.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(cases_90, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+cases99.forest <- grid.arrange(grobs = mr_forest_plot(mr_singlesnp(cases_99, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median"))))
+```
+
+## Funnel Plot
+
+```{r include=FALSE}
+pilling.funnel <- mr_funnel_plot(mr_singlesnp(pilling, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
+timmers.funnel <-  mr_funnel_plot(mr_singlesnp(timmers, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
+cases90.funnel <- mr_funnel_plot(mr_singlesnp(cases_90, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
+cases99.funnel <- mr_funnel_plot(mr_singlesnp(cases_99, all_method = c("mr_egger_regression", "mr_ivw", "mr_weighted_median")))
+
+pilling.funnel$CsvMCa.yr3rbH$theme$legend.direction <- 'none'
+pilling.funnel$CsvMCa.yr3rbH$theme$legend.position <- 'none'
+timmers.funnel$CsvMCa.L8s7y2$theme$legend.direction <- 'none'
+timmers.funnel$CsvMCa.L8s7y2$theme$legend.position <- 'none'
+cases90.funnel$CsvMCa.EsxvJZ$theme$legend.direction <- 'none'
+cases90.funnel$CsvMCa.EsxvJZ$theme$legend.position <- 'none'
+cases99.funnel$CsvMCa.Ii9gKe$theme$legend.direction <- 'none'
+cases99.funnel$CsvMCa.Ii9gKe$theme$legend.position <- 'none'
+
+```
+
+```{r}
+
+
+p1 <- pilling.funnel$CsvMCa.yr3rbH + 
+  ggtitle("Parental 90") + theme(plot.title = element_text(color = "blue"))
+p2 <- timmers.funnel$CsvMCa.L8s7y2+ 
+  ggtitle("Parental") + theme(plot.title = element_text(color = "blue"))
+p3 <- cases90.funnel$CsvMCa.EsxvJZ+ 
+  ggtitle("Cases 90" ) + theme(plot.title = element_text(color = "blue"))
+p4 <- cases99.funnel$CsvMCa.Ii9gKe + 
+  ggtitle("Cases 99") + theme(plot.title = element_text(color = "blue"))
+
+p1
+p2
+p3
+p4
+```

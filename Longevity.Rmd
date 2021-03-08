@@ -2420,7 +2420,7 @@ p1[8]
 
 Cases99
 Then let's pull the exposures from the harmonized datasets
-Timmers Dataset
+Cases 99 Dataset
 ```{r}
 gwas <- readRDS("data/harmonized/Cases99/cases_99_gwas_df.rds") %>%
   mutate(data_source.exposure = "gwas")
